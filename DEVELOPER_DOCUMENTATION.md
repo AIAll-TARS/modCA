@@ -3,24 +3,16 @@
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
-2. [System Architecture](#2-system-architecture)
-3. [Technology Stack](#3-technology-stack)
-4. [Directory Structure](#4-directory-structure)
-5. [Backend Documentation](#5-backend-documentation)
-   - [Setup and Installation](#51-setup-and-installation)
-   - [API Endpoints](#52-api-endpoints)
-   - [Data Models](#53-data-models)
-   - [Database Structure](#54-database-structure)
-   - [Simulation Engine](#55-simulation-engine)
-6. [Frontend Documentation](#6-frontend-documentation)
-   - [Setup and Installation](#61-setup-and-installation)
-   - [Pages and Components](#62-pages-and-components)
-   - [State Management](#63-state-management)
-   - [API Integration](#64-api-integration)
-7. [Development Workflow](#7-development-workflow)
-8. [Testing](#8-testing)
-9. [Deployment](#9-deployment)
-10. [Troubleshooting](#10-troubleshooting)
+2. [Theoretical Background](#2-theoretical-background)
+3. [System Architecture](#3-system-architecture)
+4. [Technology Stack](#4-technology-stack)
+5. [Directory Structure](#5-directory-structure)
+6. [Backend Documentation](#6-backend-documentation)
+7. [Frontend Documentation](#7-frontend-documentation)
+8. [Development Workflow](#8-development-workflow)
+9. [Testing](#9-testing)
+10. [Deployment](#10-deployment)
+11. [Troubleshooting](#11-troubleshooting)
 
 ## 1. Project Overview
 
@@ -34,7 +26,49 @@ Key features:
 - Ability to save and load simulations
 - API-driven architecture with clear separation of frontend and backend
 
-## 2. System Architecture
+## 2. Theoretical Background
+
+### 2.1 Cellular Automata Foundation
+
+This implementation draws inspiration from the research paper ["Cellular Automata as the Basis of Fast and Reliable Material Models"](http://www.ptmts.org.pl/2004-3-burzynski-in.pdf) by T. Burzyński and W. Kuś. While the original paper focuses on material science applications, we've adapted these concepts to ecological modeling.
+
+Key concepts from the paper that we've adapted:
+- Discrete state transitions
+- Neighborhood-based interaction rules
+- Probabilistic state changes
+- Multi-state cell representation
+
+### 2.2 Simulation Rules
+
+The simulation implements a three-component ecosystem model:
+
+1. **Predators**:
+   - Can move to adjacent cells
+   - Consume prey with probability P(hunt)
+   - Die with probability P(predator_death)
+   - Reproduce with probability P(predator_birth) when energy sufficient
+
+2. **Prey**:
+   - Can move to adjacent cells
+   - Consume substrate with probability P(substrate_consumption)
+   - Die from predation or natural causes
+   - Reproduce with probability P(prey_birth) when energy sufficient
+
+3. **Substrate**:
+   - Static resource
+   - Appears with probability P(substrate_formation)
+   - Disappears with probability P(substrate_death)
+   - Can be consumed by prey
+
+### 2.3 Implementation Approach
+
+Our implementation differs from traditional cellular automata platforms like Golly in several ways:
+- Focus on ecological modeling rather than general CA patterns
+- Probabilistic rather than deterministic rules
+- Real-time parameter adjustment
+- Web-based interface for accessibility
+
+## 3. System Architecture
 
 modca_7web follows a modern client-server architecture with the following components:
 
@@ -61,7 +95,7 @@ modca_7web follows a modern client-server architecture with the following compon
   - WebSocket connections for real-time updates during simulation execution
 - **Data Storage**: SQLite database for persisting simulation configurations and results
 
-## 3. Technology Stack
+## 4. Technology Stack
 
 ### Backend
 - **Python 3.8+**: Core programming language
@@ -80,7 +114,7 @@ modca_7web follows a modern client-server architecture with the following compon
 - **Formik + Yup**: Form handling and validation
 - **WebSocket API**: For real-time communication with backend
 
-## 4. Directory Structure
+## 5. Directory Structure
 
 ```
 modca_7web/
@@ -120,9 +154,9 @@ modca_7web/
 └── start_app.bat               # Application starter
 ```
 
-## 5. Backend Documentation
+## 6. Backend Documentation
 
-### 5.1 Setup and Installation
+### 6.1 Setup and Installation
 
 **Prerequisites:**
 - Python 3.8 or higher
@@ -137,7 +171,7 @@ modca_7web/
 4. Install dependencies: `pip install -r requirements.txt`
 5. Run the server: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
 
-### 5.2 API Endpoints
+### 6.2 API Endpoints
 
 #### RESTful Endpoints
 
@@ -162,7 +196,7 @@ WebSocket Commands:
 - `step`: Run a specified number of steps
 - `reset`: Reset the simulation to initial state
 
-### 5.3 Data Models
+### 6.3 Data Models
 
 #### SimulationSettings
 Core configuration model for simulation parameters:
@@ -222,7 +256,7 @@ class SimulationStatistics(BaseModel):
     empty_percentage: Optional[float]
 ```
 
-### 5.4 Database Structure
+### 6.4 Database Structure
 
 The application uses SQLite with the following tables:
 
@@ -250,191 +284,117 @@ Stores results of completed simulations:
 | final_statistics | TEXT | JSON string of final statistics |
 | history | TEXT | JSON string of step-by-step history |
 
-### 5.5 Simulation Engine
+### 6.5 Simulation Engine
 
-The cellular automata simulation engine is centered around the following components:
-
-#### Grid Initialization
+The simulation engine (`simulation.py`) implements the core cellular automata logic:
 
 ```python
-def initialize_grid(size, prey_count, predator_count, substrate_probability):
-    """
-    Initialize a grid with specified entities.
-    
-    Args:
-        size (int): Size of the square grid
-        prey_count (int): Number of prey to place
-        predator_count (int): Number of predators to place
-        substrate_probability (float): Probability of substrate at each cell
+class SimulationEngine:
+    def __init__(self, settings: SimulationSettings):
+        self.grid = Grid(settings.grid_size)
+        self.settings = settings
+        self.statistics = SimulationStatistics()
         
-    Returns:
-        numpy.ndarray: 2D grid with entities placed
-    """
+    def step(self):
+        """Execute one simulation step."""
+        # Phase 1: Movement
+        self._handle_movement()
+        
+        # Phase 2: Interactions
+        self._handle_interactions()
+        
+        # Phase 3: Reproduction
+        self._handle_reproduction()
+        
+        # Phase 4: Death
+        self._handle_death()
+        
+        # Phase 5: Substrate
+        self._handle_substrate()
+        
+        # Update statistics
+        self._update_statistics()
 ```
 
-#### Simulation Class
+Key Implementation Details:
+- Phases are executed sequentially to ensure consistent behavior
+- Random number generation uses fixed seeds for reproducibility
+- Optimized grid operations using NumPy arrays
+- Statistics calculation runs in O(n) time
 
-The `Simulation` class manages the state and evolution of the cellular automata:
+## 7. Frontend Documentation
 
-```python
-class Simulation:
-    """
-    Manages the simulation of cellular automata.
-    
-    Attributes:
-        grid (numpy.ndarray): Current state of the grid
-        params (dict): Simulation parameters
-        step_count (int): Current step number
-        statistics_history (list): History of statistics
-    
-    Methods:
-        step(): Perform one simulation step
-        run_steps(n): Run n simulation steps
-        get_statistics(): Get current statistics
-        reset(): Reset simulation to initial state
-    """
+### 7.1 Component Structure
+
+```
+components/
+├── Grid/
+│   ├── Cell.tsx
+│   ├── Grid.tsx
+│   └── types.ts
+├── Controls/
+│   ├── SimulationControls.tsx
+│   ├── ParameterControls.tsx
+│   └── types.ts
+└── Statistics/
+    ├── PopulationGraph.tsx
+    ├── StatisticsSummary.tsx
+    └── types.ts
 ```
 
-## 6. Frontend Documentation
+### 7.2 State Management
 
-### 6.1 Setup and Installation
-
-**Prerequisites:**
-- Node.js 16.x or higher
-- npm (Node.js package manager)
-
-**Installation Steps:**
-1. Navigate to the frontend directory: `cd modca_7web/frontend`
-2. Install dependencies: `npm install`
-3. Run the development server: `npm run dev`
-4. Access the application at http://localhost:3000
-
-### 6.2 Pages and Components
-
-#### Home Page (index.tsx)
-The landing page with options to:
-- Start a new simulation
-- Load a saved simulation
-- View documentation and information
-
-#### Simulation Page (simulate.tsx)
-The main interface for running and visualizing simulations:
-
-**Components:**
-- **SimulationForm**: Form for configuring simulation parameters
-- **SimulationGrid**: Canvas-based visualization of the cellular automata grid
-- **StatisticsPanel**: Display of current population statistics
-- **PopulationChart**: Line chart showing population trends over time
-- **ControlPanel**: Buttons for controlling simulation (step, run, pause, reset)
-
-### 6.3 State Management
-
-The frontend uses React's useState and useEffect hooks for local state management:
+The application uses React's Context API for global state management:
 
 ```typescript
-// Main simulation states
-const [simulationId, setSimulationId] = useState<string | null>(null);
-const [simulationStatus, setSimulationStatus] = useState<string>('idle');
-const [grid, setGrid] = useState<number[][]>([]);
-const [statistics, setStatistics] = useState<any>({});
-const [step, setStep] = useState<number>(0);
-const [totalSteps, setTotalSteps] = useState<number>(0);
-const [historicalData, setHistoricalData] = useState<any[]>([]);
-const [isRunning, setIsRunning] = useState<boolean>(false);
-const [socket, setSocket] = useState<WebSocket | null>(null);
+interface SimulationState {
+  settings: SimulationSettings;
+  statistics: SimulationStatistics;
+  status: SimulationStatus;
+  grid: Grid;
+}
+
+const SimulationContext = React.createContext<{
+  state: SimulationState;
+  dispatch: React.Dispatch<SimulationAction>;
+}>(initialContext);
 ```
 
-### 6.4 API Integration
+## 8. Development Workflow
 
-The frontend communicates with the backend using:
-
-1. **Axios for RESTful API Calls**:
-
-```typescript
-const startSimulation = async (values: any) => {
-    try {
-        const response = await axios.post('http://localhost:8000/api/simulate', values);
-        // Process response...
-    } catch (error) {
-        handleAxiosError(error, 'Failed to start simulation');
-    }
-};
-```
-
-2. **WebSocket for Real-time Updates**:
-
-```typescript
-const connectWebSocket = (simId: string) => {
-    const ws = new WebSocket(`ws://localhost:8000/ws/simulate/${simId}`);
-    
-    ws.onopen = () => {
-        console.log('WebSocket connection established');
-    };
-    
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        // Update state with new data...
-    };
-    
-    ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-    };
-    
-    ws.onclose = () => {
-        console.log('WebSocket connection closed');
-    };
-    
-    setSocket(ws);
-};
-```
-
-## 7. Development Workflow
-
-### Setting Up the Development Environment
+### 8.1 Setting Up Development Environment
 
 1. Clone the repository
-2. Install backend dependencies:
-   ```
-   cd modca_7web/backend
+2. Set up backend:
+   ```bash
+   cd backend
    python -m venv venv
-   venv\Scripts\activate
+   source venv/bin/activate  # or venv\Scripts\activate on Windows
    pip install -r requirements.txt
    ```
-
-3. Install frontend dependencies:
-   ```
-   cd modca_7web/frontend
+3. Set up frontend:
+   ```bash
+   cd frontend
    npm install
    ```
 
-4. Start both servers in development mode:
-   - Backend: `cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
-   - Frontend: `cd frontend && npm run dev`
+### 8.2 Development Process
 
-Alternatively, use the provided `start_app.bat` for an automated setup.
+1. Create feature branch from main
+2. Implement changes
+3. Run tests:
+   ```bash
+   # Backend tests
+   cd backend
+   pytest
+   
+   # Frontend tests
+   cd frontend
+   npm test
+   ```
+4. Submit pull request
 
-### Development Guidelines
-
-1. **Backend Development**:
-   - Follow PEP 8 style guide for Python code
-   - Use type hints for improved code readability
-   - Add docstrings to functions and classes
-   - Include proper error handling
-   - Log important events and errors
-
-2. **Frontend Development**:
-   - Use TypeScript for type safety
-   - Follow component-based architecture
-   - Use Tailwind CSS for styling
-   - Implement responsive design
-   - Handle loading states and errors gracefully
-
-3. **API Integration**:
-   - Update API documentation when endpoints change
-   - Test API endpoints with Postman or similar tools
-   - Handle errors and edge cases appropriately
-
-## 8. Testing
+## 9. Testing
 
 ### Backend Testing
 
@@ -464,7 +424,7 @@ Alternatively, use the provided `start_app.bat` for an automated setup.
    npm run test:e2e
    ```
 
-## 9. Deployment
+## 10. Deployment
 
 ### Backend Deployment
 
@@ -496,7 +456,7 @@ Alternatively, use the provided `start_app.bat` for an automated setup.
    - Deploy to Netlify
    - Deploy to a static hosting service
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 ### Common Backend Issues
 
