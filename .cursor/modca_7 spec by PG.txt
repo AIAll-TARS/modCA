@@ -1,0 +1,248 @@
+### **modca_o7: Cellular Automata Ecosystem Simulation – Detailed Specification**
+
+#### **Overview**
+**modca_o7** is a cellular automata-based simulation that models interactions in an ecosystem, consisting of **predators, prey, and substrate**. It is implemented in Python with **Tkinter** for GUI, **NumPy** for computational efficiency, and **Matplotlib** for visualization.
+
+The application provides:
+- **A graphical user interface (GUI)**
+- **A real-time simulation of ecosystem dynamics**
+- **Customizable simulation parameters**
+- **Data visualization and trend analysis**
+- **Persistent storage for settings using SQLite and JSON**
+
+---
+
+## **1. Application Components**
+### **1.1. Main Module (`main.py`)**
+- **Entry point** for the application.
+- Initializes the **Tkinter-based GUI**.
+- Ensures user settings are **saved** before exiting.
+
+#### **Key Functions:**
+```python
+def main():
+    """Initialize and run the application."""
+    root = tk.Tk()
+    app = SimulationGUI(root)
+    root.protocol("WM_DELETE_WINDOW", lambda: (app.save_settings(), root.destroy()))
+    root.mainloop()
+```
+
+---
+
+### **1.2. Constants (`constants.py`)**
+- Defines global simulation **parameters** and **default values**.
+
+#### **Grid Configuration**
+- `DEFAULT_GRID_SIZE = 100`
+- `DEFAULT_STEPS = 100`
+- `DEFAULT_NEIGHBORHOOD = "von_neumann"` (can be `"moore"`)
+
+#### **Predator Behavior**
+- `DEFAULT_Pl = 0.05` (Death Probability)
+- `DEFAULT_PREDATOR_BIRTH_PROB = 0.33`
+- `DEFAULT_l = 3` (Initial Number of Predators)
+
+#### **Prey Behavior**
+- `DEFAULT_Pr = 0.7` (Hunted Probability)
+- `DEFAULT_Prey_random_death = 0.01`
+- `DEFAULT_r = 2000` (Initial Number of Prey)
+- `DEFAULT_Prey_birth_prob = 0.7`
+
+#### **Substrate Behavior**
+- `DEFAULT_Ps_initial = 0.25` (Initial Probability)
+- `DEFAULT_Ps_neighbor = 0.05` (Formation Boost)
+- `DEFAULT_Substrate_random_death = 0.03`
+
+#### **Cell States**
+- `EMPTY = 0`
+- `PREY = 1`
+- `PREDATOR = 2`
+- `SUBSTRATE = 3`
+
+#### **Color Mapping for Visualization**
+```python
+COLORS = {
+    EMPTY: "black",
+    PREY: "yellow",
+    PREDATOR: "red",
+    SUBSTRATE: "green",
+}
+```
+
+---
+
+### **1.3. Grid Management (`grid.py`)**
+Handles **grid initialization** and **neighborhood calculations**.
+
+#### **Key Functions:**
+1. **Initialize Grid**
+   ```python
+   def initialize_grid(grid_size, initial_prey=0, initial_predators=0, initial_substrate=0):
+   ```
+   - Places entities randomly on the grid, ensuring no cell is overpopulated.
+
+2. **Neighborhood Detection**
+   - Uses **Moore** (8-cell) or **Von Neumann** (4-cell) neighborhoods.
+   ```python
+   def get_moore_neighbors(grid, x, y):
+   def get_von_neumann_neighbors(grid, x, y):
+   ```
+   - Helps calculate local interactions for movement and reproduction.
+
+---
+
+### **1.4. Simulation Logic (`simulation.py`)**
+Manages **state updates** for the ecosystem.
+
+#### **Simulation Process**
+- **Step Execution**
+  ```python
+  def step(self):
+  ```
+  - Processes each cell **randomly** to prevent bias.
+  - Updates the **new state** based on predefined rules.
+
+#### **Entity Updates**
+1. **Predator Update**
+   ```python
+   def _update_predator(self, new_grid, x, y):
+   ```
+   - Can **die**, **hunt prey**, or **move**.
+   - May **reproduce** if hunting is successful.
+
+2. **Prey Update**
+   ```python
+   def _update_prey(self, new_grid, x, y):
+   ```
+   - Can be **hunted**, **die randomly**, **move**, or **reproduce** after consuming substrate.
+
+3. **Substrate Update**
+   ```python
+   def _update_substrate(self, new_grid, x, y):
+   ```
+   - Can **disappear** over time.
+
+4. **Empty Cell Update**
+   ```python
+   def _update_empty(self, new_grid, x, y):
+   ```
+   - May **turn into substrate** based on **probabilities**.
+
+---
+
+### **1.5. Graphical User Interface (`gui.py`)**
+Uses **Tkinter** for an interactive GUI.
+
+#### **Features**
+- **Dark Mode Support**
+- **Sliders and Inputs for Parameter Customization**
+- **Buttons for Starting, Pausing, and Stopping the Simulation**
+- **Real-time Updates for Population Trends**
+
+#### **Key Components**
+1. **Simulation Controls**
+   ```python
+   def setup_control_panel(self, parent):
+   ```
+   - Inputs for **grid size**, **steps**, and **neighborhood type**.
+   - Adjustable **predator-prey-substrate probabilities**.
+
+2. **Data Persistence**
+   ```python
+   def save_settings(self):
+   ```
+   - Stores user configurations in a **JSON file**.
+
+---
+
+### **1.6. Visualization (`visualization.py`)**
+Handles **real-time** rendering of the grid and population trends.
+
+#### **Key Features**
+- **Grid Rendering** with Matplotlib
+  ```python
+  def update_grid_display(self, grid):
+  ```
+  - Uses **color mapping** to differentiate entities.
+
+- **Population Trend Graph**
+  ```python
+  def update_stats_display(self, stats):
+  ```
+  - Plots the population changes of **predators, prey, and substrate** over time.
+
+- **Dark Mode Support**
+  ```python
+  def _apply_dark_mode(self):
+  ```
+  - Ensures **black backgrounds and white text** for better visualization.
+
+---
+
+### **1.7. Database & Settings (`last_settings.json`)**
+Stores the **latest simulation parameters** for consistency across sessions.
+
+#### **Example JSON Configuration**
+```json
+{
+    "Grid Size": "25",
+    "Steps": "100",
+    "Predator Death Prob (Pl)": "1",
+    "Prey Hunted Prob (Pr)": "1",
+    "Prey Random Death": "1",
+    "Substrate Random Death": "1",
+    "Initial Prey": "100",
+    "Initial Predators": "100",
+    "Initial Substrate": "100"
+}
+```
+
+---
+
+## **2. Running the Application**
+### **2.1. Installation**
+1. Clone the repository:
+   ```sh
+   git clone <repository-url>
+   cd modca_o7
+   ```
+2. Install dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```
+
+### **2.2. Running the Simulation**
+```sh
+python main.py
+```
+
+---
+
+## **3. Simulation Rules**
+### **3.1. Entity Interactions**
+| **Entity**  | **Can Move?** | **Consumes** | **Can Reproduce?** | **Can Die?** |
+|------------|-------------|-------------|------------------|-------------|
+| **Predator** | ✅ | Prey | ✅ | ✅ |
+| **Prey** | ✅ | Substrate | ✅ | ✅ |
+| **Substrate** | ❌ | - | ❌ | ✅ |
+| **Empty Cell** | ❌ | - | ❌ | ❌ |
+
+### **3.2. Probability-Based Behaviors**
+- **Predators have a `5%` chance to die each step.**
+- **Prey have a `70%` chance to be hunted.**
+- **Substrate has a `3%` chance to disappear.**
+- **Prey reproduce with `70%` probability when consuming substrate.**
+- **Predators reproduce with `33%` probability when hunting successfully.**
+
+---
+
+## **4. Conclusion**
+**modca_o7** provides a **detailed and interactive cellular automata simulation** for exploring **ecosystem dynamics**. It allows users to tweak parameters and observe **emergent behaviors** in real-time.
+
+This modular design makes it **extensible**, allowing future enhancements such as:
+- **Additional species** with different survival mechanics.
+- **Genetic algorithms** for evolving behaviors.
+- **More advanced visualization techniques.**
+
+Would you like to add **custom configurations** or **new behaviors** to the simulation?
