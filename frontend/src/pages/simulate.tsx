@@ -16,6 +16,15 @@ import {
     Tooltip,
     Legend,
 } from 'chart.js'
+import {
+    COLORS,
+    CHART_COLORS,
+    LARGE_GRID_THRESHOLD,
+    DEFAULT_SIMULATION_SETTINGS,
+    PREDATOR,
+    PREY,
+    SUBSTRATE
+} from '../constants'
 
 // Register ChartJS components
 ChartJS.register(
@@ -29,14 +38,6 @@ ChartJS.register(
 )
 
 const inter = Inter({ subsets: ['latin'] })
-
-// Entity colors
-const COLORS = {
-    0: 'black',   // Empty
-    1: '#f7dc6f', // Prey (yellow)
-    2: '#e74c3c', // Predator (red)
-    3: '#27ae60'  // Substrate (green)
-}
 
 // Define the validation schema
 const SimulationSchema = Yup.object().shape({
@@ -90,54 +91,33 @@ export default function Simulate() {
             {
                 label: 'Predators',
                 data: [],
-                borderColor: '#e74c3c',  // Red for predators
-                backgroundColor: 'rgba(231, 76, 60, 0.5)',
-                borderWidth: 2
+                borderColor: CHART_COLORS[PREDATOR].border,
+                backgroundColor: CHART_COLORS[PREDATOR].background,
+                tension: 0.1
             },
             {
                 label: 'Prey',
                 data: [],
-                borderColor: '#f7dc6f',  // Yellow for prey
-                backgroundColor: 'rgba(247, 220, 111, 0.5)',
-                borderWidth: 2
+                borderColor: CHART_COLORS[PREY].border,
+                backgroundColor: CHART_COLORS[PREY].background,
+                tension: 0.1
             },
             {
                 label: 'Substrate',
                 data: [],
-                borderColor: '#27ae60',  // Green for substrate
-                backgroundColor: 'rgba(39, 174, 96, 0.5)',
-                borderWidth: 2
-            },
-        ],
+                borderColor: CHART_COLORS[SUBSTRATE].border,
+                backgroundColor: CHART_COLORS[SUBSTRATE].background,
+                tension: 0.1
+            }
+        ]
     })
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const wsRef = useRef<WebSocket | null>(null)
     const [wsConnected, setWsConnected] = useState<boolean>(false)
 
-    // Default simulation settings
-    const hardcodedDefaults = {
-        grid_size: 50,
-        steps: 100,
-        neighborhood_type: 'moore',
-        grid_type: 'torus',
-        predator_death_probability: 0.1,
-        predator_birth_probability: 0.3,
-        initial_predators: 50,
-        predator_starvation_steps: 10,
-        prey_hunted_probability: 0.2,
-        prey_random_death: 0.05,
-        initial_prey: 200,
-        prey_birth_probability: 0.2,
-        prey_starvation_steps: 3,
-        initial_substrate_probability: 0.3,
-        substrate_random_death: 0.05,
-        substrate_consumption_prob: 0.2,
-        record_simulation: false
-    }
-
     // Load saved settings from localStorage or use defaults
-    const [defaultSettings, setDefaultSettings] = useState(hardcodedDefaults);
+    const [defaultSettings, setDefaultSettings] = useState(DEFAULT_SIMULATION_SETTINGS);
 
     // Load saved settings from localStorage on component mount
     useEffect(() => {
@@ -609,23 +589,23 @@ export default function Simulate() {
                         {
                             label: 'Predators',
                             data: [statistics.predator_count],
-                            borderColor: '#e74c3c',  // Red for predators
-                            backgroundColor: 'rgba(231, 76, 60, 0.5)',
-                            borderWidth: 2
+                            borderColor: CHART_COLORS[PREDATOR].border,
+                            backgroundColor: CHART_COLORS[PREDATOR].background,
+                            tension: 0.1
                         },
                         {
                             label: 'Prey',
                             data: [statistics.prey_count],
-                            borderColor: '#f7dc6f',  // Yellow for prey
-                            backgroundColor: 'rgba(247, 220, 111, 0.5)',
-                            borderWidth: 2
+                            borderColor: CHART_COLORS[PREY].border,
+                            backgroundColor: CHART_COLORS[PREY].background,
+                            tension: 0.1
                         },
                         {
                             label: 'Substrate',
                             data: [statistics.substrate_count],
-                            borderColor: '#27ae60',  // Green for substrate
-                            backgroundColor: 'rgba(39, 174, 96, 0.5)',
-                            borderWidth: 2
+                            borderColor: CHART_COLORS[SUBSTRATE].border,
+                            backgroundColor: CHART_COLORS[SUBSTRATE].background,
+                            tension: 0.1
                         },
                     ],
                 })
@@ -1580,8 +1560,8 @@ export default function Simulate() {
                                                     type="button"
                                                     onClick={() => {
                                                         // Reset to factory defaults
-                                                        setDefaultSettings(hardcodedDefaults);
-                                                        saveSettingsToLocalStorage(hardcodedDefaults);
+                                                        setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
+                                                        saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
                                                         // Reload the page to apply defaults
                                                         window.location.reload();
                                                     }}
