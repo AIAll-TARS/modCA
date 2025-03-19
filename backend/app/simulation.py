@@ -335,7 +335,7 @@ class Simulation:
         grid_size = self.grid.shape[0]
 
         # Random death chance
-        if random.random() < self.params.get('predator_death_chance', 0.005):
+        if random.random() < self.params.get('predator_death_probability', 0.005):
             logger.debug(f"Predator at ({x},{y}) died randomly")
             new_grid[x, y] = EMPTY
             return
@@ -358,7 +358,7 @@ class Simulation:
         # More hungry predators take more risks
         hunger_risk = current_hunger / hunger_threshold
         hunting_threshold = self.params.get('hunting_threshold', 0.6)
-        hunt_success_prob = self.params.get('hunt_success_prob', 0.7)
+        hunt_success_prob = self.params.get('prey_hunted_probability', 0.7)
 
         # Adjust hunting probability based on hunger
         hunt_probability = hunt_success_prob * (1 + hunger_risk)
@@ -382,7 +382,7 @@ class Simulation:
             new_predator_hunger[x, y] = -1
 
             # Chance to reproduce after eating
-            if random.random() < self.params.get('predator_reproduction_chance', 0.2):
+            if random.random() < self.params.get('predator_birth_probability', 0.2):
                 # Find empty cell for the offspring
                 empty_neighbors = self._get_nearby_cells(x, y, distance=1)
                 empty_neighbors = [
@@ -427,7 +427,7 @@ class Simulation:
         grid_size = self.grid.shape[0]
 
         # Random death chance
-        if random.random() < self.params.get('prey_death_chance', 0.01):
+        if random.random() < self.params.get('prey_random_death', 0.01):
             logger.debug(f"Prey at ({x},{y}) died from random death")
             new_grid[x, y] = EMPTY
             return
@@ -465,27 +465,41 @@ class Simulation:
         substrate_neighbors = [
             (nx, ny) for nx, ny in neighbors if self.grid[nx, ny] == SUBSTRATE]
         if substrate_neighbors:
-            # Found substrate - consume it
+            # Found substrate - consume it with probability from settings
             sx, sy = random.choice(substrate_neighbors)
-            new_grid[sx, sy] = EMPTY  # Consume the substrate
 
-            # Reset hunger after eating
-            new_prey_hunger[x, y] = 0
+            # Use the substrate_consumption_prob parameter for consumption chance
+            if random.random() < self.params.get('substrate_consumption_prob', 0.6):
+                new_grid[sx, sy] = EMPTY  # Consume the substrate
 
-            # Chance to reproduce after eating
-            if random.random() < self.params.get('prey_reproduction_chance', 0.3):
-                # Find empty cell for the offspring
-                empty_neighbors = [
-                    (nx, ny) for nx, ny in neighbors if self.grid[nx, ny] == EMPTY]
-                if empty_neighbors:
-                    # Reproduce into a random empty neighbor cell
-                    nx, ny = random.choice(empty_neighbors)
-                    new_grid[nx, ny] = PREY
-                    # New prey starts with 0 hunger
-                    new_prey_hunger[nx, ny] = 0
+                # Reset hunger after eating
+                new_prey_hunger[x, y] = 0
+
+                # Check if there are 2 or more adjacent substrate cells
+                adjacent_substrate = [
+                    (nx, ny) for nx, ny in neighbors if self.grid[nx, ny] == SUBSTRATE
+                ]
+                if len(adjacent_substrate) >= 2:
+                    # Reset hunger if there are 2 or more adjacent substrate cells
+                    new_prey_hunger[x, y] = 0
                     logger.debug(
-                        f"Prey at ({x},{y}) reproduced to ({nx},{ny})")
-            return
+                        f"Prey at ({x},{y}) reset hunger due to adjacent substrate")
+
+                # Added: Prey reproduction logic after eating substrate
+                if random.random() < self.params.get('prey_birth_probability', 0.7):
+                    # Look for empty neighbor cells for the offspring
+                    empty_neighbors = [
+                        (nx, ny) for nx, ny in neighbors if self.grid[nx, ny] == EMPTY]
+                    if empty_neighbors:
+                        # Choose a random empty cell and create new prey
+                        nx, ny = random.choice(empty_neighbors)
+                        new_grid[nx, ny] = PREY
+                        # Initialize hunger for new prey
+                        new_prey_hunger[nx, ny] = 0
+                        # Track the birth event
+                        self.statistics["prey_births"] += 1
+                        logger.debug(
+                            f"New prey born at ({nx},{ny}) after parent at ({x},{y}) consumed substrate")
 
         # If no substrate found and no predator nearby or got lucky, try to move
         empty_neighbors = [(nx, ny)
