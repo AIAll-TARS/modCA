@@ -201,7 +201,7 @@ class Simulation:
                             substrate_count += 1
                         elif self.grid[x, y] == EMPTY:
                             self._update_empty(
-                                new_grid, new_predator_hunger, x, y)
+                                new_grid, new_predator_hunger, new_prey_hunger, x, y)
                             empty_count += 1
 
                         # Check if cell changed
@@ -523,13 +523,18 @@ class Simulation:
         if random.random() < self.params['substrate_random_death']:
             new_grid[x, y] = EMPTY
 
-    def _update_empty(self, new_grid, new_predator_hunger, x, y):
+    def _update_empty(self, new_grid, new_predator_hunger, new_prey_hunger, x, y):
         """Update an empty cell in the simulation.
 
         Predator reproduction rule:
         - Requires 2 or more adjacent predator neighbors
         - Requires at least 1 prey in the neighborhood
         - Subject to predator_birth_probability parameter
+
+        Prey reproduction rule:
+        - Requires 2 or more adjacent prey neighbors
+        - Requires at least 1 substrate in the neighborhood
+        - Subject to prey_birth_probability parameter
         """
         # First check for predator reproduction: if 2+ predator neighbors exist
         predator_neighbors = count_neighbors(
@@ -552,6 +557,24 @@ class Simulation:
             self.statistics["predator_births"] += 1
             logger.info(
                 f"New predator born at ({x},{y}) with {predator_neighbors} predator neighbors and {prey_neighbors} prey neighbors")
+            return
+
+        # Next check for prey reproduction: if 2+ prey neighbors exist and there's substrate nearby
+        substrate_neighbors = count_neighbors(
+            self.grid, x, y, SUBSTRATE, self.params['neighborhood_type'], self.params['grid_type']
+        )
+
+        if (prey_neighbors >= 2 and substrate_neighbors >= 1 and
+                random.random() < self.params.get('prey_birth_probability', 0.2)):
+            # Two or more prey are neighbors AND at least one substrate in neighborhood
+            # so this empty cell can become a new prey
+            new_grid[x, y] = PREY
+            # Initialize hunger counter for the new prey
+            new_prey_hunger[x, y] = 0
+            # Track the birth event
+            self.statistics["prey_births"] += 1
+            logger.info(
+                f"New prey born at ({x},{y}) with {prey_neighbors} prey neighbors and {substrate_neighbors} substrate neighbors")
             return
 
         # If no predator reproduction occurred, check for substrate formation
