@@ -184,6 +184,14 @@ export default function Simulate() {
                 borderColor: CHART_COLORS[SUBSTRATE].border,
                 backgroundColor: CHART_COLORS[SUBSTRATE].background,
                 tension: 0.1
+            },
+            {
+                label: 'Total',
+                data: [],
+                borderColor: 'rgba(150, 150, 150, 1)',
+                backgroundColor: 'rgba(150, 150, 150, 0.5)',
+                tension: 0.1,
+                borderWidth: 3
             }
         ]
     })
@@ -502,6 +510,10 @@ export default function Simulate() {
                         ...prev.datasets[2],
                         data: [...prev.datasets[2].data, statistics.substrate_count],
                     },
+                    {
+                        ...prev.datasets[3],
+                        data: [...prev.datasets[3].data, statistics.predator_count + statistics.prey_count + statistics.substrate_count],
+                    },
                 ],
             }
         })
@@ -695,6 +707,14 @@ export default function Simulate() {
                             backgroundColor: CHART_COLORS[SUBSTRATE].background,
                             tension: 0.1
                         },
+                        {
+                            label: 'Total',
+                            data: [],
+                            borderColor: 'rgba(150, 150, 150, 1)',
+                            backgroundColor: 'rgba(150, 150, 150, 0.5)',
+                            tension: 0.1,
+                            borderWidth: 3
+                        }
                     ],
                 })
 
@@ -846,6 +866,10 @@ export default function Simulate() {
                                     {
                                         ...prevData.datasets[2],
                                         data: [...prevData.datasets[2].data, data.statistics.substrate_count],
+                                    },
+                                    {
+                                        ...prevData.datasets[3],
+                                        data: [...prevData.datasets[3].data, data.statistics.predator_count + data.statistics.prey_count + data.statistics.substrate_count],
                                     },
                                 ],
                             }
@@ -1178,6 +1202,32 @@ export default function Simulate() {
         );
     };
 
+    // Helper function to calculate trend over last 10 steps
+    const calculateTrend = (dataset: number[], maxSteps = 10) => {
+        if (dataset.length < 2) return 'stable';
+
+        const pointsToConsider = Math.min(maxSteps, dataset.length);
+        const recentPoints = dataset.slice(-pointsToConsider);
+
+        // Simple linear regression
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        const n = recentPoints.length;
+
+        for (let i = 0; i < n; i++) {
+            sumX += i;
+            sumY += recentPoints[i];
+            sumXY += i * recentPoints[i];
+            sumXX += i * i;
+        }
+
+        // Calculate slope
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+
+        // Determine trend based on slope
+        if (Math.abs(slope) < 0.5) return 'stable';
+        return slope > 0 ? 'increasing' : 'decreasing';
+    };
+
     return (
         <>
             <Head>
@@ -1330,16 +1380,78 @@ export default function Simulate() {
                             <div className="flex items-center justify-center space-x-6 mb-6 text-2xl">
                                 <div className="text-white font-bold">Step: {currentStep}</div>
                                 <div className="flex items-center">
-                                    <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
-                                    <span className="text-white">{statistics.predator_count || 0}</span>
+                                    <span className="text-red-500 font-bold">{statistics.predator_count || 0}</span>
+                                    {currentStep > 1 && (
+                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[0].data) === 'increasing'
+                                            ? 'text-green-400'
+                                            : calculateTrend(chartData.datasets[0].data) === 'decreasing'
+                                                ? 'text-red-400'
+                                                : 'text-gray-400'
+                                            }`}>
+                                            {calculateTrend(chartData.datasets[0].data) === 'increasing'
+                                                ? '↑'
+                                                : calculateTrend(chartData.datasets[0].data) === 'decreasing'
+                                                    ? '↓'
+                                                    : '→'
+                                            }
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center">
-                                    <div className="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
-                                    <span className="text-white">{statistics.prey_count || 0}</span>
+                                    <span className="text-yellow-500 font-bold">{statistics.prey_count || 0}</span>
+                                    {currentStep > 1 && (
+                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[1].data) === 'increasing'
+                                            ? 'text-green-400'
+                                            : calculateTrend(chartData.datasets[1].data) === 'decreasing'
+                                                ? 'text-red-400'
+                                                : 'text-gray-400'
+                                            }`}>
+                                            {calculateTrend(chartData.datasets[1].data) === 'increasing'
+                                                ? '↑'
+                                                : calculateTrend(chartData.datasets[1].data) === 'decreasing'
+                                                    ? '↓'
+                                                    : '→'
+                                            }
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center">
-                                    <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
-                                    <span className="text-white">{statistics.substrate_count || 0}</span>
+                                    <span className="text-green-500 font-bold">{statistics.substrate_count || 0}</span>
+                                    {currentStep > 1 && (
+                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[2].data) === 'increasing'
+                                            ? 'text-green-400'
+                                            : calculateTrend(chartData.datasets[2].data) === 'decreasing'
+                                                ? 'text-red-400'
+                                                : 'text-gray-400'
+                                            }`}>
+                                            {calculateTrend(chartData.datasets[2].data) === 'increasing'
+                                                ? '↑'
+                                                : calculateTrend(chartData.datasets[2].data) === 'decreasing'
+                                                    ? '↓'
+                                                    : '→'
+                                            }
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center border-l pl-4 border-gray-600">
+                                    <span className="text-gray-300 font-bold">
+                                        {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
+                                    </span>
+                                    {currentStep > 1 && (
+                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[3].data) === 'increasing'
+                                            ? 'text-green-400'
+                                            : calculateTrend(chartData.datasets[3].data) === 'decreasing'
+                                                ? 'text-red-400'
+                                                : 'text-gray-400'
+                                            }`}>
+                                            {calculateTrend(chartData.datasets[3].data) === 'increasing'
+                                                ? '↑'
+                                                : calculateTrend(chartData.datasets[3].data) === 'decreasing'
+                                                    ? '↓'
+                                                    : '→'
+                                            }
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
@@ -1950,7 +2062,7 @@ export default function Simulate() {
 
                                 <div className="mt-4">
                                     <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Current Statistics</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                                         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
                                             <div className="text-sm text-red-600 dark:text-red-400 font-medium">Predators</div>
                                             <div className="text-2xl font-bold text-red-800 dark:text-red-300">{statistics.predator_count || 0}</div>
@@ -1962,6 +2074,12 @@ export default function Simulate() {
                                         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
                                             <div className="text-sm text-green-600 dark:text-green-400 font-medium">Substrate</div>
                                             <div className="text-2xl font-bold text-green-800 dark:text-green-300">{statistics.substrate_count || 0}</div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-md p-3">
+                                        <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Population</div>
+                                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-300">
+                                            {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
                                         </div>
                                     </div>
                                 </div>
