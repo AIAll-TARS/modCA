@@ -3,7 +3,7 @@ Main module for the modca_o7 web application backend.
 Provides FastAPI server for simulation execution and API endpoints.
 """
 
-from .constants import EMPTY, PREY, PREDATOR, SUBSTRATE
+from .constants import EMPTY, PREY, PREDATOR, SUBSTRATE, GRID_SIZE, STEPS, INITIAL_PREY, INITIAL_PREDATORS, PREDATOR_DEATH_PROBABILITY, PREDATOR_BIRTH_PROBABILITY, PREDATOR_STARVATION_STEPS, PREY_HUNTED_PROBABILITY, PREY_RANDOM_DEATH, PREY_BIRTH_PROBABILITY, PREY_STARVATION_STEPS, INITIAL_SUBSTRATE_PROBABILITY, SUBSTRATE_RANDOM_DEATH, SUBSTRATE_CONSUMPTION_PROB, NEIGHBORHOOD_TYPE, GRID_TYPE, PREY_THREAT_RESPONSE
 from .models import SimulationSettings, SimulationResponse, UserSettings
 from .db_handler import DatabaseHandler
 from .grid import initialize_grid
@@ -78,6 +78,59 @@ async def start_simulation(settings: SimulationSettings):
     """Start a new simulation with the provided settings."""
     try:
         logger.info(f"Starting new simulation with settings: {settings}")
+
+        # Apply fallbacks for any missing or invalid values
+        if settings.grid_size <= 0:
+            logger.warning(
+                f"Invalid grid_size: {settings.grid_size}, using default {GRID_SIZE}")
+            settings.grid_size = GRID_SIZE
+        if settings.steps <= 0:
+            logger.warning(
+                f"Invalid steps: {settings.steps}, using default {STEPS}")
+            settings.steps = STEPS
+        if settings.initial_prey < 0:
+            logger.warning(
+                f"Invalid initial_prey: {settings.initial_prey}, using default {INITIAL_PREY}")
+            settings.initial_prey = INITIAL_PREY
+        if settings.initial_predators < 0:
+            logger.warning(
+                f"Invalid initial_predators: {settings.initial_predators}, using default {INITIAL_PREDATORS}")
+            settings.initial_predators = INITIAL_PREDATORS
+
+        # Validate probability values (must be between 0 and 1)
+        for prob_name, prob_value, default in [
+            ("predator_death_probability",
+             settings.predator_death_probability, PREDATOR_DEATH_PROBABILITY),
+            ("predator_birth_probability",
+             settings.predator_birth_probability, PREDATOR_BIRTH_PROBABILITY),
+            ("prey_hunted_probability",
+             settings.prey_hunted_probability, PREY_HUNTED_PROBABILITY),
+            ("prey_random_death", settings.prey_random_death, PREY_RANDOM_DEATH),
+            ("prey_birth_probability",
+             settings.prey_birth_probability, PREY_BIRTH_PROBABILITY),
+            ("prey_threat_response",
+             settings.prey_threat_response, PREY_THREAT_RESPONSE),
+            ("initial_substrate_probability",
+             settings.initial_substrate_probability, INITIAL_SUBSTRATE_PROBABILITY),
+            ("substrate_random_death",
+             settings.substrate_random_death, SUBSTRATE_RANDOM_DEATH),
+            ("substrate_consumption_prob",
+             settings.substrate_consumption_prob, SUBSTRATE_CONSUMPTION_PROB)
+        ]:
+            if prob_value < 0 or prob_value > 1:
+                logger.warning(
+                    f"Invalid {prob_name}: {prob_value}, using default {default}")
+                setattr(settings, prob_name, default)
+
+        # Validate starvation steps
+        if settings.predator_starvation_steps <= 0:
+            logger.warning(
+                f"Invalid predator_starvation_steps: {settings.predator_starvation_steps}, using default {PREDATOR_STARVATION_STEPS}")
+            settings.predator_starvation_steps = PREDATOR_STARVATION_STEPS
+        if settings.prey_starvation_steps <= 0:
+            logger.warning(
+                f"Invalid prey_starvation_steps: {settings.prey_starvation_steps}, using default {PREY_STARVATION_STEPS}")
+            settings.prey_starvation_steps = PREY_STARVATION_STEPS
 
         # Check if grid size is extremely large and might cause memory issues
         if settings.grid_size > 800:
@@ -159,51 +212,57 @@ async def start_simulation(settings: SimulationSettings):
                 status_code=500, detail=f"Grid initialization failed: {str(e)}")
 
         # Create simulation parameters dictionary
-        params = settings.dict()
+        param_dict = {
+            'grid_size': settings.grid_size,
+            'steps': settings.steps,
+            'neighborhood_type': settings.neighborhood_type,
+            'grid_type': settings.grid_type,
+            'predator_death_probability': settings.predator_death_probability,
+            'predator_birth_probability': settings.predator_birth_probability,
+            'initial_predators': settings.initial_predators,
+            'predator_starvation_steps': settings.predator_starvation_steps,
+            'prey_hunted_probability': settings.prey_hunted_probability,
+            'prey_random_death': settings.prey_random_death,
+            'initial_prey': settings.initial_prey,
+            'prey_birth_probability': settings.prey_birth_probability,
+            'prey_starvation_steps': settings.prey_starvation_steps,
+            'prey_threat_response': settings.prey_threat_response,
+            'initial_substrate_probability': settings.initial_substrate_probability,
+            'substrate_random_death': settings.substrate_random_death,
+            'substrate_consumption_prob': settings.substrate_consumption_prob
+        }
         logger.info("Parameters dictionary created successfully")
 
-        # Pass the recording flag to the simulation
+        # Create the initial simulation object
         record_simulation = settings.record_simulation
         if record_simulation:
-            logger.info(f"Recording enabled for simulation {simulation_id}")
+            logger.info("Recording enabled for this simulation")
 
-        # Create a new simulation with error handling
-        try:
-            logger.info("Creating new simulation instance")
-            simulation = Simulation(
+        # Initialize the simulation
+        sim_data = {
+            "simulation": Simulation(
                 grid,
-                params,
+                param_dict,
                 recording_enabled=record_simulation,
                 adjustment_info=adjustment_info if adjustment_info.get(
                     "values_adjusted", False) else None
-            )
-            logger.info("Simulation instance created successfully")
-
-            # Test getting statistics to ensure simulation is correctly initialized
-            test_stats = simulation.get_statistics()
-            logger.info(
-                f"Initial statistics retrieved successfully: {test_stats}")
-        except Exception as e:
-            logger.exception(f"Error creating simulation: {str(e)}")
-            raise HTTPException(
-                status_code=500, detail=f"Simulation initialization failed: {str(e)}")
-
-        # Store the simulation
-        active_simulations[simulation_id] = {
-            "simulation": simulation,
-            "settings": settings,
+            ),
+            "status": "initialized",
             "current_step": 0,
             "total_steps": settings.steps,
-            "status": "running",
-            "created_at": datetime.now().isoformat(),
+            "parameters": param_dict,
+            "created_at": datetime.now().isoformat()
         }
+
+        # Store the simulation
+        active_simulations[simulation_id] = sim_data
         logger.info(f"Simulation {simulation_id} stored in active_simulations")
 
         # Save settings to database - but make this non-critical
         db_save_success = False
         try:
             db = DatabaseHandler()
-            settings_id = db.save_settings(params)
+            settings_id = db.save_settings(param_dict)
             logger.info(f"Settings saved to database with ID: {settings_id}")
             db_save_success = (settings_id > 0)
         except Exception as e:
@@ -212,16 +271,16 @@ async def start_simulation(settings: SimulationSettings):
             logger.info("Continuing without saving settings to database")
 
         # Get initial statistics
-        statistics = simulation.get_statistics()
+        statistics = sim_data["simulation"].get_statistics()
         logger.info(f"Initial statistics: {statistics}")
 
         # Return initial state and simulation ID
         response = {
             "simulation_id": simulation_id,
-            "status": "running",  # Changed from "started" to "running" for consistency
-            "current_step": 0,
+            "status": sim_data["status"],
+            "current_step": sim_data["current_step"],
             "total_steps": settings.steps,
-            "grid": grid.tolist(),
+            "grid": sim_data["simulation"].grid.tolist(),
             "statistics": statistics,
             # Optional field to indicate if DB save was successful
             "db_save_success": db_save_success
@@ -523,12 +582,12 @@ async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
                         f"WebSocket: Resetting simulation {simulation_id}")
                     # Reset the simulation
                     grid = initialize_grid(
-                        sim_data["settings"].grid_size,
-                        sim_data["settings"].initial_prey,
-                        sim_data["settings"].initial_predators,
-                        sim_data["settings"].initial_substrate_probability
+                        sim_data["parameters"]["grid_size"],
+                        sim_data["parameters"]["initial_prey"],
+                        sim_data["parameters"]["initial_predators"],
+                        sim_data["parameters"]["initial_substrate_probability"]
                     )
-                    simulation = Simulation(grid, sim_data["settings"].dict())
+                    simulation = Simulation(grid, sim_data["parameters"])
 
                     sim_data["simulation"] = simulation
                     sim_data["current_step"] = 0

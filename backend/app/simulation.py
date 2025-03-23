@@ -335,7 +335,7 @@ class Simulation:
         grid_size = self.grid.shape[0]
 
         # Random death chance
-        if random.random() < self.params.get('predator_death_probability', 0.005):
+        if random.random() < self.params.get('predator_death_probability', 0.1):
             logger.debug(f"Predator at ({x},{y}) died randomly")
             new_grid[x, y] = EMPTY
             return
@@ -358,7 +358,7 @@ class Simulation:
         # More hungry predators take more risks
         hunger_risk = current_hunger / hunger_threshold
         hunting_threshold = self.params.get('hunting_threshold', 0.6)
-        hunt_success_prob = self.params.get('prey_hunted_probability', 0.7)
+        hunt_success_prob = self.params.get('prey_hunted_probability', 0.2)
 
         # Adjust hunting probability based on hunger
         hunt_probability = hunt_success_prob * (1 + hunger_risk)
@@ -382,7 +382,7 @@ class Simulation:
             new_predator_hunger[x, y] = -1
 
             # Chance to reproduce after eating
-            if random.random() < self.params.get('predator_birth_probability', 0.2):
+            if random.random() < self.params.get('predator_birth_probability', 0.3):
                 # Find empty cell for the offspring
                 empty_neighbors = self._get_nearby_cells(x, y, distance=1)
                 empty_neighbors = [
@@ -427,14 +427,14 @@ class Simulation:
         grid_size = self.grid.shape[0]
 
         # Random death chance
-        if random.random() < self.params.get('prey_random_death', 0.01):
+        if random.random() < self.params.get('prey_random_death', 0.05):
             logger.debug(f"Prey at ({x},{y}) died from random death")
             new_grid[x, y] = EMPTY
             return
 
         # Check hunger level for starvation
         current_hunger = self.prey_hunger[x, y]
-        hunger_threshold = self.params.get('prey_starvation_steps', 15)
+        hunger_threshold = self.params.get('prey_starvation_steps', 3)
 
         # If prey is hungry enough to starve, it dies
         if current_hunger >= hunger_threshold:
@@ -454,7 +454,8 @@ class Simulation:
         if predator_nearby:
             new_hunger = current_hunger + 1
             new_prey_hunger[x, y] = new_hunger
-            if random.random() < 0.7:  # 70% chance to stay put when threatened
+            # Use the threat response parameter for the chance to stay put when threatened
+            if random.random() < self.params.get('prey_threat_response', 0.7):
                 return
         else:
             # Normal hunger increase
@@ -469,7 +470,7 @@ class Simulation:
             sx, sy = random.choice(substrate_neighbors)
 
             # Use the substrate_consumption_prob parameter for consumption chance
-            if random.random() < self.params.get('substrate_consumption_prob', 0.6):
+            if random.random() < self.params.get('substrate_consumption_prob', 0.2):
                 new_grid[sx, sy] = EMPTY  # Consume the substrate
 
                 # Reset hunger after eating
@@ -486,7 +487,7 @@ class Simulation:
                         f"Prey at ({x},{y}) reset hunger due to adjacent substrate")
 
                 # Added: Prey reproduction logic after eating substrate
-                if random.random() < self.params.get('prey_birth_probability', 0.7):
+                if random.random() < self.params.get('prey_birth_probability', 0.2):
                     # Look for empty neighbor cells for the offspring
                     empty_neighbors = [
                         (nx, ny) for nx, ny in neighbors if self.grid[nx, ny] == EMPTY]
