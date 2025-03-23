@@ -3,7 +3,7 @@ Data models for the modca_o7 web application.
 Defines the Pydantic models for API requests and responses.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Optional, Any, Union
 from datetime import datetime
 
@@ -25,35 +25,37 @@ class SimulationSettings(BaseModel):
 
     # Predator parameters
     predator_death_probability: float = Field(
-        default=0.05, description="Probability of predator dying")
+        default=0.1, description="Probability of predator dying")
     predator_birth_probability: float = Field(
-        default=0.33, description="Chance of predator reproduction")
+        default=0.3, description="Chance of predator reproduction")
     initial_predators: int = Field(
-        default=3, description="Starting number of predators")
+        default=50, description="Starting number of predators")
     predator_starvation_steps: int = Field(
         default=10, description="Steps a predator can survive without food")
 
     # Prey parameters
     prey_hunted_probability: float = Field(
-        default=0.7, description="Probability that a prey is hunted")
+        default=0.2, description="Probability that a prey is hunted")
     prey_random_death: float = Field(
-        default=0.01, description="Probability of prey dying randomly")
+        default=0.05, description="Probability of prey dying randomly")
     initial_prey: int = Field(
-        default=2000, description="Starting number of prey")
+        default=200, description="Starting number of prey")
     prey_birth_probability: float = Field(
-        default=0.7, description="Probability of prey reproduction")
+        default=0.2, description="Probability of prey reproduction")
     prey_starvation_steps: int = Field(
         default=3, description="Steps a prey can survive without substrate")
+    prey_threat_response: float = Field(
+        default=0.7, description="Probability of prey staying still when threatened")
 
     # Substrate parameters
     initial_substrate_probability: float = Field(
-        default=0.25, description="Probability of substrate formation")
+        default=0.3, description="Probability of substrate formation")
     substrate_random_death: float = Field(
-        default=0.03, description="Probability of substrate disappearing")
+        default=0.05, description="Probability of substrate disappearing")
     substrate_consumption_prob: float = Field(
-        default=0.6, description="Probability of substrate being consumed by prey")
+        default=0.2, description="Probability of substrate being consumed by prey")
 
-    @field_validator('neighborhood_type')
+    @validator('neighborhood_type')
     @classmethod
     def validate_neighborhood_type(cls, v):
         if v not in ['von_neumann', 'moore']:
@@ -61,14 +63,14 @@ class SimulationSettings(BaseModel):
                 'neighborhood_type must be either "von_neumann" or "moore"')
         return v
 
-    @field_validator('initial_predators', 'initial_prey')
+    @validator('initial_predators', 'initial_prey')
     @classmethod
     def validate_entity_counts(cls, v: int, values: Dict[str, Any]) -> int:
-        if 'grid_size' in values.data:
-            total_cells = values.data['grid_size'] * values.data['grid_size']
-            total_entities = (values.data.get('initial_predators', 0) if 'initial_predators' not in values.data else values.data['initial_predators']) + \
-                (values.data.get('initial_prey', 0)
-                 if 'initial_prey' not in values.data else values.data['initial_prey'])
+        if 'grid_size' in values:
+            total_cells = values['grid_size'] * values['grid_size']
+            total_entities = (values.get('initial_predators', 0) if 'initial_predators' not in values else values['initial_predators']) + \
+                (values.get('initial_prey', 0)
+                 if 'initial_prey' not in values else values['initial_prey'])
             if total_entities > total_cells:
                 raise ValueError(
                     f"Total number of predators and prey ({total_entities}) cannot exceed the total number of cells ({total_cells})")

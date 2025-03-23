@@ -21,6 +21,7 @@ PREY_RANDOM_DEATH = 0.05  # Probability of prey dying randomly
 INITIAL_PREY = 200  # Starting number of prey
 PREY_BIRTH_PROBABILITY = 0.2  # Probability of prey reproduction
 PREY_STARVATION_STEPS = 3  # Steps until prey dies from starvation
+PREY_THREAT_RESPONSE = 0.7  # Probability of prey staying still when threatened
 
 # Substrate parameters
 INITIAL_SUBSTRATE_PROBABILITY = 0.3  # Probability of substrate formation

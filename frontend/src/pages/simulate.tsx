@@ -23,7 +23,24 @@ import {
     DEFAULT_SIMULATION_SETTINGS,
     PREDATOR,
     PREY,
-    SUBSTRATE
+    SUBSTRATE,
+    GRID_SIZE,
+    STEPS,
+    INITIAL_PREY,
+    INITIAL_PREDATORS,
+    PREDATOR_DEATH_PROBABILITY,
+    PREDATOR_BIRTH_PROBABILITY,
+    PREDATOR_STARVATION_STEPS,
+    PREY_HUNTED_PROBABILITY,
+    PREY_RANDOM_DEATH,
+    PREY_BIRTH_PROBABILITY,
+    PREY_STARVATION_STEPS,
+    INITIAL_SUBSTRATE_PROBABILITY,
+    SUBSTRATE_RANDOM_DEATH,
+    SUBSTRATE_CONSUMPTION_PROB,
+    NEIGHBORHOOD_TYPE,
+    GRID_TYPE,
+    VALIDATION_LIMITS
 } from '../constants'
 
 // Register ChartJS components
@@ -42,39 +59,93 @@ const inter = Inter({ subsets: ['latin'] })
 // Define the validation schema
 const SimulationSchema = Yup.object().shape({
     grid_size: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.GRID_SIZE.min, `Must be at least ${VALIDATION_LIMITS.GRID_SIZE.min}`)
+        .max(VALIDATION_LIMITS.GRID_SIZE.max, `Must be at most ${VALIDATION_LIMITS.GRID_SIZE.max}`),
     steps: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.STEPS.min, `Must be at least ${VALIDATION_LIMITS.STEPS.min}`)
+        .max(VALIDATION_LIMITS.STEPS.max, `Must be at most ${VALIDATION_LIMITS.STEPS.max}`),
     neighborhood_type: Yup.string()
         .required('Required'),
     grid_type: Yup.string()
         .required('Required'),
     record_simulation: Yup.boolean(),
     predator_death_probability: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min, `Must be at least ${VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}`)
+        .max(VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max, `Must be at most ${VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max}`),
     predator_birth_probability: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min, `Must be at least ${VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min}`)
+        .max(VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max, `Must be at most ${VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max}`),
     initial_predators: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.INITIAL_PREDATORS.min, `Must be at least ${VALIDATION_LIMITS.INITIAL_PREDATORS.min}`)
+        .max(VALIDATION_LIMITS.INITIAL_PREDATORS.max, `Must be at most ${VALIDATION_LIMITS.INITIAL_PREDATORS.max}`),
     predator_starvation_steps: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.min, `Must be at least ${VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.min}`)
+        .max(VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.max, `Must be at most ${VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.max}`),
     prey_hunted_probability: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min, `Must be at least ${VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min}`)
+        .max(VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max, `Must be at most ${VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max}`),
     prey_random_death: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.PREY_RANDOM_DEATH.min, `Must be at least ${VALIDATION_LIMITS.PREY_RANDOM_DEATH.min}`)
+        .max(VALIDATION_LIMITS.PREY_RANDOM_DEATH.max, `Must be at most ${VALIDATION_LIMITS.PREY_RANDOM_DEATH.max}`),
     initial_prey: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.INITIAL_PREY.min, `Must be at least ${VALIDATION_LIMITS.INITIAL_PREY.min}`)
+        .max(VALIDATION_LIMITS.INITIAL_PREY.max, `Must be at most ${VALIDATION_LIMITS.INITIAL_PREY.max}`),
     prey_birth_probability: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min, `Must be at least ${VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min}`)
+        .max(VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max, `Must be at most ${VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max}`),
     prey_starvation_steps: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.PREY_STARVATION_STEPS.min, `Must be at least ${VALIDATION_LIMITS.PREY_STARVATION_STEPS.min}`)
+        .max(VALIDATION_LIMITS.PREY_STARVATION_STEPS.max, `Must be at most ${VALIDATION_LIMITS.PREY_STARVATION_STEPS.max}`),
+    prey_threat_response: Yup.number()
+        .required('Required')
+        .min(VALIDATION_LIMITS.PREY_THREAT_RESPONSE.min, `Must be at least ${VALIDATION_LIMITS.PREY_THREAT_RESPONSE.min}`)
+        .max(VALIDATION_LIMITS.PREY_THREAT_RESPONSE.max, `Must be at most ${VALIDATION_LIMITS.PREY_THREAT_RESPONSE.max}`),
     initial_substrate_probability: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min, `Must be at least ${VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min}`)
+        .max(VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max, `Must be at most ${VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max}`),
     substrate_random_death: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min, `Must be at least ${VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min}`)
+        .max(VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max, `Must be at most ${VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max}`),
     substrate_consumption_prob: Yup.number()
-        .required('Required'),
+        .required('Required')
+        .min(VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min, `Must be at least ${VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}`)
+        .max(VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max, `Must be at most ${VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}`),
 })
+
+// Define a proper interface for simulation parameters
+interface SimulationParams {
+    grid_size: number;
+    steps: number;
+    neighborhood_type: string;
+    grid_type: string;
+    record_simulation?: boolean;
+    predator_death_probability: number;
+    predator_birth_probability: number;
+    initial_predators: number;
+    predator_starvation_steps: number;
+    prey_hunted_probability: number;
+    prey_random_death: number;
+    initial_prey: number;
+    prey_birth_probability: number;
+    prey_starvation_steps: number;
+    prey_threat_response: number;
+    initial_substrate_probability: number;
+    substrate_random_death: number;
+    substrate_consumption_prob: number;
+}
 
 export default function Simulate() {
     const router = useRouter()
@@ -424,7 +495,7 @@ export default function Simulate() {
     }, [statistics, currentStep])
 
     // Start a new simulation
-    const startSimulation = async (values: any) => {
+    const startSimulation = async (values: SimulationParams) => {
         try {
             // Validate grid size
             if (Number(values.grid_size) > 400) {
@@ -485,23 +556,24 @@ export default function Simulate() {
             // Validate values before sending to server
             const validatedValues = {
                 ...values,
-                // Convert string inputs to appropriate types
-                grid_size: parseInt(values.grid_size || "100"),
-                steps: parseInt(values.steps || "100"),
-                initial_prey: parseInt(values.initial_prey || "2000"),
-                initial_predators: parseInt(values.initial_predators || "3"),
-                predator_death_probability: parseFloat(values.predator_death_probability || "0.05"),
-                predator_birth_probability: parseFloat(values.predator_birth_probability || "0.33"),
-                predator_starvation_steps: parseInt(values.predator_starvation_steps || "10"),
-                prey_hunted_probability: parseFloat(values.prey_hunted_probability || "0.7"),
-                prey_random_death: parseFloat(values.prey_random_death || "0.01"),
-                prey_birth_probability: parseFloat(values.prey_birth_probability || "0.7"),
-                prey_starvation_steps: parseInt(values.prey_starvation_steps || "3"),
-                initial_substrate_probability: parseFloat(values.initial_substrate_probability || "0.25"),
-                substrate_random_death: parseFloat(values.substrate_random_death || "0.03"),
-                substrate_consumption_prob: parseFloat(values.substrate_consumption_prob || "0.6"),
-                neighborhood_type: values.neighborhood_type,
-                grid_type: values.grid_type
+                // Convert string inputs to appropriate types using constants as fallbacks
+                grid_size: parseInt(values.grid_size || String(GRID_SIZE)),
+                steps: parseInt(values.steps || String(STEPS)),
+                initial_prey: parseInt(values.initial_prey || String(INITIAL_PREY)),
+                initial_predators: parseInt(values.initial_predators || String(INITIAL_PREDATORS)),
+                predator_death_probability: parseFloat(values.predator_death_probability || String(PREDATOR_DEATH_PROBABILITY)),
+                predator_birth_probability: parseFloat(values.predator_birth_probability || String(PREDATOR_BIRTH_PROBABILITY)),
+                predator_starvation_steps: parseInt(values.predator_starvation_steps || String(PREDATOR_STARVATION_STEPS)),
+                prey_hunted_probability: parseFloat(values.prey_hunted_probability || String(PREY_HUNTED_PROBABILITY)),
+                prey_random_death: parseFloat(values.prey_random_death || String(PREY_RANDOM_DEATH)),
+                prey_birth_probability: parseFloat(values.prey_birth_probability || String(PREY_BIRTH_PROBABILITY)),
+                prey_starvation_steps: parseInt(values.prey_starvation_steps || String(PREY_STARVATION_STEPS)),
+                prey_threat_response: parseFloat(values.prey_threat_response || String(PREY_THREAT_RESPONSE)),
+                initial_substrate_probability: parseFloat(values.initial_substrate_probability || String(INITIAL_SUBSTRATE_PROBABILITY)),
+                substrate_random_death: parseFloat(values.substrate_random_death || String(SUBSTRATE_RANDOM_DEATH)),
+                substrate_consumption_prob: parseFloat(values.substrate_consumption_prob || String(SUBSTRATE_CONSUMPTION_PROB)),
+                neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
+                grid_type: values.grid_type || GRID_TYPE
             }
 
             // DEBUG: Log all conversions to see if they're working correctly
@@ -521,6 +593,9 @@ export default function Simulate() {
 
             // Add timeout to axios request to prevent hanging indefinitely
             try {
+                console.log('Sending request to /api/simulate with payload:', validatedValues);
+                console.log('API URL:', axios.defaults.baseURL || 'Using relative URL');
+
                 const response = await axios.post('/api/simulate', validatedValues, {
                     timeout: dynamicTimeout, // Dynamic timeout based on grid size
                     headers: {
@@ -1308,26 +1383,27 @@ export default function Simulate() {
                                     initialValues={defaultSettings}
                                     validationSchema={SimulationSchema}
                                     enableReinitialize={true}
-                                    onSubmit={(values, { setSubmitting }) => {
+                                    onSubmit={(values: SimulationParams, { setSubmitting }) => {
                                         // Convert all form values explicitly before calling startSimulation
-                                        const numericValues = {
+                                        const numericValues: SimulationParams = {
                                             ...values,
-                                            grid_size: Number(values.grid_size),
-                                            steps: Number(values.steps),
-                                            initial_prey: Number(values.initial_prey),
-                                            initial_predators: Number(values.initial_predators),
-                                            predator_death_probability: Number(values.predator_death_probability),
-                                            predator_birth_probability: Number(values.predator_birth_probability),
-                                            predator_starvation_steps: Number(values.predator_starvation_steps),
-                                            prey_hunted_probability: Number(values.prey_hunted_probability),
-                                            prey_random_death: Number(values.prey_random_death),
-                                            prey_birth_probability: Number(values.prey_birth_probability),
-                                            prey_starvation_steps: Number(values.prey_starvation_steps),
-                                            initial_substrate_probability: Number(values.initial_substrate_probability),
-                                            substrate_random_death: Number(values.substrate_random_death),
-                                            substrate_consumption_prob: Number(values.substrate_consumption_prob),
-                                            neighborhood_type: values.neighborhood_type,
-                                            grid_type: values.grid_type
+                                            grid_size: Number(values.grid_size) || GRID_SIZE,
+                                            steps: Number(values.steps) || STEPS,
+                                            initial_prey: Number(values.initial_prey) || INITIAL_PREY,
+                                            initial_predators: Number(values.initial_predators) || INITIAL_PREDATORS,
+                                            predator_death_probability: Number(values.predator_death_probability) || PREDATOR_DEATH_PROBABILITY,
+                                            predator_birth_probability: Number(values.predator_birth_probability) || PREDATOR_BIRTH_PROBABILITY,
+                                            predator_starvation_steps: Number(values.predator_starvation_steps) || PREDATOR_STARVATION_STEPS,
+                                            prey_hunted_probability: Number(values.prey_hunted_probability) || PREY_HUNTED_PROBABILITY,
+                                            prey_random_death: Number(values.prey_random_death) || PREY_RANDOM_DEATH,
+                                            prey_birth_probability: Number(values.prey_birth_probability) || PREY_BIRTH_PROBABILITY,
+                                            prey_starvation_steps: Number(values.prey_starvation_steps) || PREY_STARVATION_STEPS,
+                                            prey_threat_response: Number(values.prey_threat_response) || PREY_THREAT_RESPONSE,
+                                            initial_substrate_probability: Number(values.initial_substrate_probability) || INITIAL_SUBSTRATE_PROBABILITY,
+                                            substrate_random_death: Number(values.substrate_random_death) || SUBSTRATE_RANDOM_DEATH,
+                                            substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
+                                            neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
+                                            grid_type: values.grid_type || GRID_TYPE
                                         };
                                         console.log('Form submission - converted numeric values:', numericValues);
 
@@ -1346,6 +1422,8 @@ export default function Simulate() {
                                                     <Field
                                                         type="number"
                                                         name="grid_size"
+                                                        min={VALIDATION_LIMITS.GRID_SIZE.min}
+                                                        max={VALIDATION_LIMITS.GRID_SIZE.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="grid_size" component="div" className="text-red-500 text-sm mt-1" />
@@ -1356,6 +1434,8 @@ export default function Simulate() {
                                                     <Field
                                                         type="number"
                                                         name="steps"
+                                                        min={VALIDATION_LIMITS.STEPS.min}
+                                                        max={VALIDATION_LIMITS.STEPS.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="steps" component="div" className="text-red-500 text-sm mt-1" />
@@ -1396,6 +1476,8 @@ export default function Simulate() {
                                                     <Field
                                                         type="number"
                                                         name="initial_predators"
+                                                        min={VALIDATION_LIMITS.INITIAL_PREDATORS.min}
+                                                        max={VALIDATION_LIMITS.INITIAL_PREDATORS.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="initial_predators" component="div" className="text-red-500 text-sm mt-1" />
@@ -1407,6 +1489,8 @@ export default function Simulate() {
                                                         type="number"
                                                         name="predator_death_probability"
                                                         step="0.01"
+                                                        min={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}
+                                                        max={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="predator_death_probability" component="div" className="text-red-500 text-sm mt-1" />
@@ -1418,6 +1502,8 @@ export default function Simulate() {
                                                         type="number"
                                                         name="predator_birth_probability"
                                                         step="0.01"
+                                                        min={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min}
+                                                        max={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="predator_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
@@ -1428,6 +1514,8 @@ export default function Simulate() {
                                                     <Field
                                                         type="number"
                                                         name="predator_starvation_steps"
+                                                        min={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.min}
+                                                        max={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.max}
                                                         className="input"
                                                     />
                                                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a predator can survive without food</div>
@@ -1443,6 +1531,8 @@ export default function Simulate() {
                                                     <Field
                                                         type="number"
                                                         name="initial_prey"
+                                                        min={VALIDATION_LIMITS.INITIAL_PREY.min}
+                                                        max={VALIDATION_LIMITS.INITIAL_PREY.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="initial_prey" component="div" className="text-red-500 text-sm mt-1" />
@@ -1454,6 +1544,8 @@ export default function Simulate() {
                                                         type="number"
                                                         name="prey_hunted_probability"
                                                         step="0.01"
+                                                        min={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min}
+                                                        max={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="prey_hunted_probability" component="div" className="text-red-500 text-sm mt-1" />
@@ -1465,6 +1557,8 @@ export default function Simulate() {
                                                         type="number"
                                                         name="prey_random_death"
                                                         step="0.01"
+                                                        min={VALIDATION_LIMITS.PREY_RANDOM_DEATH.min}
+                                                        max={VALIDATION_LIMITS.PREY_RANDOM_DEATH.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="prey_random_death" component="div" className="text-red-500 text-sm mt-1" />
@@ -1476,6 +1570,8 @@ export default function Simulate() {
                                                         type="number"
                                                         name="prey_birth_probability"
                                                         step="0.01"
+                                                        min={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min}
+                                                        max={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="prey_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
@@ -1486,10 +1582,26 @@ export default function Simulate() {
                                                     <Field
                                                         type="number"
                                                         name="prey_starvation_steps"
+                                                        min={VALIDATION_LIMITS.PREY_STARVATION_STEPS.min}
+                                                        max={VALIDATION_LIMITS.PREY_STARVATION_STEPS.max}
                                                         className="input"
                                                     />
                                                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a prey can survive without substrate</div>
                                                     <ErrorMessage name="prey_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="prey_threat_response" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Threat Response</label>
+                                                    <Field
+                                                        type="number"
+                                                        name="prey_threat_response"
+                                                        step="0.01"
+                                                        min={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.min}
+                                                        max={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.max}
+                                                        className="input"
+                                                    />
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Probability of staying still when threatened</div>
+                                                    <ErrorMessage name="prey_threat_response" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
 
                                                 <div className="col-span-3 border-t pt-4 mt-2">
@@ -1502,6 +1614,8 @@ export default function Simulate() {
                                                         type="number"
                                                         name="initial_substrate_probability"
                                                         step="0.01"
+                                                        min={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min}
+                                                        max={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="initial_substrate_probability" component="div" className="text-red-500 text-sm mt-1" />
@@ -1513,6 +1627,8 @@ export default function Simulate() {
                                                         type="number"
                                                         name="substrate_random_death"
                                                         step="0.01"
+                                                        min={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min}
+                                                        max={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="substrate_random_death" component="div" className="text-red-500 text-sm mt-1" />
@@ -1524,6 +1640,8 @@ export default function Simulate() {
                                                         type="number"
                                                         name="substrate_consumption_prob"
                                                         step="0.01"
+                                                        min={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}
+                                                        max={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}
                                                         className="input"
                                                     />
                                                     <ErrorMessage name="substrate_consumption_prob" component="div" className="text-red-500 text-sm mt-1" />
