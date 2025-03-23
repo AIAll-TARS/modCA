@@ -64,7 +64,7 @@ export const LARGE_GRID_THRESHOLD = 200;  // Grids larger than this will use vie
 // Form validation limits
 export const VALIDATION_LIMITS = {
     GRID_SIZE: { min: 10, max: 1000 },
-    STEPS: { min: 1, max: 1000 },
+    STEPS: { min: 1, max: 1000000 },
     INITIAL_PREDATORS: { min: 0, max: 10000 },
     PREDATOR_DEATH_PROBABILITY: { min: 0, max: 1 },
     PREDATOR_BIRTH_PROBABILITY: { min: 0, max: 1 },
