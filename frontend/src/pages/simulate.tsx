@@ -54,6 +54,10 @@ ChartJS.register(
     Legend
 )
 
+// Configure Chart.js defaults to not show zero lines
+ChartJS.defaults.datasets.line.spanGaps = true;
+ChartJS.defaults.elements.line.borderWidth = 2;
+
 const inter = Inter({ subsets: ['latin'] })
 
 // Define the validation schema
@@ -156,6 +160,7 @@ export default function Simulate() {
     const [grid, setGrid] = useState<number[][]>([])
     const [statistics, setStatistics] = useState<any>({})
     const [isGridFullscreen, setIsGridFullscreen] = useState<boolean>(false)
+    const [isChartFullscreen, setIsChartFullscreen] = useState<boolean>(false)
     const [chartData, setChartData] = useState<any>({
         labels: [],
         datasets: [
@@ -467,9 +472,17 @@ export default function Simulate() {
         setIsGridFullscreen(!isGridFullscreen);
     };
 
+    // Toggle fullscreen mode for the chart
+    const toggleChartFullscreen = () => {
+        setIsChartFullscreen(!isChartFullscreen);
+    };
+
     // Update chart with new statistics
     useEffect(() => {
         if (!statistics || !statistics.predator_count) return
+
+        // Skip adding data points when simulation hasn't started yet (step 0)
+        if (currentStep === 0) return
 
         setChartData(prev => {
             const newLabels = [...prev.labels, currentStep]
@@ -659,25 +672,25 @@ export default function Simulate() {
 
                 // Reset chart data
                 setChartData({
-                    labels: [0],
+                    labels: [],
                     datasets: [
                         {
                             label: 'Predators',
-                            data: [statistics.predator_count],
+                            data: [],
                             borderColor: CHART_COLORS[PREDATOR].border,
                             backgroundColor: CHART_COLORS[PREDATOR].background,
                             tension: 0.1
                         },
                         {
                             label: 'Prey',
-                            data: [statistics.prey_count],
+                            data: [],
                             borderColor: CHART_COLORS[PREY].border,
                             backgroundColor: CHART_COLORS[PREY].background,
                             tension: 0.1
                         },
                         {
                             label: 'Substrate',
-                            data: [statistics.substrate_count],
+                            data: [],
                             borderColor: CHART_COLORS[SUBSTRATE].border,
                             backgroundColor: CHART_COLORS[SUBSTRATE].background,
                             tension: 0.1
@@ -815,6 +828,9 @@ export default function Simulate() {
 
                         // Update chart with new data
                         setChartData(prevData => {
+                            // Skip adding data for step 0
+                            if (data.current_step === 0) return prevData;
+
                             const newLabels = [...prevData.labels, data.current_step]
                             return {
                                 labels: newLabels,
@@ -1262,6 +1278,139 @@ export default function Simulate() {
                                     ref={canvasRef}
                                     className="max-w-full max-h-full bg-gray-800"
                                 ></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isChartFullscreen && (
+                <div className="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center p-2">
+                    <div className="relative w-full h-full">
+                        <button
+                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
+                            onClick={toggleChartFullscreen}
+                        >
+                            Exit Fullscreen
+                        </button>
+
+                        {/* Control buttons for simulation in fullscreen mode */}
+                        <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
+                            <button
+                                className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
+                                onClick={() => stepSimulation(1)}
+                                disabled={status === 'completed' || !simulationId}
+                            >
+                                Step
+                            </button>
+                            <button
+                                className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                                onClick={autoRunSimulation}
+                                disabled={status === 'completed' || !simulationId}
+                            >
+                                Auto Run
+                            </button>
+                            <button
+                                className="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700"
+                                onClick={resetSimulation}
+                                disabled={!simulationId}
+                            >
+                                Reset
+                            </button>
+                            <button
+                                className="bg-yellow-600 text-white px-3 py-1 rounded-md hover:bg-yellow-700"
+                                onClick={() => router.push("/")}
+                            >
+                                Home
+                            </button>
+                        </div>
+
+                        <div className="w-full h-full flex flex-col items-center justify-center">
+                            {/* Combined step counter and population counters in one line with larger text */}
+                            <div className="flex items-center justify-center space-x-6 mb-6 text-2xl">
+                                <div className="text-white font-bold">Step: {currentStep}</div>
+                                <div className="flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+                                    <span className="text-white">{statistics.predator_count || 0}</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
+                                    <span className="text-white">{statistics.prey_count || 0}</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                                    <span className="text-white">{statistics.substrate_count || 0}</span>
+                                </div>
+                            </div>
+
+                            <div className="w-full h-[calc(100%-80px)] flex items-center justify-center bg-white dark:bg-dark-card p-4 rounded-md">
+                                <Line
+                                    data={chartData}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                display: false, // Hide the legend
+                                            },
+                                            title: {
+                                                display: true,
+                                                text: 'Population Over Time',
+                                                color: '#E0E0E0',
+                                                font: {
+                                                    size: 24 // Larger title
+                                                }
+                                            },
+                                        },
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true,
+                                                ticks: {
+                                                    color: '#E0E0E0',
+                                                    font: {
+                                                        size: 16
+                                                    }
+                                                },
+                                                grid: {
+                                                    color: 'rgba(255, 255, 255, 0.1)'
+                                                },
+                                                display: true
+                                            },
+                                            x: {
+                                                ticks: {
+                                                    color: '#E0E0E0',
+                                                    font: {
+                                                        size: 16
+                                                    },
+                                                    callback: function (value, index, values) {
+                                                        // If there are no data points yet, show 0-10 range
+                                                        if (chartData.labels.length === 0) {
+                                                            return index; // Return index to show 0-10
+                                                        }
+                                                        return this.getLabelForValue(Number(value));
+                                                    }
+                                                },
+                                                grid: {
+                                                    color: 'rgba(255, 255, 255, 0.1)'
+                                                },
+                                                display: true,
+                                                // Show default 0-10 range if no data
+                                                min: chartData.labels.length > 0 ? undefined : 0,
+                                                max: chartData.labels.length > 0 ? undefined : 10,
+                                            }
+                                        },
+                                        elements: {
+                                            line: {
+                                                tension: 0.1,
+                                                borderWidth: 3
+                                            },
+                                            point: {
+                                                radius: 2,
+                                                hoverRadius: 5
+                                            }
+                                        },
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>
@@ -1733,7 +1882,15 @@ export default function Simulate() {
 
                                     <div className="w-full lg:w-1/2 px-2 mb-4">
                                         <div className="border dark:border-dark-border rounded-md p-2">
-                                            <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Population Trends</h3>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Population Trends</h3>
+                                                <button
+                                                    className="btn-secondary text-sm px-2 py-1"
+                                                    onClick={toggleChartFullscreen}
+                                                >
+                                                    Fullscreen
+                                                </button>
+                                            </div>
                                             <div className="aspect-square bg-white dark:bg-dark-card">
                                                 <Line
                                                     data={chartData}
@@ -1760,7 +1917,8 @@ export default function Simulate() {
                                                                 },
                                                                 grid: {
                                                                     color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
-                                                                }
+                                                                },
+                                                                display: chartData.labels.length > 0
                                                             },
                                                             x: {
                                                                 ticks: {
@@ -1768,9 +1926,21 @@ export default function Simulate() {
                                                                 },
                                                                 grid: {
                                                                     color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
-                                                                }
+                                                                },
+                                                                display: chartData.labels.length > 0
                                                             }
                                                         },
+                                                        elements: {
+                                                            line: {
+                                                                tension: 0.1
+                                                            },
+                                                            point: {
+                                                                radius: 0 // Hide points when not needed
+                                                            }
+                                                        },
+                                                        animation: {
+                                                            duration: 0 // Disable animation for initial render
+                                                        }
                                                     }}
                                                 />
                                             </div>
