@@ -336,8 +336,11 @@ class Simulation:
 
         # Random death chance
         if random.random() < self.params.get('predator_death_probability', 0.1):
-            logger.debug(f"Predator at ({x},{y}) died randomly")
-            new_grid[x, y] = EMPTY
+            logger.debug(
+                f"Predator at ({x},{y}) died randomly and became substrate")
+            new_grid[x, y] = SUBSTRATE
+            # Track the substrate creation
+            self.statistics["substrate_created"] += 1
             return
 
         # Check hunger level for starvation
@@ -428,8 +431,11 @@ class Simulation:
 
         # Random death chance
         if random.random() < self.params.get('prey_random_death', 0.05):
-            logger.debug(f"Prey at ({x},{y}) died from random death")
-            new_grid[x, y] = EMPTY
+            logger.debug(
+                f"Prey at ({x},{y}) died from random death and became substrate")
+            new_grid[x, y] = SUBSTRATE
+            # Track the substrate creation
+            self.statistics["substrate_created"] += 1
             return
 
         # Check hunger level for starvation
