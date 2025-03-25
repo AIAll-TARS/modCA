@@ -130,7 +130,7 @@ const SimulationSchema = Yup.object().shape({
 })
 
 // Define a proper interface for simulation parameters
-interface SimulationParams {
+type SimulationParams = {
     grid_size: number;
     steps: number;
     neighborhood_type: string;
@@ -139,17 +139,19 @@ interface SimulationParams {
     predator_death_probability: number;
     predator_birth_probability: number;
     initial_predators: number;
+    initial_prey: number;
     predator_starvation_steps: number;
     prey_hunted_probability: number;
     prey_random_death: number;
-    initial_prey: number;
     prey_birth_probability: number;
     prey_starvation_steps: number;
-    prey_threat_response: number;
     initial_substrate_probability: number;
     substrate_random_death: number;
     substrate_consumption_prob: number;
-}
+    prey_threat_response?: number;
+};
+
+type SimulationSettings = SimulationParams;
 
 export default function Simulate() {
     const router = useRouter()
@@ -161,7 +163,17 @@ export default function Simulate() {
     const [statistics, setStatistics] = useState<any>({})
     const [isGridFullscreen, setIsGridFullscreen] = useState<boolean>(false)
     const [isChartFullscreen, setIsChartFullscreen] = useState<boolean>(false)
-    const [chartData, setChartData] = useState<any>({
+    const [chartData, setChartData] = useState<{
+        labels: number[];
+        datasets: Array<{
+            label: string;
+            data: number[];
+            borderColor: string;
+            backgroundColor: string;
+            tension: number;
+            borderWidth?: number;
+        }>;
+    }>({
         labels: [],
         datasets: [
             {
@@ -194,7 +206,7 @@ export default function Simulate() {
                 borderWidth: 3
             }
         ]
-    })
+    });
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const wsRef = useRef<WebSocket | null>(null)
@@ -492,55 +504,59 @@ export default function Simulate() {
         // Skip adding data points when simulation hasn't started yet (step 0)
         if (currentStep === 0) return
 
-        setChartData(prev => {
-            const newLabels = [...prev.labels, currentStep]
+        setChartData((prev) => {
+            const newLabels = [...prev.labels, currentStep];
+            const predatorCount = Number(statistics.predator_count);
+            const preyCount = Number(statistics.prey_count);
+            const substrateCount = Number(statistics.substrate_count);
+            const totalCount = predatorCount + preyCount + substrateCount;
 
             return {
                 labels: newLabels,
                 datasets: [
                     {
                         ...prev.datasets[0],
-                        data: [...prev.datasets[0].data, statistics.predator_count],
+                        data: [...prev.datasets[0].data, predatorCount],
                     },
                     {
                         ...prev.datasets[1],
-                        data: [...prev.datasets[1].data, statistics.prey_count],
+                        data: [...prev.datasets[1].data, preyCount],
                     },
                     {
                         ...prev.datasets[2],
-                        data: [...prev.datasets[2].data, statistics.substrate_count],
+                        data: [...prev.datasets[2].data, substrateCount],
                     },
                     {
                         ...prev.datasets[3],
-                        data: [...prev.datasets[3].data, statistics.predator_count + statistics.prey_count + statistics.substrate_count],
+                        data: [...prev.datasets[3].data, totalCount],
                     },
                 ],
             }
-        })
-    }, [statistics, currentStep])
+        });
+    }, [statistics, currentStep]);
 
     // Start a new simulation
-    const startSimulation = async (values: SimulationParams) => {
+    const startSimulation = async (settings: SimulationSettings) => {
         try {
             // Validate grid size
-            if (Number(values.grid_size) > 400) {
+            if (Number(settings.grid_size) > 400) {
                 alert('Grid size cannot exceed 400x400');
                 return;
             }
 
             // Validate total entities
-            const totalCells = Number(values.grid_size) * Number(values.grid_size);
-            const totalEntities = Number(values.initial_predators) + Number(values.initial_prey);
+            const totalCells = Number(settings.grid_size) * Number(settings.grid_size);
+            const totalEntities = Number(settings.initial_predators) + Number(settings.initial_prey);
 
             if (totalEntities > totalCells) {
-                alert(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+                alert(`Total number of predators (${settings.initial_predators}) and prey (${settings.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
                 return;
             }
 
             // Add warning for very large grids
-            if (Number(values.grid_size) >= 200) {
+            if (Number(settings.grid_size) >= 200) {
                 const confirmLargeGrid = window.confirm(
-                    `You're creating a large grid (${values.grid_size}×${values.grid_size}) with ${values.grid_size * values.grid_size} cells.\n\n` +
+                    `You're creating a large grid (${settings.grid_size}×${settings.grid_size}) with ${settings.grid_size * settings.grid_size} cells.\n\n` +
                     `Large grids can be slow to render and may use significant memory.\n\n` +
                     `For best performance:\n` +
                     `- Use fullscreen mode\n` +
@@ -553,68 +569,34 @@ export default function Simulate() {
                 }
             }
 
-            // Additional warning for extremely large grids that may timeout
-            if (Number(values.grid_size) >= 800) {
-                const confirmExtremeGrid = window.confirm(
-                    `WARNING: Extremely large grid (${values.grid_size}×${values.grid_size}).\n\n` +
-                    `Grids larger than 800×800 may cause server timeouts or memory issues.\n\n` +
-                    `- The server may take a long time to respond\n` +
-                    `- The simulation might fail to initialize\n\n` +
-                    `Try reducing the grid size for better reliability.\n\n` +
-                    `Proceed anyway with this extreme grid size?`
-                );
-
-                if (!confirmExtremeGrid) {
-                    return;
-                }
-            }
-
-            setStatus('loading')
-            console.log('Starting simulation with raw form values:', values)
+            setStatus('loading');
+            console.log('Starting simulation with raw form values:', settings);
 
             // Calculate dynamic timeout based on grid size
-            const gridSizeSquared = Number(values.grid_size) * Number(values.grid_size);
+            const gridSizeSquared = Number(settings.grid_size) * Number(settings.grid_size);
             // Base timeout of 30 seconds, plus 1 second per 10,000 cells
             const dynamicTimeout = 30000 + Math.floor(gridSizeSquared / 10000) * 1000;
-            console.log(`Using dynamic timeout of ${dynamicTimeout}ms for grid size ${values.grid_size}`);
+            console.log(`Using dynamic timeout of ${dynamicTimeout}ms for grid size ${settings.grid_size}`);
 
-            // Validate values before sending to server
+            // Convert all numeric values to strings for API call
             const validatedValues = {
-                ...values,
-                // Convert string inputs to appropriate types using constants as fallbacks
-                grid_size: parseInt(values.grid_size || String(GRID_SIZE)),
-                steps: parseInt(values.steps || String(STEPS)),
-                initial_prey: parseInt(values.initial_prey || String(INITIAL_PREY)),
-                initial_predators: parseInt(values.initial_predators || String(INITIAL_PREDATORS)),
-                predator_death_probability: parseFloat(values.predator_death_probability || String(PREDATOR_DEATH_PROBABILITY)),
-                predator_birth_probability: parseFloat(values.predator_birth_probability || String(PREDATOR_BIRTH_PROBABILITY)),
-                predator_starvation_steps: parseInt(values.predator_starvation_steps || String(PREDATOR_STARVATION_STEPS)),
-                prey_hunted_probability: parseFloat(values.prey_hunted_probability || String(PREY_HUNTED_PROBABILITY)),
-                prey_random_death: parseFloat(values.prey_random_death || String(PREY_RANDOM_DEATH)),
-                prey_birth_probability: parseFloat(values.prey_birth_probability || String(PREY_BIRTH_PROBABILITY)),
-                prey_starvation_steps: parseInt(values.prey_starvation_steps || String(PREY_STARVATION_STEPS)),
-                prey_threat_response: parseFloat(values.prey_threat_response || String(PREY_THREAT_RESPONSE)),
-                initial_substrate_probability: parseFloat(values.initial_substrate_probability || String(INITIAL_SUBSTRATE_PROBABILITY)),
-                substrate_random_death: parseFloat(values.substrate_random_death || String(SUBSTRATE_RANDOM_DEATH)),
-                substrate_consumption_prob: parseFloat(values.substrate_consumption_prob || String(SUBSTRATE_CONSUMPTION_PROB)),
-                neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
-                grid_type: values.grid_type || GRID_TYPE
-            }
-
-            // DEBUG: Log all conversions to see if they're working correctly
-            console.log('Conversion results:')
-            console.log('grid_size:', values.grid_size, '->', validatedValues.grid_size)
-            console.log('steps:', values.steps, '->', validatedValues.steps)
-            console.log('initial_prey:', values.initial_prey, '->', validatedValues.initial_prey)
-            console.log('initial_predators:', values.initial_predators, '->', validatedValues.initial_predators)
-            console.log('predator_death_probability:', values.predator_death_probability, '->', validatedValues.predator_death_probability)
-
-            // Note: Removed value limitations to allow any user input
-
-            console.log('Validated values being sent to backend:', validatedValues)
-
-            // Save the settings to localStorage for future use
-            saveSettingsToLocalStorage(validatedValues);
+                ...settings,
+                grid_size: String(settings.grid_size),
+                steps: String(settings.steps),
+                initial_predators: String(settings.initial_predators),
+                initial_prey: String(settings.initial_prey),
+                predator_death_probability: String(settings.predator_death_probability),
+                predator_birth_probability: String(settings.predator_birth_probability),
+                predator_starvation_steps: String(settings.predator_starvation_steps),
+                prey_hunted_probability: String(settings.prey_hunted_probability),
+                prey_random_death: String(settings.prey_random_death),
+                prey_birth_probability: String(settings.prey_birth_probability),
+                prey_starvation_steps: String(settings.prey_starvation_steps),
+                initial_substrate_probability: String(settings.initial_substrate_probability),
+                substrate_random_death: String(settings.substrate_random_death),
+                substrate_consumption_prob: String(settings.substrate_consumption_prob),
+                record_simulation: settings.record_simulation ?? false
+            };
 
             // Add timeout to axios request to prevent hanging indefinitely
             try {
@@ -622,11 +604,11 @@ export default function Simulate() {
                 console.log('API URL:', axios.defaults.baseURL || 'Using relative URL');
 
                 const response = await axios.post('/api/simulate', validatedValues, {
-                    timeout: dynamicTimeout, // Dynamic timeout based on grid size
+                    timeout: dynamicTimeout,
                     headers: {
                         'Content-Type': 'application/json'
                     }
-                })
+                });
 
                 console.log('Raw response from backend:', response)
                 console.log('Simulation started successfully, response data:', response.data)
@@ -847,33 +829,38 @@ export default function Simulate() {
                         setStatistics(data.statistics)
 
                         // Update chart with new data
-                        setChartData(prevData => {
+                        setChartData((prev) => {
                             // Skip adding data for step 0
-                            if (data.current_step === 0) return prevData;
+                            if (data.current_step === 0) return prev;
 
-                            const newLabels = [...prevData.labels, data.current_step]
+                            const newLabels = [...prev.labels, data.current_step];
+                            const predatorCount = Number(data.statistics.predator_count);
+                            const preyCount = Number(data.statistics.prey_count);
+                            const substrateCount = Number(data.statistics.substrate_count);
+                            const totalCount = predatorCount + preyCount + substrateCount;
+
                             return {
                                 labels: newLabels,
                                 datasets: [
                                     {
-                                        ...prevData.datasets[0],
-                                        data: [...prevData.datasets[0].data, data.statistics.predator_count],
+                                        ...prev.datasets[0],
+                                        data: [...prev.datasets[0].data, predatorCount],
                                     },
                                     {
-                                        ...prevData.datasets[1],
-                                        data: [...prevData.datasets[1].data, data.statistics.prey_count],
+                                        ...prev.datasets[1],
+                                        data: [...prev.datasets[1].data, preyCount],
                                     },
                                     {
-                                        ...prevData.datasets[2],
-                                        data: [...prevData.datasets[2].data, data.statistics.substrate_count],
+                                        ...prev.datasets[2],
+                                        data: [...prev.datasets[2].data, substrateCount],
                                     },
                                     {
-                                        ...prevData.datasets[3],
-                                        data: [...prevData.datasets[3].data, data.statistics.predator_count + data.statistics.prey_count + data.statistics.substrate_count],
+                                        ...prev.datasets[3],
+                                        data: [...prev.datasets[3].data, totalCount],
                                     },
                                 ],
                             }
-                        })
+                        });
                     }
                 } catch (error) {
                     console.error('Error parsing WebSocket message:', error)
@@ -1468,9 +1455,9 @@ export default function Simulate() {
                                             title: {
                                                 display: true,
                                                 text: 'Population Over Time',
-                                                color: '#E0E0E0',
+                                                color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined,
                                                 font: {
-                                                    size: 24 // Larger title
+                                                    size: 16
                                                 }
                                             },
                                         },
@@ -1478,49 +1465,48 @@ export default function Simulate() {
                                             y: {
                                                 beginAtZero: true,
                                                 ticks: {
-                                                    color: '#E0E0E0',
+                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined,
                                                     font: {
-                                                        size: 16
+                                                        size: 12
                                                     }
                                                 },
                                                 grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
+                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
                                                 },
-                                                display: true
+                                                display: chartData.labels.length > 0
                                             },
                                             x: {
                                                 ticks: {
-                                                    color: '#E0E0E0',
+                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined,
                                                     font: {
-                                                        size: 16
+                                                        size: 12
                                                     },
-                                                    callback: function (value, index, values) {
+                                                    callback: function (tickValue: string | number, index: number) {
                                                         // If there are no data points yet, show 0-10 range
                                                         if (chartData.labels.length === 0) {
-                                                            return index; // Return index to show 0-10
+                                                            return index;
                                                         }
-                                                        return this.getLabelForValue(Number(value));
+                                                        return Number(tickValue);
                                                     }
                                                 },
                                                 grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
+                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
                                                 },
-                                                display: true,
-                                                // Show default 0-10 range if no data
+                                                display: chartData.labels.length > 0,
                                                 min: chartData.labels.length > 0 ? undefined : 0,
-                                                max: chartData.labels.length > 0 ? undefined : 10,
+                                                max: chartData.labels.length > 0 ? undefined : 10
                                             }
                                         },
                                         elements: {
                                             line: {
                                                 tension: 0.1,
-                                                borderWidth: 3
+                                                borderWidth: 2
                                             },
                                             point: {
-                                                radius: 2,
-                                                hoverRadius: 5
+                                                radius: 1,
+                                                hoverRadius: 4
                                             }
-                                        },
+                                        }
                                     }}
                                 />
                             </div>
@@ -2008,24 +1994,28 @@ export default function Simulate() {
                                                     data={chartData}
                                                     options={{
                                                         responsive: true,
+                                                        maintainAspectRatio: false,
                                                         plugins: {
                                                             legend: {
-                                                                position: 'top',
-                                                                labels: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                }
+                                                                display: false, // Hide the legend
                                                             },
                                                             title: {
                                                                 display: true,
                                                                 text: 'Population Over Time',
-                                                                color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
+                                                                color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined,
+                                                                font: {
+                                                                    size: 16
+                                                                }
                                                             },
                                                         },
                                                         scales: {
                                                             y: {
                                                                 beginAtZero: true,
                                                                 ticks: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
+                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined,
+                                                                    font: {
+                                                                        size: 12
+                                                                    }
                                                                 },
                                                                 grid: {
                                                                     color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
@@ -2034,24 +2024,35 @@ export default function Simulate() {
                                                             },
                                                             x: {
                                                                 ticks: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
+                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined,
+                                                                    font: {
+                                                                        size: 12
+                                                                    },
+                                                                    callback: function (tickValue: string | number, index: number) {
+                                                                        // If there are no data points yet, show 0-10 range
+                                                                        if (chartData.labels.length === 0) {
+                                                                            return index;
+                                                                        }
+                                                                        return Number(tickValue);
+                                                                    }
                                                                 },
                                                                 grid: {
                                                                     color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
                                                                 },
-                                                                display: chartData.labels.length > 0
+                                                                display: chartData.labels.length > 0,
+                                                                min: chartData.labels.length > 0 ? undefined : 0,
+                                                                max: chartData.labels.length > 0 ? undefined : 10
                                                             }
                                                         },
                                                         elements: {
                                                             line: {
-                                                                tension: 0.1
+                                                                tension: 0.1,
+                                                                borderWidth: 2
                                                             },
                                                             point: {
-                                                                radius: 0 // Hide points when not needed
+                                                                radius: 1,
+                                                                hoverRadius: 4
                                                             }
-                                                        },
-                                                        animation: {
-                                                            duration: 0 // Disable animation for initial render
                                                         }
                                                     }}
                                                 />
