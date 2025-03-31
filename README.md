@@ -6,6 +6,39 @@ A sophisticated web-based cellular automata simulation platform for modeling pre
 
 modCA_7web provides an interactive environment for exploring complex ecosystem dynamics through cellular automata simulations. While the frontend interface is intentionally minimalistic, the underlying simulation engine is powerful and sophisticated, similar in concept to advanced cellular automata platforms like [Golly](https://golly.sourceforge.io/), though focused specifically on predator-prey-substrate interactions.
 
+## 🚀 Quick Launch (WSL2)
+
+The fastest way to start modCA_7web is using our launcher script in WSL2:
+
+```bash
+cd ~/projects/modca_7web
+./open_in_nautilus.sh
+```
+
+This will:
+- Open the project in Windows Explorer
+- Launch the backend server in Windows Terminal
+- Launch the frontend server in Windows Terminal
+- Open the application in your default browser
+
+For detailed setup instructions and alternative launch methods, see our [QUICK_START.md](QUICK_START.md).
+
+## System Requirements
+
+### Recommended Setup (WSL2)
+- Windows 11/10 with WSL2
+- Ubuntu 24.04 LTS on WSL2
+- Windows Terminal
+- Python 3.12+
+- Node.js 20+ and npm
+- Modern web browser (Chrome/Firefox recommended)
+
+### Alternative Setups
+- Native Ubuntu 24.04 LTS
+- Native Windows (Python 3.8-3.11)
+
+For detailed installation instructions for each platform, see [QUICK_START.md](QUICK_START.md).
+
 ## Key Features
 
 - Real-time simulation of predator-prey-substrate interactions
