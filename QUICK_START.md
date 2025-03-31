@@ -4,78 +4,70 @@ Welcome to modCA_7web! This guide will help you get the simulation running in mi
 
 ## 📋 Choose Your Platform
 
-### Ubuntu/WSL2 (Recommended)
+### Windows 11/10 with WSL2 (Recommended)
 Best performance and compatibility with latest Python 3.12+
 
-1. **System Setup**
-   ```bash
-   # Install required packages
-   sudo apt update
-   sudo apt install python3.12-full python3.12-dev build-essential git nodejs npm
-   ```
+1. **Prerequisites**
+   - Windows 11/10 with WSL2 installed
+   - Ubuntu 24.04 LTS on WSL2
+   - Windows Terminal (install from Microsoft Store)
+   - Python 3.12+ (in WSL)
+   - Node.js 20+ and npm (in WSL)
 
-2. **Get the Code**
+2. **Quick Launch (After Setup)**
+   ```bash
+   cd ~/projects/modca_7web
+   ./open_in_nautilus.sh
+   ```
+   This will:
+   - Open project in Windows Explorer
+   - Start backend server in Windows Terminal
+   - Start frontend server in Windows Terminal
+   - Open application in your default browser
+
+3. **First-Time Setup**
    ```bash
    # Clone and enter directory
    git clone https://github.com/yourusername/modca_7web.git
    cd modca_7web
-   ```
-
-3. **Backend Setup**
-   ```bash
-   # Setup Python environment
+   chmod +x open_in_nautilus.sh  # Make launcher executable
+   
+   # Backend Setup
    cd backend
    python3 -m venv venv
    source venv/bin/activate
-   
-   # Install dependencies
    pip install --upgrade pip setuptools wheel
    pip install -r requirements_linux.txt
    
-   # Start backend server
-   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-   ```
-
-4. **Frontend Setup** (New Terminal)
-   ```bash
-   cd frontend
+   # Frontend Setup
+   cd ../frontend
    npm install
-   npm run dev
    ```
 
-### Windows (Native)
-Stable environment with Python 3.8-3.11
+### Native Ubuntu (Alternative)
+For users running Ubuntu as their main OS
 
 1. **System Setup**
-   - Install [Python 3.8-3.11](https://www.python.org/downloads/)
-   - Install [Node.js 20+](https://nodejs.org/)
-   - Install [Git](https://git-scm.com/download/win)
-
-2. **Get the Code**
-   ```powershell
-   git clone https://github.com/yourusername/modca_7web.git
-   cd modca_7web
+   ```bash
+   sudo apt update
+   sudo apt install python3.12-full python3.12-dev build-essential git nodejs npm
    ```
 
-3. **Backend Setup**
-   ```powershell
-   cd backend
-   python -m venv venv
-   .\venv\Scripts\activate
-   pip install -r requirements_win.txt
+2. **Manual Launch**
+   ```bash
+   # Terminal 1 (Backend)
+   cd ~/projects/modca_7web/backend
+   source venv/bin/activate
    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-   ```
 
-4. **Frontend Setup** (New Terminal)
-   ```powershell
-   cd frontend
-   npm install
+   # Terminal 2 (Frontend)
+   cd ~/projects/modca_7web/frontend
    npm run dev
    ```
 
 ## 🌐 Access the Application
 
-Open your browser and navigate to:
+The application will automatically open in your default browser at:
 - [http://localhost:3000](http://localhost:3000)
 
 ## 🎮 Quick Usage Guide
@@ -99,25 +91,35 @@ Open your browser and navigate to:
 
 ## ⚠️ Common Issues
 
-### Ubuntu/WSL2
-```bash
-# Permission denied
-sudo chown -R $USER:$USER ~/projects/modca_7web
+### WSL2
+1. **Windows Terminal Not Found**
+   ```bash
+   # Install from Microsoft Store or:
+   winget install Microsoft.WindowsTerminal
+   ```
 
-# Port in use
-sudo lsof -i :8000
-sudo lsof -i :3000
-```
+2. **Python Version Issues**
+   ```bash
+   # Check Python version
+   python3 --version
+   # Should be 3.12 or higher
+   ```
 
-### Windows
-- Use Command Prompt as Administrator if needed
-- Ensure Python is in PATH
-- Check ports 3000 and 8000 availability
+3. **Permission Issues**
+   ```bash
+   chmod +x open_in_nautilus.sh
+   ```
+
+### General
+- Ensure ports 3000 and 8000 are available
+- Check both backend and frontend are running
+- Verify virtual environment is activated
 
 ## 🛑 Stopping the App
 
-1. Press `Ctrl+C` in each terminal
-2. Deactivate Python environment:
+1. Press `Ctrl+C` in each terminal window
+2. Or close the Windows Terminal windows
+3. Deactivate Python environment if continuing development:
    ```bash
    deactivate
    ```
