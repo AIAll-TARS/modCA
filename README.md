@@ -340,45 +340,124 @@ The grid is initialized with the following process:
 - Low starvation thresholds
 - Creates dramatic boom-bust population cycles
 
-## Quick Start
+## 🚀 Quick Start Guide
 
-### Prerequisites
-- Windows operating system
-- Python 3.8+
-- Node.js 16+
-- Chrome web browser
+### System Requirements
 
-### Installation & Running
+#### Supported Platforms
+- **Ubuntu 24.04 LTS** (Recommended)
+- **Ubuntu 20.04+ LTS**
+- **Windows 10/11** (via WSL2 recommended)
 
-**Option 1: One-Click Start**
-1. Double-click `start_app.bat`
-2. Wait for servers to start and Chrome to open
-3. Access at http://localhost:3000
+#### Prerequisites
+- **Python 3.12+** (Ubuntu) or **Python 3.8-3.11** (Windows)
+- **Node.js 20+** and npm
+- **Git**
+- Modern web browser (Chrome/Firefox recommended)
 
-**Option 2: Desktop Shortcut**
-1. Run `create_desktop_shortcut.bat`
-2. Use the created "modCA_7web" desktop shortcut
+### 📥 Installation
 
-### Manual Setup
-1. Set up backend:
+#### Ubuntu/WSL2 (Recommended)
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/modca_7web.git
+cd modca_7web
+
+# Backend Setup
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt  # Uses numpy 1.26.4 for Python 3.12 compatibility
+
+# Start Backend Server
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+# In a new terminal
+# Frontend Setup
+cd frontend
+npm install
+npm run dev
+```
+
+Access the application at [http://localhost:3000](http://localhost:3000)
+
+#### Windows (Native)
+```powershell
+# Clone the repository
+git clone https://github.com/yourusername/modca_7web.git
+cd modca_7web
+
+# Backend Setup
+cd backend
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements_win.txt  # Uses numpy 1.24.3
+
+# Start Backend Server
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+# In a new terminal
+# Frontend Setup
+cd frontend
+npm install
+npm run dev
+```
+
+### 🛠️ Platform-Specific Dependencies
+
+#### Ubuntu/WSL2
+- Python 3.12+ compatibility requires:
+  - numpy==1.26.4
+  - Updated setuptools and wheel
+  - Python3.12-dev packages
+
+#### Windows
+- Python 3.8-3.11 recommended
+- numpy==1.24.3
+- No additional system packages required
+
+### ⚠️ Common Issues & Solutions
+
+#### Ubuntu/WSL2
+1. **Python 3.12 + NumPy Issues**
    ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
-   pip install -r requirements.txt
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   # Install required system packages
+   sudo apt update
+   sudo apt install python3.12-dev build-essential
    ```
 
-2. Set up frontend:
+2. **Permission Issues**
    ```bash
-   cd frontend
-   npm install
-   npm run dev
+   # Fix directory permissions if needed
+   sudo chown -R $USER:$USER ~/projects/modca_7web
    ```
 
-### Stopping the Application
-- Press any key in the console window
-- Or close all command prompt windows
+3. **Port Access Issues**
+   ```bash
+   # Check if ports are in use
+   sudo lsof -i :8000
+   sudo lsof -i :3000
+   ```
+
+#### Windows
+1. **Python Version Conflicts**
+   - Use Python 3.8-3.11 for native Windows
+   - Or use WSL2 for Python 3.12 support
+
+2. **NumPy Installation Errors**
+   - Ensure you're using requirements_win.txt
+   - Verify Python version compatibility
+
+### 🔄 Stopping the Application
+- Press `Ctrl+C` in each terminal window
+- Deactivate virtual environment: `deactivate`
+
+### 🌟 Best Practices
+1. Use WSL2 on Windows for best development experience
+2. Keep virtual environment activated during development
+3. Update pip and setuptools before installing requirements
+4. Use version-specific requirements files for your platform
 
 ## Development
 
