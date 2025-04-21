@@ -1,0 +1,18 @@
+[Unit]
+Description=modCA Web Application
+After=network.target
+
+[Service]
+Type=simple
+User=aiall
+Group=aiall
+WorkingDirectory=/home/aiall/projects/modca_7web/backend
+Environment="PATH=/home/aiall/projects/modca_7web/backend/venv/bin:/usr/bin"
+Environment="PYTHONPATH=/home/aiall/projects/modca_7web/backend"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/home/aiall/projects/modca_7web/backend/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target 

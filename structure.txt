@@ -1,0 +1,36 @@
+.
+├── )
+├── ).pub
+├── DEVELOPER_DOCUMENTATION.md
+├── QUICK_START.md
+├── README.md
+├── backend
+│   ├── app
+│   ├── recordings
+│   ├── requirements.txt
+│   ├── settings.db
+│   └── venv
+├── cleanup.bat
+├── create_desktop_shortcut.bat
+├── deployment
+│   ├── config
+│   ├── maintenance
+│   ├── modca_web_deployment_spec_v2.md
+│   ├── monitoring
+│   └── scripts
+├── frontend
+│   ├── next-env.d.ts
+│   ├── next.config.js
+│   ├── node_modules
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── src
+│   ├── tailwind.config.js
+│   └── tsconfig.json
+├── modCA_7web.code-workspace
+├── start-backend.bat
+├── start_app.bat
+└── structure.txt
+
+13 directories, 21 files
