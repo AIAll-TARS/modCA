@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=modCA_7web
+Comment=Start modCA_7web Cellular Automata Simulation
+Exec=wt.exe -w 0 new-tab --title "modCA" --suppressApplicationTitle bash -c 'cd ~/projects/modca_7web && ./open_in_nautilus.sh'
+Icon=applications-science
+Terminal=false
+Categories=Development;Science;
+StartupNotify=true
+Path=/home/aiall/projects/modca_7web 
