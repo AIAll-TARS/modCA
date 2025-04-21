@@ -1,6 +1,0 @@
-@echo off
-echo Installing required packages...
-pip install pydantic==1.10.8 fastapi uvicorn numpy
-echo Starting backend server...
-cd backend
-python -m uvicorn app.main:app --reload 
