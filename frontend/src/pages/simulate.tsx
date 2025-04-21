@@ -219,7 +219,7 @@ export default function Simulate() {
     }, []);
 
     // Function to save settings to localStorage
-    const saveSettingsToLocalStorage = (settings) => {
+    const saveSettingsToLocalStorage = (settings: SimulationParams) => {
         try {
             localStorage.setItem('simulationSettings', JSON.stringify(settings));
             console.log('Settings saved to localStorage:', settings);
