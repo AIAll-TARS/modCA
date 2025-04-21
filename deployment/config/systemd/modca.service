@@ -10,7 +10,19 @@ WorkingDirectory=/home/aiall/projects/modca_7web/backend
 Environment="PATH=/home/aiall/projects/modca_7web/backend/venv/bin:/usr/bin"
 Environment="PYTHONPATH=/home/aiall/projects/modca_7web/backend"
 Environment="PYTHONUNBUFFERED=1"
-ExecStart=/home/aiall/projects/modca_7web/backend/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+ExecStart=/home/aiall/projects/modca_7web/backend/venv/bin/gunicorn \
+    -k uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8000 \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --timeout 120 \
+    --keep-alive 5 \
+    --log-level warning \
+    --access-logfile /var/log/modca/access.log \
+    --error-logfile /var/log/modca/error.log \
+    app.main:app
 Restart=always
 RestartSec=1
 
