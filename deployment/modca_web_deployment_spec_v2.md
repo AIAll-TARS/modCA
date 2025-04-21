@@ -5,31 +5,29 @@ Deploy `modCA_7web`, a locally running simulation platform, to a publicly access
 
 ---
 
-### II. Target Architecture
+### II. Current Architecture
 
 ```
                                    Users (Web Browsers)
                                            ↓
-                                    CloudFlare (CDN)
+                                         HTTP
                                            ↓
-                                         HTTPS
-                                           ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                        Load Balancer (Optional)                  │
-└───────────────────────────────┬─────────────────────────────────┘
-                                ↓
 ┌─────────────────┐      ┌──────────────┐     ┌──────────────────┐
 │    NGINX        │◆◆◆◆◆│   Gunicorn   │◆◆◆◆◆│    FastAPI       │
 │(Reverse Proxy)  │      │(ASGI server) │     │(Uvicorn workers) │
 └────┬────────────┘      └──────┬───────┘     └────────┬─────────┘
      ↓                          ↓                       ↓
-┌────────────┐            ┌───────────┐          ┌───────────┐
-│  Next.js   │            │  SQLite   │          │  Redis    │
-│  Frontend  │            │    DB     │          │ (Cache)   │
-└────────────┘            └───────────┘          └───────────┘
-     ↓
-Static Assets
-(S3/CloudFront)
+┌────────────┐            ┌───────────┐
+│  Next.js   │            │  SQLite   │
+│  Frontend  │            │    DB     │
+└────────────┘            └───────────┘
+
+Future Additions Planned:
+- CloudFlare CDN
+- HTTPS/SSL
+- Redis Cache
+- S3/CloudFront for static assets
+- Load Balancer (if needed)
 ```
 
 ---
@@ -49,18 +47,20 @@ sudo apt update && sudo apt upgrade -y
 
 # Install dependencies
 sudo apt install python3.12 python3.12-venv python3.12-dev \
-    build-essential nginx git redis-server \
-    supervisor ufw fail2ban -y
+    build-essential nginx git -y
 
-# Configure firewall
-sudo ufw allow 'Nginx Full'
-sudo ufw allow OpenSSH
-sudo ufw enable
+# Additional security packages (TODO):
+# sudo apt install redis-server supervisor ufw fail2ban -y
 
-# Configure fail2ban
-sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-sudo systemctl enable fail2ban
-sudo systemctl start fail2ban
+# TODO: Configure firewall
+# sudo ufw allow 'Nginx Full'
+# sudo ufw allow OpenSSH
+# sudo ufw enable
+
+# TODO: Configure fail2ban
+# sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+# sudo systemctl enable fail2ban
+# sudo systemctl start fail2ban
 ```
 
 #### 3. Backend Application Setup
@@ -76,11 +76,10 @@ source venv/bin/activate
 # Install dependencies
 pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
-pip install gunicorn uvicorn[standard] redis
+pip install gunicorn uvicorn[standard]
 
-# Create production config
-cp .env.example .env
-nano .env  # Set production values
+# TODO: Add Redis when implemented
+# pip install redis
 ```
 
 #### 4. Gunicorn Configuration
@@ -91,13 +90,14 @@ Description=modCA Web Application
 After=network.target
 
 [Service]
-User=www-data
-Group=www-data
-WorkingDirectory=/home/ubuntu/modca_7web/backend
-Environment="PATH=/home/ubuntu/modca_7web/backend/venv/bin"
-Environment="PYTHONPATH=/home/ubuntu/modca_7web/backend"
-Environment="PRODUCTION=true"
-ExecStart=/home/ubuntu/modca_7web/backend/venv/bin/gunicorn \
+Type=simple
+User=aiall
+Group=aiall
+WorkingDirectory=/home/aiall/projects/modca_7web/backend
+Environment="PATH=/home/aiall/projects/modca_7web/backend/venv/bin:/usr/bin"
+Environment="PYTHONPATH=/home/aiall/projects/modca_7web/backend"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/home/aiall/projects/modca_7web/backend/venv/bin/gunicorn \
     -k uvicorn.workers.UvicornWorker \
     --bind 127.0.0.1:8000 \
     --workers 4 \
@@ -110,9 +110,8 @@ ExecStart=/home/ubuntu/modca_7web/backend/venv/bin/gunicorn \
     --access-logfile /var/log/modca/access.log \
     --error-logfile /var/log/modca/error.log \
     app.main:app
-
 Restart=always
-RestartSec=10
+RestartSec=1
 
 [Install]
 WantedBy=multi-user.target
@@ -121,7 +120,7 @@ WantedBy=multi-user.target
 Enable and start:
 ```bash
 sudo mkdir -p /var/log/modca
-sudo chown -R www-data:www-data /var/log/modca
+sudo chown -R aiall:aiall /var/log/modca
 sudo systemctl daemon-reload
 sudo systemctl enable modca
 sudo systemctl start modca
@@ -130,6 +129,9 @@ sudo systemctl start modca
 ---
 
 ### IV. Frontend Deployment
+
+Current Status: Development Mode
+TODO: Implement one of the following options:
 
 #### Option A: Vercel (Recommended)
 1. Push code to GitHub
@@ -141,7 +143,7 @@ sudo systemctl start modca
    ```
 4. Deploy
 
-#### Option B: Self-hosted
+#### Option B: Self-hosted with PM2
 ```bash
 # Build frontend
 cd frontend
@@ -174,8 +176,7 @@ pm2 startup
 
 ### V. NGINX Configuration
 
-#### 1. Base Configuration
-Create `/etc/nginx/sites-available/modca`:
+Current implementation (HTTP only, SSL pending):
 ```nginx
 # Rate limiting zone
 limit_req_zone $binary_remote_addr zone=modca_limit:10m rate=10r/s;
@@ -190,33 +191,7 @@ upstream websocket {
 server {
     listen 80;
     listen [::]:80;
-    server_name yourdomain.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name yourdomain.com;
-
-    # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
-    ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:50m;
-    ssl_session_tickets off;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
-    ssl_prefer_server_ciphers off;
-
-    # HSTS
-    add_header Strict-Transport-Security "max-age=63072000" always;
-
-    # Security headers
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' wss:;";
+    server_name localhost;  # Change this to your domain when deploying to production
 
     # Frontend proxy
     location / {
@@ -235,7 +210,8 @@ server {
     }
 
     # API proxy
-    location /api {
+    location /api/ {
+        rewrite ^/api/(.*) /$1 break;
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -276,217 +252,47 @@ server {
 }
 ```
 
-#### 2. Enable and Test
-```bash
-sudo ln -s /etc/nginx/sites-available/modca /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
+TODO: Add SSL configuration:
+```nginx
+# SSL configuration to be added
+ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+ssl_session_timeout 1d;
+ssl_session_cache shared:SSL:50m;
+ssl_session_tickets off;
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+ssl_prefer_server_ciphers off;
 
-#### 3. SSL Certificate
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d yourdomain.com
-```
-
----
-
-### VI. Environment Configuration
-
-#### 1. Backend (.env)
-```env
-# Application
-PRODUCTION=true
-DEBUG=false
-API_PORT=8000
-ALLOWED_HOSTS=yourdomain.com
-CORS_ORIGINS=https://yourdomain.com
-
-# Security
-SECRET_KEY=your-secure-secret-key
-JWT_SECRET=your-jwt-secret
-JWT_ALGORITHM=HS256
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
-
-# Logging
-LOG_LEVEL=WARNING
-LOG_FILE=/var/log/modca/app.log
-```
-
-#### 2. Frontend (.env.production)
-```env
-NEXT_PUBLIC_API_URL=https://yourdomain.com/api
-NEXT_PUBLIC_WS_URL=wss://yourdomain.com/ws
+# Security headers to be added
+add_header Strict-Transport-Security "max-age=63072000" always;
+add_header X-Frame-Options DENY;
+add_header X-Content-Type-Options nosniff;
+add_header X-XSS-Protection "1; mode=block";
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' wss:;";
 ```
 
 ---
 
-### VII. Database Management
+### VI. Monitoring and Logging
 
-#### Current SQLite Setup
-```bash
-# Set permissions
-sudo mkdir -p /var/lib/modca/db
-sudo mv backend/settings.db /var/lib/modca/db/
-sudo chown -R www-data:www-data /var/lib/modca
-sudo chmod 755 /var/lib/modca
-sudo chmod 640 /var/lib/modca/db/settings.db
+Current Status:
+- Backend logs: `/var/log/modca/`
+- Nginx logs: `/var/log/nginx/`
+- Frontend: Console output (development mode)
 
-# Backup script (/etc/cron.daily/modca-backup)
-#!/bin/bash
-BACKUP_DIR="/var/backups/modca"
-DATE=$(date +%Y%m%d)
-mkdir -p $BACKUP_DIR
-sqlite3 /var/lib/modca/db/settings.db ".backup '$BACKUP_DIR/settings_$DATE.db'"
-find $BACKUP_DIR -type f -mtime +7 -delete
-```
-
-#### Future PostgreSQL Migration Plan
-1. Create migration scripts
-2. Set up PostgreSQL
-3. Test migration process
-4. Schedule maintenance window
-5. Execute migration
-6. Verify data integrity
+TODO:
+1. Set up log rotation
+2. Configure monitoring
+3. Implement health checks
+4. Set up alerts
 
 ---
 
-### VIII. Monitoring & Maintenance
+### VII. Backup Strategy
 
-#### 1. System Monitoring
-```bash
-# Install monitoring tools
-sudo apt install prometheus node-exporter grafana
-
-# Configure Prometheus for modCA metrics
-# /etc/prometheus/prometheus.yml
-scrape_configs:
-  - job_name: 'modca'
-    static_configs:
-      - targets: ['localhost:8000']
-```
-
-#### 2. Log Management
-```bash
-# Install log rotation
-sudo nano /etc/logrotate.d/modca
-/var/log/modca/*.log {
-    daily
-    rotate 14
-    compress
-    delaycompress
-    notifempty
-    create 0640 www-data www-data
-    sharedscripts
-    postrotate
-        systemctl reload modca
-    endscript
-}
-```
-
-#### 3. Backup Strategy
-- Daily SQLite backups
-- Weekly full system backups
-- Regular configuration backups
-- Automated cleanup of old backups
-
-#### 4. Monitoring Endpoints
-- `/health`: Basic health check
-- `/metrics`: Prometheus metrics
-- `/status`: Detailed system status
-
----
-
-### IX. Deployment Structure
-
-```
-deployment/
-├── README.md                 # Deployment documentation
-├── scripts/
-│   ├── install.sh           # Installation script
-│   ├── backup.sh            # Backup script
-│   └── update.sh            # Update script
-├── config/
-│   ├── nginx/
-│   │   └── modca.conf       # NGINX configuration
-│   ├── systemd/
-│   │   └── modca.service    # Systemd service
-│   └── prometheus/
-│       └── prometheus.yml   # Prometheus config
-├── monitoring/
-│   └── grafana/
-│       └── dashboards/      # Grafana dashboards
-└── maintenance/
-    ├── backup_restore.md    # Backup/restore procedures
-    └── troubleshooting.md   # Troubleshooting guide
-```
-
----
-
-### X. Security Measures
-
-1. **Application Security**
-   - Rate limiting
-   - Input validation
-   - CORS restrictions
-   - Security headers
-   - HTTPS only
-   - WebSocket security
-
-2. **System Security**
-   - Fail2ban
-   - UFW firewall
-   - Regular updates
-   - Secure file permissions
-   - Limited service accounts
-
-3. **Monitoring & Alerts**
-   - Resource monitoring
-   - Error rate alerts
-   - Security event logging
-   - Uptime monitoring
-
----
-
-### XI. Scaling Considerations
-
-1. **Horizontal Scaling**
-   - Load balancer configuration
-   - Session management
-   - WebSocket clustering
-   - Static asset CDN
-
-2. **Vertical Scaling**
-   - CPU optimization
-   - Memory management
-   - Database tuning
-   - Cache optimization
-
----
-
-### XII. Disaster Recovery
-
-1. **Backup Systems**
-   - Database backups
-   - Configuration backups
-   - Log archives
-   - System state backups
-
-2. **Recovery Procedures**
-   - Service restoration
-   - Data recovery
-   - Configuration restoration
-   - Verification procedures
-
----
-
-### Summary
-- Production-ready deployment with security focus
-- Scalable architecture with monitoring
-- Comprehensive backup and recovery
-- Detailed documentation and maintenance procedures
-- Future-proof design with upgrade paths
+TODO:
+1. Database backup configuration
+2. Code backup strategy
+3. Log backup strategy
+4. Backup testing procedures
