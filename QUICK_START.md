@@ -1,35 +1,137 @@
-# modCA_7web Quick Start Guide
+# 🚀 Quick Start Guide for modCA_7web
 
-## Prerequisites
-- Windows operating system
-- Python 3.8+ installed and added to your PATH
-- Node.js 16+ installed and added to your PATH
-- Chrome web browser
+Welcome to modCA_7web! This guide will help you get the simulation running in minutes.
 
-## Starting the Application
+## 📋 Choose Your Platform
 
-**Option 1:** One-Click Startup
-1. Double-click `start_app.bat`
-2. Wait for both servers to start and Chrome to open
-3. The application will be accessible at http://localhost:3000
+### Windows 11/10 with WSL2 (Recommended)
+Best performance and compatibility with latest Python 3.12+
 
-**Option 2:** Desktop Shortcut
-1. Double-click `create_desktop_shortcut.bat` to create a desktop shortcut
-2. Launch anytime by double-clicking the "modCA_7web" shortcut on your desktop
+1. **Prerequisites**
+   - Windows 11/10 with WSL2 installed
+   - Ubuntu 24.04 LTS on WSL2
+   - Windows Terminal (install from Microsoft Store)
+   - Python 3.12+ (in WSL)
+   - Node.js 20+ and npm (in WSL)
 
-## Stopping the Application
-- Return to the console window where you started the application
-- Press any key to shut down all servers
-- Or simply close all the command prompt windows
+2. **Quick Launch (After Setup)**
+   ```bash
+   cd ~/projects/modca_7web
+   ./open_in_nautilus.sh
+   ```
+   This will:
+   - Open project in Windows Explorer
+   - Start backend server in Windows Terminal
+   - Start frontend server in Windows Terminal
+   - Open application in your default browser
 
-## Cleaning Up Unnecessary Files
-If you need to clean up the project directory:
-1. Run `cleanup.bat` to remove unnecessary files and directories
-2. This will delete temporary files, cache directories, and unused environments
+3. **First-Time Setup**
+   ```bash
+   # Clone and enter directory
+   git clone https://github.com/yourusername/modca_7web.git
+   cd modca_7web
+   chmod +x open_in_nautilus.sh  # Make launcher executable
+   
+   # Backend Setup
+   cd backend
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install --upgrade pip setuptools wheel
+   pip install -r requirements_linux.txt
+   
+   # Frontend Setup
+   cd ../frontend
+   npm install
+   ```
 
-## Troubleshooting
-- Make sure Python and Node.js are installed correctly
-- Check that ports 3000 (frontend) and 8000 (backend) are available
-- If startup fails, try manually running:
-  - Backend: `cd backend && venv\Scripts\activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
-  - Frontend: `cd frontend && npm run dev` 
+### Native Ubuntu (Alternative)
+For users running Ubuntu as their main OS
+
+1. **System Setup**
+   ```bash
+   sudo apt update
+   sudo apt install python3.12-full python3.12-dev build-essential git nodejs npm
+   ```
+
+2. **Manual Launch**
+   ```bash
+   # Terminal 1 (Backend)
+   cd ~/projects/modca_7web/backend
+   source venv/bin/activate
+   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+   # Terminal 2 (Frontend)
+   cd ~/projects/modca_7web/frontend
+   npm run dev
+   ```
+
+## 🌐 Access the Application
+
+The application will automatically open in your default browser at:
+- [http://localhost:3000](http://localhost:3000)
+
+## 🎮 Quick Usage Guide
+
+1. **Start a Simulation**
+   - Click "New Simulation"
+   - Choose grid size (start with 50x50)
+   - Click "Start"
+
+2. **Adjust Parameters**
+   - Use sliders to modify:
+     - Initial populations
+     - Birth/death rates
+     - Starvation thresholds
+
+3. **Controls**
+   - Play/Pause: Space bar
+   - Step Forward: Right arrow
+   - Reset: R key
+   - Full Screen: F key
+
+## ⚠️ Common Issues
+
+### WSL2
+1. **Windows Terminal Not Found**
+   ```bash
+   # Install from Microsoft Store or:
+   winget install Microsoft.WindowsTerminal
+   ```
+
+2. **Python Version Issues**
+   ```bash
+   # Check Python version
+   python3 --version
+   # Should be 3.12 or higher
+   ```
+
+3. **Permission Issues**
+   ```bash
+   chmod +x open_in_nautilus.sh
+   ```
+
+### General
+- Ensure ports 3000 and 8000 are available
+- Check both backend and frontend are running
+- Verify virtual environment is activated
+
+## 🛑 Stopping the App
+
+1. Press `Ctrl+C` in each terminal window
+2. Or close the Windows Terminal windows
+3. Deactivate Python environment if continuing development:
+   ```bash
+   deactivate
+   ```
+
+## 📚 Next Steps
+
+- Check [README.md](README.md) for detailed documentation
+- Explore [DEVELOPER_DOCUMENTATION.md](DEVELOPER_DOCUMENTATION.md) for development
+- Join our [Discord community](https://discord.gg/yourdiscord) for help
+
+## 🆘 Need Help?
+
+- Create an issue on GitHub
+- Check our FAQ in [README.md](README.md#troubleshooting)
+- Contact: support@modca7web.com 
