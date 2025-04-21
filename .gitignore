@@ -114,3 +114,4 @@ frontend/.env.production.local
 
 # Next.js
 .next/
+.next
