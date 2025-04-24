@@ -40,8 +40,11 @@ import {
     SUBSTRATE_CONSUMPTION_PROB,
     NEIGHBORHOOD_TYPE,
     GRID_TYPE,
-    VALIDATION_LIMITS
+    VALIDATION_LIMITS,
+    PREY_THREAT_RESPONSE
 } from '../constants'
+import { ChartData, ChartDataset, Statistics, SimulationParams } from '../types'
+import { fontFamily } from '@/styles/fonts'
 
 // Register ChartJS components
 ChartJS.register(
@@ -128,28 +131,6 @@ const SimulationSchema = Yup.object().shape({
         .min(VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min, `Must be at least ${VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}`)
         .max(VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max, `Must be at most ${VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}`),
 })
-
-// Define a proper interface for simulation parameters
-interface SimulationParams {
-    grid_size: number;
-    steps: number;
-    neighborhood_type: string;
-    grid_type: string;
-    record_simulation?: boolean;
-    predator_death_probability: number;
-    predator_birth_probability: number;
-    initial_predators: number;
-    predator_starvation_steps: number;
-    prey_hunted_probability: number;
-    prey_random_death: number;
-    initial_prey: number;
-    prey_birth_probability: number;
-    prey_starvation_steps: number;
-    prey_threat_response: number;
-    initial_substrate_probability: number;
-    substrate_random_death: number;
-    substrate_consumption_prob: number;
-}
 
 export default function Simulate() {
     const router = useRouter()
@@ -492,7 +473,7 @@ export default function Simulate() {
         // Skip adding data points when simulation hasn't started yet (step 0)
         if (currentStep === 0) return
 
-        setChartData(prev => {
+        setChartData((prev: ChartData) => {
             const newLabels = [...prev.labels, currentStep]
 
             return {
@@ -581,25 +562,26 @@ export default function Simulate() {
             // Validate values before sending to server
             const validatedValues = {
                 ...values,
-                // Convert string inputs to appropriate types using constants as fallbacks
-                grid_size: parseInt(values.grid_size || String(GRID_SIZE)),
-                steps: parseInt(values.steps || String(STEPS)),
-                initial_prey: parseInt(values.initial_prey || String(INITIAL_PREY)),
-                initial_predators: parseInt(values.initial_predators || String(INITIAL_PREDATORS)),
-                predator_death_probability: parseFloat(values.predator_death_probability || String(PREDATOR_DEATH_PROBABILITY)),
-                predator_birth_probability: parseFloat(values.predator_birth_probability || String(PREDATOR_BIRTH_PROBABILITY)),
-                predator_starvation_steps: parseInt(values.predator_starvation_steps || String(PREDATOR_STARVATION_STEPS)),
-                prey_hunted_probability: parseFloat(values.prey_hunted_probability || String(PREY_HUNTED_PROBABILITY)),
-                prey_random_death: parseFloat(values.prey_random_death || String(PREY_RANDOM_DEATH)),
-                prey_birth_probability: parseFloat(values.prey_birth_probability || String(PREY_BIRTH_PROBABILITY)),
-                prey_starvation_steps: parseInt(values.prey_starvation_steps || String(PREY_STARVATION_STEPS)),
-                prey_threat_response: parseFloat(values.prey_threat_response || String(PREY_THREAT_RESPONSE)),
-                initial_substrate_probability: parseFloat(values.initial_substrate_probability || String(INITIAL_SUBSTRATE_PROBABILITY)),
-                substrate_random_death: parseFloat(values.substrate_random_death || String(SUBSTRATE_RANDOM_DEATH)),
-                substrate_consumption_prob: parseFloat(values.substrate_consumption_prob || String(SUBSTRATE_CONSUMPTION_PROB)),
+                // Convert all values to numbers with fallbacks
+                grid_size: Number(values.grid_size) || GRID_SIZE,
+                steps: Number(values.steps) || STEPS,
+                initial_prey: Number(values.initial_prey) || INITIAL_PREY,
+                initial_predators: Number(values.initial_predators) || INITIAL_PREDATORS,
+                predator_death_probability: Number(values.predator_death_probability) || PREDATOR_DEATH_PROBABILITY,
+                predator_birth_probability: Number(values.predator_birth_probability) || PREDATOR_BIRTH_PROBABILITY,
+                predator_starvation_steps: Number(values.predator_starvation_steps) || PREDATOR_STARVATION_STEPS,
+                prey_hunted_probability: Number(values.prey_hunted_probability) || PREY_HUNTED_PROBABILITY,
+                prey_random_death: Number(values.prey_random_death) || PREY_RANDOM_DEATH,
+                prey_birth_probability: Number(values.prey_birth_probability) || PREY_BIRTH_PROBABILITY,
+                prey_starvation_steps: Number(values.prey_starvation_steps) || PREY_STARVATION_STEPS,
+                prey_threat_response: Number(values.prey_threat_response) || PREY_THREAT_RESPONSE,
+                initial_substrate_probability: Number(values.initial_substrate_probability) || INITIAL_SUBSTRATE_PROBABILITY,
+                substrate_random_death: Number(values.substrate_random_death) || SUBSTRATE_RANDOM_DEATH,
+                substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
                 neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
-                grid_type: values.grid_type || GRID_TYPE
-            }
+                grid_type: values.grid_type || GRID_TYPE,
+                record_simulation: Boolean(values.record_simulation)
+            };
 
             // DEBUG: Log all conversions to see if they're working correctly
             console.log('Conversion results:')
@@ -847,7 +829,7 @@ export default function Simulate() {
                         setStatistics(data.statistics)
 
                         // Update chart with new data
-                        setChartData(prevData => {
+                        setChartData((prevData: ChartData) => {
                             // Skip adding data for step 0
                             if (data.current_step === 0) return prevData;
 
@@ -1227,6 +1209,13 @@ export default function Simulate() {
         if (Math.abs(slope) < 0.5) return 'stable';
         return slope > 0 ? 'increasing' : 'decreasing';
     };
+
+    const styles = {
+        main: {
+            fontFamily,
+            // ... existing code ...
+        }
+    }
 
     return (
         <>
@@ -1664,7 +1653,8 @@ export default function Simulate() {
                                             substrate_random_death: Number(values.substrate_random_death) || SUBSTRATE_RANDOM_DEATH,
                                             substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
                                             neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
-                                            grid_type: values.grid_type || GRID_TYPE
+                                            grid_type: values.grid_type || GRID_TYPE,
+                                            record_simulation: Boolean(values.record_simulation)
                                         };
                                         console.log('Form submission - converted numeric values:', numericValues);
 

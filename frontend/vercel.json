@@ -1,0 +1,52 @@
+{
+    "version": 2,
+    "buildCommand": "npm run build",
+    "devCommand": "npm run dev",
+    "installCommand": "npm install",
+    "framework": "nextjs",
+    "regions": [
+        "fra1"
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "X-Frame-Options",
+                    "value": "DENY"
+                },
+                {
+                    "key": "X-XSS-Protection",
+                    "value": "1; mode=block"
+                }
+            ]
+        },
+        {
+            "source": "/ws/(.*)",
+            "headers": [
+                {
+                    "key": "Connection",
+                    "value": "upgrade"
+                },
+                {
+                    "key": "Upgrade",
+                    "value": "websocket"
+                }
+            ]
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/:path*",
+            "destination": "https://janis7ewski.org/api/:path*"
+        },
+        {
+            "source": "/ws/:path*",
+            "destination": "https://janis7ewski.org/ws/:path*"
+        }
+    ]
+}
