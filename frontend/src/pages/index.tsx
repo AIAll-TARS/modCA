@@ -1,9 +1,13 @@
-import { Inter } from 'next/font/google'
+import { fontFamily } from '@/styles/fonts'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
-const inter = Inter({ subsets: ['latin'] })
+const styles = {
+    main: {
+        fontFamily,
+    }
+}
 
 export default function Home() {
     const router = useRouter()
