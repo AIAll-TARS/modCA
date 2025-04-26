@@ -24,6 +24,10 @@
                     "value": "1; mode=block"
                 },
                 {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=0, must-revalidate"
+                },
+                {
                     "key": "Access-Control-Allow-Credentials",
                     "value": "true"
                 },
@@ -51,6 +55,10 @@
                 {
                     "key": "Upgrade",
                     "value": "websocket"
+                },
+                {
+                    "key": "Cache-Control",
+                    "value": "no-store, no-cache"
                 },
                 {
                     "key": "Access-Control-Allow-Origin",
