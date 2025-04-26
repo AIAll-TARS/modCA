@@ -623,4 +623,31 @@ const SimulationContext = React.createContext<{
 3. **Rendering Performance**:
    - Optimize grid rendering with canvas
    - Implement virtualization for large grids
-   - Use React.memo or shouldComponentUpdate for expensive components 
+   - Use React.memo or shouldComponentUpdate for expensive components
+
+## Local Development: Manual Startup
+
+To run the app locally, use two terminals:
+
+**Terminal 1 (Backend):**
+```bash
+cd backend
+python3 -m venv venv  # Only first time
+source venv/bin/activate
+pip install -r requirements.txt  # Only first time
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Terminal 2 (Frontend):**
+```bash
+cd frontend
+npm install  # Only first time
+npm run dev -- --port 3000
+```
+If port 3000 is busy, use:
+```bash
+npm run dev -- --port 3001
+```
+
+- Access the app at http://localhost:3000 (or 3001 if used)
+- The backend API is at http://localhost:8000 

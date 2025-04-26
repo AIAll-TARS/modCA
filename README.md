@@ -14,22 +14,32 @@ The application is hosted on Vercel with Cloudflare for DNS management and secur
 
 modCA_7web provides an interactive environment for exploring complex ecosystem dynamics through cellular automata simulations. While the frontend interface is intentionally minimalistic, the underlying simulation engine is powerful and sophisticated, similar in concept to advanced cellular automata platforms like [Golly](https://golly.sourceforge.io/), though focused specifically on predator-prey-substrate interactions.
 
-## 🚀 Quick Launch (WSL2)
+## 🚀 Quick Start Guide (Manual)
 
-The fastest way to start modCA_7web is using our launcher script in WSL2:
+To run modCA_7web locally, use two terminals:
 
+### 1. Start the Backend (FastAPI/Uvicorn)
 ```bash
-cd ~/projects/modca_7web
-./open_in_nautilus.sh
+cd backend
+python3 -m venv venv  # Only first time
+source venv/bin/activate
+pip install -r requirements.txt  # Only first time
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-This will:
-- Open the project in Windows Explorer
-- Launch the backend server in Windows Terminal
-- Launch the frontend server in Windows Terminal
-- Open the application in your default browser
+### 2. Start the Frontend (Next.js)
+```bash
+cd frontend
+npm install  # Only first time
+npm run dev -- --port 3000
+```
+If port 3000 is busy, use:
+```bash
+npm run dev -- --port 3001
+```
 
-For detailed setup instructions and alternative launch methods, see our [QUICK_START.md](QUICK_START.md).
+- Access the app at http://localhost:3000 (or 3001 if used)
+- The backend API is at http://localhost:8000
 
 ## System Requirements
 
@@ -380,125 +390,6 @@ The grid is initialized with the following process:
 - High death rates
 - Low starvation thresholds
 - Creates dramatic boom-bust population cycles
-
-## 🚀 Quick Start Guide
-
-### System Requirements
-
-#### Supported Platforms
-- **Ubuntu 24.04 LTS** (Recommended)
-- **Ubuntu 20.04+ LTS**
-- **Windows 10/11** (via WSL2 recommended)
-
-#### Prerequisites
-- **Python 3.12+** (Ubuntu) or **Python 3.8-3.11** (Windows)
-- **Node.js 20+** and npm
-- **Git**
-- Modern web browser (Chrome/Firefox recommended)
-
-### 📥 Installation
-
-#### Ubuntu/WSL2 (Recommended)
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/modca_7web.git
-cd modca_7web
-
-# Backend Setup
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt  # Uses numpy 1.26.4 for Python 3.12 compatibility
-
-# Start Backend Server
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-
-# In a new terminal
-# Frontend Setup
-cd frontend
-npm install
-npm run dev
-```
-
-Access the application at [http://localhost:3000](http://localhost:3000)
-
-#### Windows (Native)
-```powershell
-# Clone the repository
-git clone https://github.com/yourusername/modca_7web.git
-cd modca_7web
-
-# Backend Setup
-cd backend
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements_win.txt  # Uses numpy 1.24.3
-
-# Start Backend Server
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-
-# In a new terminal
-# Frontend Setup
-cd frontend
-npm install
-npm run dev
-```
-
-### 🛠️ Platform-Specific Dependencies
-
-#### Ubuntu/WSL2
-- Python 3.12+ compatibility requires:
-  - numpy==1.26.4
-  - Updated setuptools and wheel
-  - Python3.12-dev packages
-
-#### Windows
-- Python 3.8-3.11 recommended
-- numpy==1.24.3
-- No additional system packages required
-
-### ⚠️ Common Issues & Solutions
-
-#### Ubuntu/WSL2
-1. **Python 3.12 + NumPy Issues**
-   ```bash
-   # Install required system packages
-   sudo apt update
-   sudo apt install python3.12-dev build-essential
-   ```
-
-2. **Permission Issues**
-   ```bash
-   # Fix directory permissions if needed
-   sudo chown -R $USER:$USER ~/projects/modca_7web
-   ```
-
-3. **Port Access Issues**
-   ```bash
-   # Check if ports are in use
-   sudo lsof -i :8000
-   sudo lsof -i :3000
-   ```
-
-#### Windows
-1. **Python Version Conflicts**
-   - Use Python 3.8-3.11 for native Windows
-   - Or use WSL2 for Python 3.12 support
-
-2. **NumPy Installation Errors**
-   - Ensure you're using requirements_win.txt
-   - Verify Python version compatibility
-
-### 🔄 Stopping the Application
-- Press `Ctrl+C` in each terminal window
-- Deactivate virtual environment: `deactivate`
-
-### 🌟 Best Practices
-1. Use WSL2 on Windows for best development experience
-2. Keep virtual environment activated during development
-3. Update pip and setuptools before installing requirements
-4. Use version-specific requirements files for your platform
 
 ## Development
 

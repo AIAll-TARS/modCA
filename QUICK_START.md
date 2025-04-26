@@ -14,35 +14,31 @@ Best performance and compatibility with latest Python 3.12+
    - Python 3.12+ (in WSL)
    - Node.js 20+ and npm (in WSL)
 
-2. **Quick Launch (After Setup)**
+2. **Manual Launch**
+   - Open two terminals:
+
+   **Terminal 1 (Backend):**
    ```bash
-   cd ~/projects/modca_7web
-   ./open_in_nautilus.sh
+   cd ~/projects/modca_7web/backend
+   python3 -m venv venv  # Only first time
+   source venv/bin/activate
+   pip install -r requirements.txt  # Only first time
+   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
    ```
-   This will:
-   - Open project in Windows Explorer
-   - Start backend server in Windows Terminal
-   - Start frontend server in Windows Terminal
-   - Open application in your default browser
+
+   **Terminal 2 (Frontend):**
+   ```bash
+   cd ~/projects/modca_7web/frontend
+   npm install  # Only first time
+   npm run dev -- --port 3000
+   ```
+   If port 3000 is busy, use:
+   ```bash
+   npm run dev -- --port 3001
+   ```
 
 3. **First-Time Setup**
-   ```bash
-   # Clone and enter directory
-   git clone https://github.com/yourusername/modca_7web.git
-   cd modca_7web
-   chmod +x open_in_nautilus.sh  # Make launcher executable
-   
-   # Backend Setup
-   cd backend
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install --upgrade pip setuptools wheel
-   pip install -r requirements_linux.txt
-   
-   # Frontend Setup
-   cd ../frontend
-   npm install
-   ```
+   (see above for backend/frontend install commands)
 
 ### Native Ubuntu (Alternative)
 For users running Ubuntu as their main OS
@@ -54,21 +50,12 @@ For users running Ubuntu as their main OS
    ```
 
 2. **Manual Launch**
-   ```bash
-   # Terminal 1 (Backend)
-   cd ~/projects/modca_7web/backend
-   source venv/bin/activate
-   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-
-   # Terminal 2 (Frontend)
-   cd ~/projects/modca_7web/frontend
-   npm run dev
-   ```
+   - Use the same two-terminal approach as above.
 
 ## 🌐 Access the Application
 
-The application will automatically open in your default browser at:
-- [http://localhost:3000](http://localhost:3000)
+The application will be available at:
+- [http://localhost:3000](http://localhost:3000) (or 3001 if used)
 
 ## 🎮 Quick Usage Guide
 
@@ -91,27 +78,7 @@ The application will automatically open in your default browser at:
 
 ## ⚠️ Common Issues
 
-### WSL2
-1. **Windows Terminal Not Found**
-   ```bash
-   # Install from Microsoft Store or:
-   winget install Microsoft.WindowsTerminal
-   ```
-
-2. **Python Version Issues**
-   ```bash
-   # Check Python version
-   python3 --version
-   # Should be 3.12 or higher
-   ```
-
-3. **Permission Issues**
-   ```bash
-   chmod +x open_in_nautilus.sh
-   ```
-
-### General
-- Ensure ports 3000 and 8000 are available
+- Ensure ports 3000 (or 3001) and 8000 are available
 - Check both backend and frontend are running
 - Verify virtual environment is activated
 
