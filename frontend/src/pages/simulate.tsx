@@ -177,7 +177,6 @@ export default function Simulate() {
             }
         ]
     })
-    const [redrawKey, setRedrawKey] = useState<number>(0);
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const wsRef = useRef<WebSocket | null>(null)
@@ -798,12 +797,12 @@ export default function Simulate() {
 
         // Use secure WebSocket if on HTTPS
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const wsUrl = `${getWsUrl()}/simulate/${simId}`
+        const wsUrl = `${protocol}//${window.location.host}/ws/simulate/${simId}`
 
         console.log(`WebSocket URL: ${wsUrl}`)
 
         try {
-            const ws = new WebSocket(wsUrl)
+            const ws = new WebSocket(getWsUrl(wsUrl))
             wsRef.current = ws
 
             ws.onopen = () => {
@@ -1219,13 +1218,6 @@ export default function Simulate() {
         }
     }
 
-    // Fix: Force grid redraw when exiting fullscreen by incrementing redrawKey
-    useEffect(() => {
-        if (!isGridFullscreen) {
-            setRedrawKey((k: number) => k + 1);
-        }
-    }, [isGridFullscreen]);
-
     return (
         <>
             <Head>
@@ -1324,7 +1316,6 @@ export default function Simulate() {
                             <div className="w-full h-[calc(100%-40px)] flex items-center justify-center">
                                 <canvas
                                     ref={canvasRef}
-                                    key={redrawKey}
                                     className="max-w-full max-h-full bg-gray-800"
                                 ></canvas>
                             </div>
@@ -1601,23 +1592,6 @@ export default function Simulate() {
                                         onClick={() => saveRecording()}
                                     >
                                         Save Recording
-                                    </button>
-                                )}
-                                {isGridFullscreen ? (
-                                    <button
-                                        type="button"
-                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                        onClick={toggleGridFullscreen}
-                                    >
-                                        Exit Fullscreen
-                                    </button>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                        onClick={toggleGridFullscreen}
-                                    >
-                                        Fullscreen
                                     </button>
                                 )}
                             </div>
@@ -1979,7 +1953,6 @@ export default function Simulate() {
                                             <div className="aspect-square bg-gray-100 dark:bg-gray-800 border rounded-md overflow-hidden">
                                                 <canvas
                                                     ref={canvasRef}
-                                                    key={redrawKey}
                                                     width={400}
                                                     height={400}
                                                     className="w-full h-full bg-gray-100 dark:bg-gray-800"
