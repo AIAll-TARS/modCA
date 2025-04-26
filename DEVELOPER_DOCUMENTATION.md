@@ -106,13 +106,46 @@ modca_7web follows a modern client-server architecture with the following compon
 - **WebSockets**: For real-time bidirectional communication
 
 ### Frontend
-- **Next.js**: React framework for server-rendered React applications
+- **Next.js 14.2.28**: React framework for server-rendered React applications
 - **TypeScript**: Typed JavaScript for improved developer experience
 - **Tailwind CSS**: Utility-first CSS framework for styling
 - **Chart.js**: Data visualization for population trends
 - **Axios**: HTTP client for API requests
 - **Formik + Yup**: Form handling and validation
 - **WebSocket API**: For real-time communication with backend
+
+### Deployment & Infrastructure
+- **Vercel**:
+  - Frontend hosting and deployment
+  - Edge Functions support
+  - Automatic HTTPS
+  - CI/CD pipeline integration
+  - Analytics and monitoring
+
+- **Cloudflare**:
+  - DNS management
+  - CDN and caching
+  - DDoS protection
+  - SSL/TLS encryption
+  - WebSocket proxy
+  - Performance optimization
+
+### Development Tools
+- **Git**: Version control
+- **npm**: Package management for frontend
+- **pip**: Package management for backend
+- **ESLint**: JavaScript/TypeScript linting
+- **Prettier**: Code formatting
+- **Jest**: Frontend testing
+- **pytest**: Backend testing
+
+### Monitoring & Analytics
+- **Vercel Analytics**: Frontend performance monitoring
+- **Cloudflare Analytics**: Traffic and security monitoring
+- **Custom Metrics**:
+  - WebSocket performance
+  - API response times
+  - User interaction tracking
 
 ## 5. Directory Structure
 
@@ -426,35 +459,136 @@ const SimulationContext = React.createContext<{
 
 ## 10. Deployment
 
-### Backend Deployment
+### 10.1 Vercel Deployment
 
-1. **Production Setup**:
-   - Set up a production server (e.g., Ubuntu 20.04 LTS)
-   - Install Python 3.8+ and required dependencies
-   - Clone the repository
+#### Prerequisites
+- Node.js 18.x or higher
+- Vercel CLI (`npm install -g vercel`)
+- A Vercel account
 
-2. **Server Configuration**:
-   - Set up Gunicorn as the WSGI server
-   - Configure Nginx as a reverse proxy
-   - Set up SSL certificates for HTTPS
-
-3. **Environment Configuration**:
-   - Set environment variables for production
-   - Configure database connection
-   - Set up proper logging
-
-### Frontend Deployment
-
-1. **Build for Production**:
+#### Setup Steps
+1. **Install Vercel CLI**:
+   ```bash
+   npm install -g vercel
    ```
+
+2. **Configure Project**:
+   - Ensure `vercel.json` is properly configured:
+   ```json
+   {
+       "version": 2,
+       "buildCommand": "npm run build",
+       "devCommand": "npm run dev",
+       "installCommand": "npm install --include=dev",
+       "framework": "nextjs",
+       "regions": ["fra1"],
+       // ... other configurations
+   }
+   ```
+
+3. **Deploy**:
+   ```bash
    cd frontend
-   npm run build
+   vercel
    ```
 
-2. **Deployment Options**:
-   - Deploy to Vercel (recommended for Next.js)
-   - Deploy to Netlify
-   - Deploy to a static hosting service
+4. **Environment Variables**:
+   - Set up required environment variables in Vercel dashboard
+   - Configure production URLs and API endpoints
+
+### 10.2 Cloudflare Setup
+
+#### Domain Registration and Management
+1. **Domain Registration**:
+   - Domain: janis7ewski.org
+   - Registrar: Cloudflare, Inc.
+   - Admin Contact: AIAll@janis7ewski.org
+   - Management: https://dash.cloudflare.com
+
+2. **DNS Records**:
+   ```
+   Type    Name     Content              Status
+   A       @        76.76.21.21         Proxied
+   CNAME   www      cname.vercel-dns.com Proxied
+   TXT     _vercel  [verification]      DNS only
+   ```
+
+3. **Nameservers**:
+   - aldo.ns.cloudflare.com
+   - venus.ns.cloudflare.com
+
+#### DNS and Security Configuration
+1. **SSL/TLS Settings**:
+   - Mode: Full (Strict)
+   - Edge Certificates: Auto-managed by Cloudflare
+   - Minimum TLS Version: 1.2
+   - Always Use HTTPS: Enabled
+
+2. **Security Settings**:
+   - Security Level: Medium
+   - Bot Fight Mode: ON
+   - Browser Integrity Check: ON
+   - JS Detection: ON
+
+#### Performance Settings
+- HTTP/3 (QUIC): ON
+- HTTP/2: ON
+- TCP Turbo: ON
+- WebSocket Support: ON
+- Brotli Compression: ON
+- Auto Minify: ON (HTML, CSS, JS)
+
+#### Page Rules
+1. **WebSocket Rule**:
+   ```
+   Pattern: *janis7ewski.org/ws*
+   Settings:
+   - SSL: Full
+   - Cache Level: Bypass
+   ```
+
+2. **API Rule**:
+   ```
+   Pattern: *janis7ewski.org/api*
+   Settings:
+   - Cache Level: Bypass
+   - Security Level: High
+   ```
+
+### 10.3 Post-Deployment Verification
+
+1. **SSL Verification**:
+   ```bash
+   curl -I https://yourdomain.com
+   ```
+
+2. **WebSocket Test**:
+   ```javascript
+   const ws = new WebSocket('wss://yourdomain.com/ws');
+   ws.onopen = () => console.log('Connected');
+   ```
+
+3. **Performance Testing**:
+   - Use Lighthouse for performance scores
+   - Check WebSocket latency
+   - Verify API response times
+
+### 10.4 Monitoring
+
+1. **Cloudflare Analytics**:
+   - Traffic overview
+   - Security events
+   - Performance metrics
+
+2. **Vercel Analytics**:
+   - Build performance
+   - Runtime errors
+   - Edge function metrics
+
+3. **Custom Monitoring**:
+   - WebSocket connection status
+   - API endpoint health
+   - User experience metrics
 
 ## 11. Troubleshooting
 
