@@ -45,6 +45,7 @@ import {
 } from '../constants'
 import { ChartData, ChartDataset, Statistics, SimulationParams } from '../types'
 import { fontFamily } from '@/styles/fonts'
+import { getApiUrl, getWsUrl } from '../utils/env'
 
 // Register ChartJS components
 ChartJS.register(
@@ -176,6 +177,7 @@ export default function Simulate() {
             }
         ]
     })
+    const [redrawKey, setRedrawKey] = useState<number>(0);
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const wsRef = useRef<WebSocket | null>(null)
@@ -601,9 +603,9 @@ export default function Simulate() {
             // Add timeout to axios request to prevent hanging indefinitely
             try {
                 console.log('Sending request to /api/simulate with payload:', validatedValues);
-                console.log('API URL:', axios.defaults.baseURL || 'Using relative URL');
+                console.log('API URL:', getApiUrl() || 'Using relative URL');
 
-                const response = await axios.post('/api/simulate', validatedValues, {
+                const response = await axios.post(`${getApiUrl()}/simulate`, validatedValues, {
                     timeout: dynamicTimeout, // Dynamic timeout based on grid size
                     headers: {
                         'Content-Type': 'application/json'
@@ -796,7 +798,7 @@ export default function Simulate() {
 
         // Use secure WebSocket if on HTTPS
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const wsUrl = `${protocol}//${window.location.host}/ws/simulate/${simId}`
+        const wsUrl = `${getWsUrl()}/simulate/${simId}`
 
         console.log(`WebSocket URL: ${wsUrl}`)
 
@@ -1217,6 +1219,13 @@ export default function Simulate() {
         }
     }
 
+    // Fix: Force grid redraw when exiting fullscreen by incrementing redrawKey
+    useEffect(() => {
+        if (!isGridFullscreen) {
+            setRedrawKey((k: number) => k + 1);
+        }
+    }, [isGridFullscreen]);
+
     return (
         <>
             <Head>
@@ -1315,6 +1324,7 @@ export default function Simulate() {
                             <div className="w-full h-[calc(100%-40px)] flex items-center justify-center">
                                 <canvas
                                     ref={canvasRef}
+                                    key={redrawKey}
                                     className="max-w-full max-h-full bg-gray-800"
                                 ></canvas>
                             </div>
@@ -1969,6 +1979,7 @@ export default function Simulate() {
                                             <div className="aspect-square bg-gray-100 dark:bg-gray-800 border rounded-md overflow-hidden">
                                                 <canvas
                                                     ref={canvasRef}
+                                                    key={redrawKey}
                                                     width={400}
                                                     height={400}
                                                     className="w-full h-full bg-gray-100 dark:bg-gray-800"

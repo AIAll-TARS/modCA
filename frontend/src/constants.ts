@@ -30,16 +30,16 @@ export const SUBSTRATE_CONSUMPTION_PROB = 0.3;  // Probability of substrate bein
 
 // Entity representation in grid
 export const EMPTY = 0;
-export const PREY = 2;
-export const PREDATOR = 1;
+export const PREY = 1;
+export const PREDATOR = 2;
 export const SUBSTRATE = 3;
 
 // Visualization colors
 export const COLORS = {
-    [EMPTY]: '#f3f4f6',
-    [PREY]: '#eab308',
-    [PREDATOR]: '#ef4444',
-    [SUBSTRATE]: '#22c55e'
+    [EMPTY]: 'black',
+    [PREY]: '#f7dc6f',
+    [PREDATOR]: '#e74c3c',
+    [SUBSTRATE]: '#27ae60'
 };
 
 // Chart colors with transparency
