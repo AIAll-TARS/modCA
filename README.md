@@ -2,6 +2,14 @@
 
 A sophisticated web-based cellular automata simulation platform for modeling predator-prey-substrate ecosystem dynamics. This project implements advanced cellular automata concepts, drawing inspiration from the research paper ["Cellular Automata as the Basis of Fast and Reliable Material Models"](http://www.ptmts.org.pl/2004-3-burzynski-in.pdf) by T. Burzyński, W. Kuś.
 
+## Live Demo
+Visit our live deployment at:
+- **Main Application**: https://janis7ewski.org
+- **Documentation**: https://janis7ewski.org/docs
+- **API**: https://janis7ewski.org/api
+
+The application is hosted on Vercel with Cloudflare for DNS management and security. Domain registered on April 21, 2025.
+
 ## Overview
 
 modCA_7web provides an interactive environment for exploring complex ecosystem dynamics through cellular automata simulations. While the frontend interface is intentionally minimalistic, the underlying simulation engine is powerful and sophisticated, similar in concept to advanced cellular automata platforms like [Golly](https://golly.sourceforge.io/), though focused specifically on predator-prey-substrate interactions.
