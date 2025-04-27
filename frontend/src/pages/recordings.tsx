@@ -3,6 +3,7 @@ import Head from 'next/head'
 import { Inter } from 'next/font/google'
 import { useRouter } from 'next/router'
 import axios from 'axios'
+import { getApiUrl } from '../utils/env'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,7 +32,7 @@ export default function Recordings() {
         async function fetchRecordings() {
             try {
                 setLoading(true)
-                const response = await axios.get('/api/recordings')
+                const response = await axios.get(`${getApiUrl()}/recordings`)
                 setRecordings(response.data.recordings || [])
             } catch (error) {
                 console.error('Error fetching recordings:', error)
@@ -53,7 +54,7 @@ export default function Recordings() {
         async function loadRecording() {
             try {
                 setLoading(true)
-                const response = await axios.get(`/api/recordings/${selectedRecording}`)
+                const response = await axios.get(`${getApiUrl()}/recordings/${selectedRecording}`)
 
                 if (response.data && response.data.status === 'success') {
                     setRecordingData(response.data)
@@ -183,7 +184,7 @@ export default function Recordings() {
         }
 
         try {
-            const response = await axios.delete(`/api/recordings/${recordingId}`)
+            const response = await axios.delete(`${getApiUrl()}/recordings/${recordingId}`)
 
             if (response.data && response.data.status === 'success') {
                 // Remove from list and clear selection if it was selected
