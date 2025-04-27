@@ -2,6 +2,7 @@ import { fontFamily } from '@/styles/fonts'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { getApiUrl } from '../utils/env'
 
 const styles = {
     main: {
@@ -109,7 +110,7 @@ export default function Home() {
                                 </p>
                             </div>
                             <button
-                                onClick={() => window.open('http://localhost:8000/docs', '_blank')}
+                                onClick={() => window.open(getApiUrl().replace(/\/api$/, '/docs'), '_blank')}
                                 className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
                             >
                                 View Docs
