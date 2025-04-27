@@ -14,6 +14,69 @@
 10. [Deployment](#10-deployment)
 11. [Troubleshooting](#11-troubleshooting)
 
+## 0. Git Repository Structure and Workflow
+
+## 0.1 Branching Model
+
+- **dev** — Main integration branch for ongoing development and testing.
+- **deploy** (or **production**) — Deployment-ready branch, only updated from tested `dev`.
+- **master** — (Optional) Stable, tagged releases or long-term reference.
+- **feature/<name>** — For new features.
+- **bugfix/<name>** — For bug fixes.
+- **exp/<name>** — For experiments or prototypes.
+- **release/<version>**, **hotfix/<name>** — (Optional) For prepping releases or urgent fixes.
+
+## 0.2 Directory Layout
+
+```
+modca_7web/
+├── backend/                # FastAPI app, Python code, requirements.txt, venv/
+│   └── app/
+├── frontend/               # Next.js app, package.json, src/
+│   └── src/
+├── deployment/             # Deployment scripts, configs, specs
+├── docs/                   # Documentation, architecture, API docs
+├── recordings/             # Simulation recordings (if versioned)
+├── .github/                # GitHub Actions, issue templates, etc.
+├── .gitignore
+├── README.md
+├── DEVELOPER_DOCUMENTATION.md
+├── QUICK_START.md
+└── ... (other project files)
+```
+
+## 0.3 Commit/PR Workflow
+
+- All work is done in feature/bugfix/exp branches.
+- Merge to `dev` via Pull Request (PR), with code review and CI checks.
+- When `dev` is stable, fast-forward or merge to `deploy` for production.
+- Tag releases on `deploy` or `master` (e.g., `v1.0.0`).
+
+## 0.4 Environment/Config Management
+
+- Use `.env.local`, `.env.production`, etc., and never commit secrets.
+- Deployment-specific configs/scripts live in `deployment/`.
+
+## 0.5 Branch Table
+
+| Branch         | Purpose                        | Who/What Uses It         |
+|----------------|-------------------------------|--------------------------|
+| dev            | Main development/integration   | Developers, CI           |
+| deploy         | Production deployment          | CI/CD, Vercel, prod      |
+| feature/*      | Isolated feature work          | Developers               |
+| bugfix/*       | Bug fixes                      | Developers               |
+| exp/*          | Experiments                    | Developers               |
+| master         | (Optional) stable reference    | Tagging, releases        |
+
+## 0.6 Rationale
+
+- **Isolation:** Dev and deploy are always cleanly separated.
+- **Safety:** Production is never polluted by half-baked features.
+- **Clarity:** Feature/bugfix/exp branches are self-explanatory.
+- **Scalability:** Easy to add CI/CD, code review, and release automation.
+
+---
+
 ## 1. Project Overview
 
 modca_7web is a web-based cellular automata simulation platform that models predator-prey-substrate ecosystem dynamics. The application uses a grid-based approach where predators, prey, and substrate interact according to probabilistic rules. This simulation allows users to explore how different parameters affect population dynamics over time.

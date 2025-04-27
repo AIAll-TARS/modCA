@@ -496,4 +496,30 @@ If you encounter issues:
 - Backend: `cd backend && venv\Scripts\activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
 - Frontend: `cd frontend && npm run dev`
 
-For more detailed troubleshooting, refer to the [Developer Documentation](DEVELOPER_DOCUMENTATION.md). 
+For more detailed troubleshooting, refer to the [Developer Documentation](DEVELOPER_DOCUMENTATION.md).
+
+## Repository Structure & Workflow
+
+- **dev**: Main integration branch for development and testing.
+- **deploy**: Deployment/production branch, updated from tested dev.
+- **feature/*, bugfix/*, exp/**: For features, bugfixes, and experiments.
+- **master**: (Optional) Stable, tagged releases.
+
+**Directory layout:**
+```
+modca_7web/
+├── backend/      # FastAPI backend
+├── frontend/     # Next.js frontend
+├── deployment/   # Deployment scripts/configs
+├── docs/         # Documentation
+├── recordings/   # Simulation recordings
+├── .github/      # GitHub Actions, templates
+├── ...
+```
+
+**Workflow:**
+- Develop in feature/bugfix/exp branches, merge to dev via PR.
+- Deploy from deploy branch (branched from dev).
+- Tag releases on deploy or master.
+
+See `DEVELOPER_DOCUMENTATION.md` for full details. 
