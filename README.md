@@ -41,6 +41,11 @@ npm run dev -- --port 3001
 - Access the app at http://localhost:3000 (or 3001 if used)
 - The backend API is at http://localhost:8000
 
+**Troubleshooting:**
+- If you get 'address already in use', kill the process using the port (e.g., `lsof -i :8000` or `lsof -i :3000` then `kill <pid>`)
+- Always activate the Python venv before running backend commands
+- Both backend and frontend must be running for the app to work locally
+
 ## System Requirements
 
 ### Recommended Setup (WSL2)
