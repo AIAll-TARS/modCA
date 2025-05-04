@@ -13,7 +13,7 @@ services:
       - COMPOSE_BAKE=true
     # Mount persistent host directory for SQLite DB
     volumes:
-      - ./backend/sqlite_data:/home/modcauser/app
+      - ./backend/sqlite_data/settings.db:/home/modcauser/app/settings.db
     expose:
       - "8000"
     networks:

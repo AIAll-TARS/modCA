@@ -3,24 +3,25 @@ FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+  PYTHONUNBUFFERED=1 \
+  PYTHONPATH=/home/modcauser
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
+  build-essential \
+  libsqlite3-dev \
+  && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user
 RUN useradd -m modcauser
-WORKDIR /home/modcauser/app
+WORKDIR /home/modcauser
 
 # Copy requirements and install
 COPY --chown=modcauser:modcauser requirements.txt ./
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY --chown=modcauser:modcauser app ./app
+COPY --chown=modcauser:modcauser app /home/modcauser/app
 
 # Copy database file if exists (optional, for initial setup)
 COPY --chown=modcauser:modcauser settings.db ./settings.db
@@ -33,7 +34,7 @@ EXPOSE 8000
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:8000/ || exit 1
+  CMD curl -f http://localhost:8000/api || exit 1
 
 # Switch to non-root user
 USER modcauser
