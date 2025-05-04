@@ -128,4 +128,83 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 
 ---
 
-For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`. 
+## 7. Containerized Backend Deployment (Docker & NGINX)
+
+### Updated Backend Architecture
+
+```
+                                  Users (Web Browsers)
+                                          ↓
+                                    Cloudflare CDN
+                                          ↓
+                                    HTTPS/SSL (443)
+                                          ↓
+                               janis7ewski.org domain
+                                          ↓
+                                ┌────────────────────┐
+                                │     Vercel Edge    │
+                                │   (Next.js Frontend│
+                                └──────────┬─────────┘
+                                           │
+                              ┌────────────▼────────────┐
+                              │ VPS (Hetzner/DO/EC2...) │
+                              │    Linux + Docker       │
+                              └────────────┬────────────┘
+                                           │
+       ┌───────────────────────────────────┴────────────────────────────────────┐
+       │                            NGINX Reverse Proxy                         │
+       │                           (Listening on 443)                           │
+       │                                                                       │
+       │   ┌───────────────┐       ┌──────────────────┐        ┌────────────┐  │
+       │   │ /api requests │──────►│  FastAPI Backend │◄──────►│  SQLite DB │  │
+       │   └───────────────┘       │  Docker Container │        └────────────┘  │
+       │                           │  Uvicorn (Gunicorn) │                     │
+       │                           └──────────────────┘                        │
+       │                                                                       │
+       │   ┌───────────────┐                                                 │
+       │   │ /ws requests  │──── WebSocket Upgrade ───────────────────────────┘
+       │   └───────────────┘
+       └───────────────────────────────────────────────────────────────────────┘
+```
+
+### Components
+- **Cloudflare CDN**: Handles DNS, SSL termination, DDoS protection, and caching.
+- **Vercel Edge (Next.js Frontend)**: Serves the frontend UI and static assets.
+- **VPS (Linux + Docker)**: Hosts the backend stack in containers for portability and reproducibility.
+- **NGINX Reverse Proxy**: Listens on 443, terminates SSL (if not handled by Cloudflare), and routes requests:
+    - `/api` → FastAPI backend (Uvicorn/Gunicorn, Dockerized)
+    - `/ws` → FastAPI WebSocket endpoint (WebSocket upgrade supported)
+    - `/`   → (optionally) static frontend, if needed
+- **FastAPI Backend (Docker Container)**: Runs the simulation API and WebSocket server, connects to SQLite DB.
+- **SQLite DB**: Stores simulation settings and recordings, mounted as a Docker volume for persistence.
+
+### Containerization Plan
+- **Dockerfile**: Will be added for the FastAPI backend (Python, Uvicorn/Gunicorn, requirements).
+- **docker-compose.yml**: Will orchestrate backend and NGINX containers, network, and volumes.
+- **NGINX Config**: See `deployment/config/nginx/modca.conf` for production-ready reverse proxy setup.
+
+### Deployment Flow
+1. Build and run containers on the VPS using Docker Compose.
+2. NGINX listens on 443, proxies API and WebSocket traffic to the backend container.
+3. Cloudflare manages SSL, DNS, and security at the edge.
+4. Vercel serves the frontend, which communicates with the backend via `/api` and `/ws` endpoints.
+
+### Next Steps
+- Add Dockerfile and docker-compose.yml to the repository.
+- Document build and deployment commands for the backend stack.
+- Ensure persistent storage for SQLite DB via Docker volumes.
+- Monitor and tune NGINX and backend performance as needed.
+
+For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
+
+---
+
+### 8. Docker Compose v2+ Notes and Troubleshooting
+
+- The `version` attribute has been removed from `docker-compose.yml` for compatibility with Docker Compose v2+ (recommended by Docker).
+- The backend service sets `COMPOSE_BAKE=true` to enable buildx bake for faster, more efficient builds.
+- If you see a warning about the version attribute, ensure you are using Docker Compose v2 and that the `version` line is removed.
+- If you encounter a port 80 conflict, ensure no other service (such as system NGINX) is running on port 80: `sudo systemctl stop nginx`.
+- If you see Docker permission errors, make sure your user is in the `docker` group and you have logged out and back in after running `sudo usermod -aG docker $USER`.
+
+--- 

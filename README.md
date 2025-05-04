@@ -522,4 +522,14 @@ modca_7web/
 - Deploy from deploy branch (branched from dev).
 - Tag releases on deploy or master.
 
-See `DEVELOPER_DOCUMENTATION.md` for full details. 
+See `DEVELOPER_DOCUMENTATION.md` for full details.
+
+## Deployment & Production
+
+The backend now supports containerized deployment using Docker and NGINX for production environments. This enables easy deployment on any Linux VPS (Hetzner, DigitalOcean, AWS EC2, etc.) with Cloudflare and Vercel integration. See `deployment/DEPLOYMENT.md` for the latest architecture and step-by-step instructions.
+
+- The `docker-compose.yml` file is now versionless for Docker Compose v2+ (no `version` attribute).
+- The backend service uses `COMPOSE_BAKE=true` for faster builds.
+- If you see a port 80 conflict, stop any existing NGINX or web server: `sudo systemctl stop nginx`.
+- For Docker permission errors, ensure your user is in the `docker` group and you have logged out and back in.
+- See `deployment/DEPLOYMENT.md` for full troubleshooting and deployment details. 
