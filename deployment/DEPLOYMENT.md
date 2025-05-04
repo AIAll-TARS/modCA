@@ -207,4 +207,32 @@ For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
 - If you encounter a port 80 conflict, ensure no other service (such as system NGINX) is running on port 80: `sudo systemctl stop nginx`.
 - If you see Docker permission errors, make sure your user is in the `docker` group and you have logged out and back in after running `sudo usermod -aG docker $USER`.
 
+---
+
+## 9. Deployment Validation & Troubleshooting
+
+### API Test
+- To verify the backend API is working, run:
+  curl -i -X POST http://localhost/api/simulate -H 'Content-Type: application/json' -d '{...}'
+- A 200 OK response with simulation data confirms the backend is healthy and NGINX is proxying correctly.
+
+### WebSocket Test
+- The WebSocket endpoint is available at ws://<your-domain-or-ip>/ws/simulate/<simulation_id>
+- Use a tool like websocat or a browser-based WebSocket client to connect and interact.
+
+### Healthcheck
+- The backend Dockerfile healthcheck now uses /api to match the FastAPI root endpoint.
+- If the backend container is 'unhealthy', ensure the healthcheck path matches your API root.
+
+### NGINX Docker Networking
+- NGINX proxy_pass directives must use the backend Docker Compose service name (modca_backend:8000), not 127.0.0.1.
+- This enables inter-container communication in Docker Compose.
+
+### 502 Bad Gateway Troubleshooting
+- If you see 502 errors:
+  - Ensure the backend container is healthy (docker compose ps)
+  - Check backend logs for import or runtime errors
+  - Confirm NGINX is proxying to the correct service name
+  - Make sure no system NGINX is running on port 80
+
 --- 
