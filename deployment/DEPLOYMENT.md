@@ -69,30 +69,31 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 
 ---
 
-## 3. Current Deployment Status
+## 3. Current Deployment Status (Updated)
 
-- **Frontend URL**: https://janis7ewski.org
-- **WebSocket URL**: wss://janis7ewski.org/ws
-- **API URL**: https://janis7ewski.org/api
-- **Build Status**: ✅ Successful (Vercel)
+- **Frontend URL**: https://janis7ewski.org (Vercel)
+- **WebSocket URL**: wss://ws.janis7ewski.org/ws (Hetzner VPS)
+- **API URL**: https://ws.janis7ewski.org/api (Hetzner VPS)
+- **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), Ubuntu 24.04, system updated, firewall enabled, Docker & Docker Compose installed, ready for containerized deployment.
 - **Monitoring**: Cloudflare & Vercel analytics enabled
 - **Security**: SSL/TLS, DDoS, security headers
 - **Known Issues**: Vercel reverse proxy warning (expected), some npm deprecation notices (non-critical)
-- **Next Steps**: Monitor WebSocket, caching, security audits, performance tuning
+- **Next Steps**: Deploy backend stack with Docker Compose, obtain SSL, enable Cloudflare proxy, monitor endpoints.
 
 ---
 
-## 4. Domain & DNS Information
+## 4. Domain & DNS Information (Updated)
 
 - **Domain Name**: janis7ewski.org
 - **Registrar**: Cloudflare, Inc.
 - **DNS Provider**: Cloudflare
 - **Nameservers**: aldo.ns.cloudflare.com, venus.ns.cloudflare.com
 - **DNS Records:**
-  - A @ → 76.76.21.21 (proxied)
+  - A @ → 76.76.21.21 (Vercel, proxied)
   - CNAME www → cname.vercel-dns.com (proxied)
   - TXT _vercel → [verification] (DNS only)
-- **SSL Certificate**: Managed by Cloudflare
+  - A ws → 49.13.233.118 (Hetzner VPS, backend/API, set to DNS only for SSL setup, then proxied)
+- **SSL Certificate**: Managed by Cloudflare (frontend), Let's Encrypt (backend)
 - **Domain Control Panel**: https://dash.cloudflare.com
 - **Admin Contact**: AIAll@janis7ewski.org
 - **Registration Date**: April 21, 2025
@@ -128,7 +129,7 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 
 ---
 
-## 7. Containerized Backend Deployment (Docker & NGINX)
+## 7. Containerized Backend Deployment (Docker & NGINX) (Updated)
 
 ### Updated Backend Architecture
 
@@ -147,7 +148,7 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
                                 └──────────┬─────────┘
                                            │
                               ┌────────────▼────────────┐
-                              │ VPS (Hetzner/DO/EC2...) │
+                              │ Hetzner VPS (Ubuntu)    │
                               │    Linux + Docker       │
                               └────────────┬────────────┘
                                            │
@@ -166,6 +167,9 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
        │   └───────────────┘
        └───────────────────────────────────────────────────────────────────────┘
 ```
+
+- **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), system updated, firewall enabled, Docker & Docker Compose installed.
+- **Deployment**: Use Docker Compose for backend and NGINX containers.
 
 ### Components
 - **Cloudflare CDN**: Handles DNS, SSL termination, DDoS protection, and caching.
@@ -199,25 +203,23 @@ For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
 
 ---
 
-### 8. Docker Compose v2+ Notes and Troubleshooting
+## 8. Docker Compose v2+ Notes and Troubleshooting (Updated)
 
-- The `version` attribute has been removed from `docker-compose.yml` for compatibility with Docker Compose v2+ (recommended by Docker).
-- The backend service sets `COMPOSE_BAKE=true` to enable buildx bake for faster, more efficient builds.
-- If you see a warning about the version attribute, ensure you are using Docker Compose v2 and that the `version` line is removed.
-- If you encounter a port 80 conflict, ensure no other service (such as system NGINX) is running on port 80: `sudo systemctl stop nginx`.
-- If you see Docker permission errors, make sure your user is in the `docker` group and you have logged out and back in after running `sudo usermod -aG docker $USER`.
+- The backend is now deployed on Hetzner VPS (49.13.233.118).
+- Use the public IP or ws.janis7ewski.org for API/WebSocket endpoint testing.
+- All other notes remain as before.
 
 ---
 
-## 9. Deployment Validation & Troubleshooting
+## 9. Deployment Validation & Troubleshooting (Updated)
 
 ### API Test
 - To verify the backend API is working, run:
-  curl -i -X POST http://localhost/api/simulate -H 'Content-Type: application/json' -d '{...}'
+  curl -i -X POST https://ws.janis7ewski.org/api/simulate -H 'Content-Type: application/json' -d '{...}'
 - A 200 OK response with simulation data confirms the backend is healthy and NGINX is proxying correctly.
 
 ### WebSocket Test
-- The WebSocket endpoint is available at ws://<your-domain-or-ip>/ws/simulate/<simulation_id>
+- The WebSocket endpoint is available at wss://ws.janis7ewski.org/ws/simulate/<simulation_id>
 - Use a tool like websocat or a browser-based WebSocket client to connect and interact.
 
 ### Healthcheck
@@ -234,5 +236,13 @@ For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
   - Check backend logs for import or runtime errors
   - Confirm NGINX is proxying to the correct service name
   - Make sure no system NGINX is running on port 80
+
+---
+
+## Hetzner VPS Deployment Checklist (modCA_7web) (Updated)
+
+- System update and firewall configuration may already be complete.
+- **Current production backend IP:** `49.13.233.118`
+- Follow the checklist for Docker, DNS, SSL, and Cloudflare proxy as described above.
 
 --- 
