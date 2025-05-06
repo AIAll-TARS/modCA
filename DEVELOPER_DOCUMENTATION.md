@@ -465,7 +465,7 @@ const SimulationContext = React.createContext<{
    ```bash
    cd backend
    python -m venv venv
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
+   source venv/bin/activate
    pip install -r requirements.txt
    ```
 3. Set up frontend:
@@ -653,6 +653,14 @@ const SimulationContext = React.createContext<{
    - API endpoint health
    - User experience metrics
 
+### 10.5 Containerized Backend Deployment (Docker & NGINX)
+
+For the latest backend deployment architecture using Docker and NGINX (including diagrams and step-by-step instructions), see `deployment/DEPLOYMENT.md`.
+
+- The backend can be deployed as a Docker container (FastAPI + Uvicorn/Gunicorn), orchestrated with NGINX as a reverse proxy.
+- See the NGINX config at `deployment/config/nginx/modca.conf`.
+- Use docker-compose to manage the backend and NGINX containers for production deployments on any Linux VPS.
+
 ## 11. Troubleshooting
 
 ### Common Backend Issues
@@ -714,3 +722,86 @@ npm run dev -- --port 3001
 
 - Access the app at http://localhost:3000 (or 3001 if used)
 - The backend API is at http://localhost:8000 
+
+## Hetzner VPS Deployment Checklist (modCA_7web)
+
+1. **Initial Server Setup**
+   - SSH into your Hetzner VPS as root: `ssh root@<your-vps-ip>`
+   - (If not already done) Update and upgrade system packages:
+     ```sh
+     apt update && apt upgrade -y
+     reboot
+     # Reconnect after reboot
+     ssh root@<your-vps-ip>
+     ```
+
+2. **Firewall Configuration**
+   - (If not already done) Enable UFW and allow essential ports:
+     ```sh
+     ufw allow 22/tcp
+     ufw allow 80/tcp
+     ufw allow 443/tcp
+     ufw enable
+     ufw status
+     ```
+
+3. **Docker & Docker Compose**
+   - Install Docker & Docker Compose if not present:
+     ```sh
+     curl -fsSL https://get.docker.com | sh
+     apt install docker-compose -y
+     ```
+
+4. **Project Setup**
+   - Install git if needed:
+     ```sh
+     apt install git -y
+     ```
+   - Clone your repository:
+     ```sh
+     git clone <your-repo-url>
+     cd modca_7web
+     ```
+
+5. **DNS Configuration**
+   - In Cloudflare, set the A record for your backend/API subdomain (e.g., ws.janis7ewski.org) to your Hetzner VPS IP (see your Hetzner dashboard for the assigned IP).
+   - Set the cloud to grey (DNS only) for SSL setup.
+   - Wait for DNS propagation.
+
+6. **Deploy Docker Stack**
+   - Adjust environment variables/configs as needed.
+   - Start services:
+     ```sh
+     docker compose up -d
+     ```
+
+7. **SSL Certificate**
+   - Stop NGINX container if running:
+     ```sh
+     docker ps
+     docker stop <nginx-container-id>
+     ```
+   - Obtain SSL certificate:
+     ```sh
+     sudo certbot certonly --standalone -d ws.janis7ewski.org
+     ```
+   - Mount certs into your NGINX container and update config as needed.
+
+8. **Re-enable Cloudflare Proxy**
+   - Set the cloud to orange for your subdomain in Cloudflare for security and performance.
+
+9. **Test Public Access**
+   - Verify API and WebSocket endpoints from an external network.
+   - Confirm SSL and Cloudflare proxy are working as expected.
+
+10. **Security & Maintenance**
+   - Consider creating a non-root user for daily operations.
+   - Regularly update system and Docker images.
+   - Monitor resource usage and logs.
+   - Back up data and configs regularly.
+
+**Note:**
+- Your Hetzner VPS IP can be found in the Hetzner Cloud Console or by running `ip a` or `hostname -I` on the server.
+- **Current production backend IP:** `49.13.233.118`
+- Your SSH key is the public key you provided to Hetzner during server creation (typically found in `~/.ssh/id_ed25519.pub` or `~/.ssh/id_rsa.pub` on your local machine).
+- For DNS, see the Cloudflare dashboard and ensure the correct A record is set for your backend/API endpoint. 

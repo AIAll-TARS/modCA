@@ -532,4 +532,86 @@ The backend now supports containerized deployment using Docker and NGINX for pro
 - The backend service uses `COMPOSE_BAKE=true` for faster builds.
 - If you see a port 80 conflict, stop any existing NGINX or web server: `sudo systemctl stop nginx`.
 - For Docker permission errors, ensure your user is in the `docker` group and you have logged out and back in.
-- See `deployment/DEPLOYMENT.md` for full troubleshooting and deployment details. 
+- See `deployment/DEPLOYMENT.md` for full troubleshooting and deployment details.
+
+## Hetzner VPS Deployment Checklist (modCA_7web)
+
+1. **Initial Server Setup**
+   - SSH into your Hetzner VPS as root: `ssh root@<your-vps-ip>`
+   - (If not already done) Update and upgrade system packages:
+     ```sh
+     apt update && apt upgrade -y
+     reboot
+     # Reconnect after reboot
+     ssh root@<your-vps-ip>
+     ```
+
+2. **Firewall Configuration**
+   - (If not already done) Enable UFW and allow essential ports:
+     ```sh
+     ufw allow 22/tcp
+     ufw allow 80/tcp
+     ufw allow 443/tcp
+     ufw enable
+     ufw status
+     ```
+
+3. **Docker & Docker Compose**
+   - Install Docker & Docker Compose if not present:
+     ```sh
+     curl -fsSL https://get.docker.com | sh
+     apt install docker-compose -y
+     ```
+
+4. **Project Setup**
+   - Install git if needed:
+     ```sh
+     apt install git -y
+     ```
+   - Clone your repository:
+     ```sh
+     git clone <your-repo-url>
+     cd modca_7web
+     ```
+
+5. **DNS Configuration**
+   - In Cloudflare, set the A record for your backend/API subdomain (e.g., ws.janis7ewski.org) to your Hetzner VPS IP (see your Hetzner dashboard for the assigned IP).
+   - Set the cloud to grey (DNS only) for SSL setup.
+   - Wait for DNS propagation.
+
+6. **Deploy Docker Stack**
+   - Adjust environment variables/configs as needed.
+   - Start services:
+     ```sh
+     docker compose up -d
+     ```
+
+7. **SSL Certificate**
+   - Stop NGINX container if running:
+     ```sh
+     docker ps
+     docker stop <nginx-container-id>
+     ```
+   - Obtain SSL certificate:
+     ```sh
+     sudo certbot certonly --standalone -d ws.janis7ewski.org
+     ```
+   - Mount certs into your NGINX container and update config as needed.
+
+8. **Re-enable Cloudflare Proxy**
+   - Set the cloud to orange for your subdomain in Cloudflare for security and performance.
+
+9. **Test Public Access**
+   - Verify API and WebSocket endpoints from an external network.
+   - Confirm SSL and Cloudflare proxy are working as expected.
+
+10. **Security & Maintenance**
+   - Consider creating a non-root user for daily operations.
+   - Regularly update system and Docker images.
+   - Monitor resource usage and logs.
+   - Back up data and configs regularly.
+
+**Note:**
+- Your Hetzner VPS IP can be found in the Hetzner Cloud Console or by running `ip a` or `hostname -I` on the server.
+- **Current production backend IP:** `49.13.233.118`
+- Your SSH key is the public key you provided to Hetzner during server creation (typically found in `~/.ssh/id_ed25519.pub` or `~/.ssh/id_rsa.pub` on your local machine). 
