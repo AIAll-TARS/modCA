@@ -75,6 +75,7 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 - **WebSocket URL**: wss://ws.janis7ewski.org/ws (Hetzner VPS)
 - **API URL**: https://ws.janis7ewski.org/api (Hetzner VPS)
 - **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), Ubuntu 24.04, system updated, firewall enabled, Docker & Docker Compose installed, ready for containerized deployment.
+- **Note:** Docker and Docker Compose are not yet installed. Proceed to the next section for installation instructions.
 - **Monitoring**: Cloudflare & Vercel analytics enabled
 - **Security**: SSL/TLS, DDoS, security headers
 - **Known Issues**: Vercel reverse proxy warning (expected), some npm deprecation notices (non-critical)
@@ -169,6 +170,7 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 ```
 
 - **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), system updated, firewall enabled, Docker & Docker Compose installed.
+- **Note:** Docker and Docker Compose are not yet installed. Proceed to the next section for installation instructions.
 - **Deployment**: Use Docker Compose for backend and NGINX containers.
 
 ### Components
