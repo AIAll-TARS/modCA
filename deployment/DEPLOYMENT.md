@@ -75,11 +75,20 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 - **WebSocket URL**: wss://ws.janis7ewski.org/ws (Hetzner VPS)
 - **API URL**: https://ws.janis7ewski.org/api (Hetzner VPS)
 - **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), Ubuntu 24.04, system updated, firewall enabled, Docker & Docker Compose installed, ready for containerized deployment.
-- **Note:** Docker and Docker Compose are not yet installed. Proceed to the next section for installation instructions.
+- **Current Progress**:
+  - ✅ Docker (v28.1.1) and Docker Compose (v2.35.1) installed
+  - ✅ Configuration files created and copied to VPS
+  - ✅ Backend code deployed to VPS
+  - 🔄 Docker Compose deployment in progress
+- **Next Steps**:
+  1. Complete Docker Compose deployment
+  2. Verify services are running correctly
+  3. Test API and WebSocket endpoints
+  4. Configure SSL certificates
+  5. Enable Cloudflare proxy
 - **Monitoring**: Cloudflare & Vercel analytics enabled
 - **Security**: SSL/TLS, DDoS, security headers
 - **Known Issues**: Vercel reverse proxy warning (expected), some npm deprecation notices (non-critical)
-- **Next Steps**: Deploy backend stack with Docker Compose, obtain SSL, enable Cloudflare proxy, monitor endpoints.
 
 ---
 
@@ -246,5 +255,72 @@ For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
 - System update and firewall configuration may already be complete.
 - **Current production backend IP:** `49.13.233.118`
 - Follow the checklist for Docker, DNS, SSL, and Cloudflare proxy as described above.
+
+---
+
+## 10. Current Deployment Status & Debugging Progress (Updated)
+
+### Current Issue
+The backend service is failing to start with a `ModuleNotFoundError: No module named 'main'` error, despite our attempts to fix the Python module import path and directory structure.
+
+### Debugging Progress Timeline
+
+1. **Initial Setup**
+   - Backend deployed on Hetzner VPS (49.13.233.118)
+   - Using Docker Compose for containerization
+   - FastAPI application with Uvicorn/Gunicorn workers
+
+2. **First Attempt**
+   - Original Dockerfile used `gunicorn app.main:app` command
+   - Error: `ModuleNotFoundError: No module named 'main'`
+   - Switched to `uvicorn` for better error messages
+
+3. **Directory Structure Investigation**
+   - Confirmed local structure:
+     ```
+     backend/
+     ├── app/
+     │   ├── main.py
+     │   ├── constants.py
+     │   └── db_handler.py
+     ├── Dockerfile
+     └── requirements.txt
+     ```
+
+4. **Dockerfile Modifications**
+   - Added PYTHONPATH environment variable
+   - Added debugging information in startup script
+   - Modified file copying strategy to be more explicit
+   - Added directory structure printing during build
+
+5. **Volume Mounting Changes**
+   - Removed volume mount for backend directory to prevent conflicts
+   - Kept only SQLite data volume mount
+
+6. **Current Dockerfile Features**
+   - Uses Python 3.11-slim base image
+   - Creates non-root user (appuser)
+   - Explicit file copying:
+     ```dockerfile
+     COPY --chown=appuser:appuser app/ /app/app/
+     COPY --chown=appuser:appuser *.py ./
+     COPY --chown=appuser:appuser *.txt ./
+     COPY --chown=appuser:appuser *.db ./
+     ```
+   - Sets PYTHONPATH=/app
+   - Includes comprehensive debugging output
+
+### Current Status
+- The container builds successfully
+- The application fails to start with the same module import error
+- We've confirmed the app directory structure is correct
+- We've verified the Python path is set correctly
+- We've removed potential volume mount conflicts
+
+### Next Steps
+1. Verify the actual contents of the container at runtime
+2. Consider adding a simple test Python script to verify imports
+3. Check if the app directory is being copied correctly during build
+4. Verify the Python environment within the container
 
 --- 
