@@ -71,31 +71,107 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 
 ## 3. Current Deployment Status (Updated)
 
-- **Frontend URL**: https://janis7ewski.org (Vercel)
-- **WebSocket URL**: wss://ws.janis7ewski.org/ws (Hetzner VPS)
-- **API URL**: https://ws.janis7ewski.org/api (Hetzner VPS)
-- **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), Ubuntu 24.04, system updated, firewall enabled, Docker & Docker Compose installed.
-- **Current Progress**:
-  - ✅ Docker (v28.1.1) and Docker Compose (v2.35.1) installed
-  - ✅ Configuration files created and copied to VPS
-  - ✅ Backend code deployed to VPS
-  - ✅ Docker Compose deployment configured and running
-  - ✅ Nginx reverse proxy configured and running
-  - ✅ Backend service running with FastAPI
-  - 🔄 SSL/HTTPS configuration pending
-- **Next Steps**:
-  1. Test API and WebSocket endpoints
-  2. Configure SSL certificates with Let's Encrypt
-  3. Enable Cloudflare proxy
-  4. Monitor system performance
-- **Recent Changes**:
-  - Reorganized project structure for better deployment management
-  - Fixed nginx configuration syntax issues
-  - Implemented proper Docker networking between services
-  - Removed SSL configuration temporarily for initial HTTP setup
-  - Added health checks for backend service
-- **Monitoring**: Cloudflare & Vercel analytics enabled
-- **Security**: Basic security measures in place, SSL/TLS pending
+### URLs
+- Frontend: https://janis7ewski.org
+- WebSocket: wss://ws.janis7ewski.org/ws
+- API: https://ws.janis7ewski.org/api
+
+### Backend Hosting
+- VPS: Hetzner Cloud (49.13.233.118)
+- OS: Ubuntu 24.04 LTS
+- Docker: 26.1.3
+- Docker Compose: v2.27.0
+
+### Current Progress
+- ✅ Project structure reorganized
+- ✅ Docker configuration fixed
+- ✅ Nginx configuration updated
+- ✅ Health check endpoint working
+- ✅ API endpoints accessible
+- ✅ WebSocket endpoint configured
+- ⏳ SSL certificates pending
+- ⏳ Cloudflare proxy pending
+- ⏳ Monitoring setup pending
+
+## Recent Changes
+
+### Nginx Configuration
+- Fixed API endpoint routing by preserving `/api` prefix
+- Updated WebSocket proxy configuration
+- Configured health check endpoint
+- Added rate limiting (10 requests per second)
+
+### Docker Configuration
+- Updated health check to use correct endpoint
+- Fixed container networking
+- Added proper volume mounts
+
+### API Endpoints
+- `/health` - Health check endpoint
+- `/api/settings` - Get/save simulation settings
+- `/api/simulate` - Start/control simulations
+- `/api/recordings` - Manage simulation recordings
+- `/ws` - WebSocket connection for real-time updates
+
+## Next Steps
+
+1. SSL Configuration
+   - [ ] Install Certbot
+   - [ ] Obtain Let's Encrypt certificates
+   - [ ] Configure SSL in Nginx
+   - [ ] Set up auto-renewal
+
+2. Cloudflare Setup
+   - [ ] Enable Cloudflare proxy
+   - [ ] Configure SSL/TLS settings
+   - [ ] Set up WebSocket proxy
+   - [ ] Configure caching rules
+
+3. Monitoring
+   - [ ] Set up basic system monitoring
+   - [ ] Configure application metrics
+   - [ ] Set up alerting
+   - [ ] Monitor WebSocket performance
+
+4. Performance Optimization
+   - [ ] Tune Nginx settings
+   - [ ] Optimize Docker configuration
+   - [ ] Configure caching
+   - [ ] Set up load balancing if needed
+
+## Troubleshooting
+
+### Common Issues
+1. API 404 errors
+   - Check if the endpoint exists in FastAPI
+   - Verify Nginx proxy configuration
+   - Check backend logs
+
+2. WebSocket connection issues
+   - Verify WebSocket proxy settings
+   - Check SSL configuration
+   - Monitor connection limits
+
+3. Container health checks
+   - Check container logs
+   - Verify endpoint accessibility
+   - Review health check configuration
+
+### Useful Commands
+```bash
+# Check container status
+docker compose ps
+
+# View container logs
+docker compose logs -f [service]
+
+# Test API endpoints
+curl -v http://49.13.233.118/api/settings
+curl -v http://49.13.233.118/health
+
+# Test WebSocket
+curl -v -N -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Host: ws.janis7ewski.org" -H "Origin: http://ws.janis7ewski.org" http://49.13.233.118/ws
+```
 
 ---
 
