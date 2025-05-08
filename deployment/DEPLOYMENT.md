@@ -1,3 +1,177 @@
+# Deployment Documentation
+
+## Current Deployment Status
+
+### URLs
+- Frontend: https://janis7ewski.org
+- WebSocket: wss://ws.janis7ewski.org/ws
+- API: https://ws.janis7ewski.org/api
+
+### Backend Hosting
+- VPS: Hetzner Cloud (49.13.233.118)
+- OS: Ubuntu 24.04 LTS
+- Docker: 26.1.3
+- Docker Compose: v2.27.0
+
+### Current Progress
+- ✅ Project structure reorganized
+- ✅ Docker configuration fixed
+- ✅ Nginx configuration updated
+- ✅ Health check endpoint working
+- ✅ API endpoints accessible
+- ✅ WebSocket endpoint configured
+- ⏳ SSL certificates pending
+- ⏳ Cloudflare proxy pending
+- ⏳ Monitoring setup pending
+
+## Recent Changes
+
+### Nginx Configuration
+- Fixed API endpoint routing by preserving `/api` prefix
+- Updated WebSocket proxy configuration
+- Configured health check endpoint
+- Added rate limiting (10 requests per second)
+
+### Docker Configuration
+- Updated health check to use correct endpoint
+- Fixed container networking
+- Added proper volume mounts
+
+### API Endpoints
+- `/health` - Health check endpoint
+- `/api/settings` - Get/save simulation settings
+- `/api/simulate` - Start/control simulations
+- `/api/recordings` - Manage simulation recordings
+- `/ws` - WebSocket connection for real-time updates
+
+## Next Steps
+
+1. DNS Configuration
+   - [ ] Update Cloudflare A record for ws.janis7ewski.org to 49.13.233.118
+   - [ ] Set proxy status to "DNS only" temporarily
+   - [ ] Wait for DNS propagation
+   - [ ] Verify DNS changes
+
+2. SSL Configuration
+   - [x] Install Certbot and python3-certbot-nginx
+   - [ ] Obtain Let's Encrypt certificates
+   - [ ] Configure SSL in Nginx
+   - [ ] Set up auto-renewal
+
+3. Cloudflare Setup
+   - [ ] Enable Cloudflare proxy
+   - [ ] Configure SSL/TLS settings
+   - [ ] Set up WebSocket proxy
+   - [ ] Configure caching rules
+
+4. Monitoring
+   - [ ] Set up basic system monitoring
+   - [ ] Configure application metrics
+   - [ ] Set up alerting
+   - [ ] Monitor WebSocket performance
+
+## Troubleshooting
+
+### Common Issues
+1. API 404 errors
+   - Check if the endpoint exists in FastAPI
+   - Verify Nginx proxy configuration
+   - Check backend logs
+
+2. WebSocket connection issues
+   - Verify WebSocket proxy settings
+   - Check SSL configuration
+   - Monitor connection limits
+
+3. Container health checks
+   - Check container logs
+   - Verify endpoint accessibility
+   - Review health check configuration
+
+### Useful Commands
+```bash
+# Check container status
+docker compose ps
+
+# View container logs
+docker compose logs -f [service]
+
+# Test API endpoints
+curl -v http://49.13.233.118/api/settings
+curl -v http://49.13.233.118/health
+
+# Test WebSocket
+curl -v -N -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Host: ws.janis7ewski.org" -H "Origin: http://ws.janis7ewski.org" http://49.13.233.118/ws
+
+# SSL Certificate Management
+certbot --nginx -d ws.janis7ewski.org
+certbot renew --dry-run
+```
+
+## DNS & SSL Status
+
+### Current DNS Configuration
+- ws.janis7ewski.org → 78.8.191.6 (needs update to 49.13.233.118)
+- Proxy status: Currently proxied (needs to be set to DNS only for SSL setup)
+
+### SSL Setup Progress
+- Certbot installed
+- Nginx plugin installed
+- Certificate request pending DNS update
+
+## Container Health Status
+
+### Backend Container
+- Status: Running
+- Health check: Passing
+- Ports: 8000 exposed
+- Volumes: Properly mounted
+
+### Nginx Container
+- Status: Running
+- Configuration: Valid
+- Ports: 80 exposed
+- SSL: Pending configuration
+
+## Recent API Tests
+
+### Successful Endpoints
+1. ✅ `/health` - Health check
+2. ✅ `/api/settings` - Settings management
+3. ✅ `/api/simulate` - Simulation creation
+4. ✅ `/api/simulate/{id}/status` - Status check
+5. ✅ `/api/simulate/{id}/step` - Step execution
+6. ✅ `/api/recordings` - Recordings list
+7. ✅ `/ws` - WebSocket endpoint (accessible)
+
+### Test Results
+- All API endpoints returning correct status codes
+- WebSocket endpoint properly configured for upgrades
+- Rate limiting working as expected
+- Health checks passing
+
+## Next Session Tasks
+
+1. DNS Updates
+   - Update Cloudflare A record
+   - Verify DNS propagation
+   - Test domain resolution
+
+2. SSL Configuration
+   - Complete certificate issuance
+   - Configure Nginx SSL settings
+   - Test HTTPS endpoints
+
+3. Cloudflare Integration
+   - Enable proxy
+   - Configure SSL/TLS
+   - Set up WebSocket proxy
+
+4. Monitoring Setup
+   - Install monitoring tools
+   - Configure metrics collection
+   - Set up alerts
+
 # modCA_7web Deployment Documentation
 
 ## 1. Repository Structure & Workflow (Summary)
