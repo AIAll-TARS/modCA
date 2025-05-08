@@ -74,21 +74,28 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 - **Frontend URL**: https://janis7ewski.org (Vercel)
 - **WebSocket URL**: wss://ws.janis7ewski.org/ws (Hetzner VPS)
 - **API URL**: https://ws.janis7ewski.org/api (Hetzner VPS)
-- **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), Ubuntu 24.04, system updated, firewall enabled, Docker & Docker Compose installed, ready for containerized deployment.
+- **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), Ubuntu 24.04, system updated, firewall enabled, Docker & Docker Compose installed.
 - **Current Progress**:
   - ✅ Docker (v28.1.1) and Docker Compose (v2.35.1) installed
   - ✅ Configuration files created and copied to VPS
   - ✅ Backend code deployed to VPS
-  - 🔄 Docker Compose deployment in progress
+  - ✅ Docker Compose deployment configured and running
+  - ✅ Nginx reverse proxy configured and running
+  - ✅ Backend service running with FastAPI
+  - 🔄 SSL/HTTPS configuration pending
 - **Next Steps**:
-  1. Complete Docker Compose deployment
-  2. Verify services are running correctly
-  3. Test API and WebSocket endpoints
-  4. Configure SSL certificates
-  5. Enable Cloudflare proxy
+  1. Test API and WebSocket endpoints
+  2. Configure SSL certificates with Let's Encrypt
+  3. Enable Cloudflare proxy
+  4. Monitor system performance
+- **Recent Changes**:
+  - Reorganized project structure for better deployment management
+  - Fixed nginx configuration syntax issues
+  - Implemented proper Docker networking between services
+  - Removed SSL configuration temporarily for initial HTTP setup
+  - Added health checks for backend service
 - **Monitoring**: Cloudflare & Vercel analytics enabled
-- **Security**: SSL/TLS, DDoS, security headers
-- **Known Issues**: Vercel reverse proxy warning (expected), some npm deprecation notices (non-critical)
+- **Security**: Basic security measures in place, SSL/TLS pending
 
 ---
 

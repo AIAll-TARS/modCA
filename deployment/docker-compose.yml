@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: modca_backend
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../backend/sqlite_data:/app/sqlite_data
+    expose:
+      - "8000"
+    networks:
+      - modca_net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: modca_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx:/etc/nginx/conf.d
+    depends_on:
+      - backend
+    networks:
+      - modca_net
+
+networks:
+  modca_net:
+    driver: bridge
