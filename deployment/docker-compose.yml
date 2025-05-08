@@ -16,7 +16,7 @@ services:
     networks:
       - modca_net
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/api" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
       interval: 30s
       timeout: 10s
       retries: 3

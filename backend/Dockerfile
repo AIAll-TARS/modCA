@@ -6,6 +6,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
   build-essential \
+  curl \
   && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user and set up directories
@@ -17,13 +18,8 @@ RUN useradd -m -u 1000 appuser && \
 COPY --chown=appuser:appuser requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the app directory first
-COPY --chown=appuser:appuser app/ /app/app/
-
-# Copy any other necessary files
-COPY --chown=appuser:appuser *.py ./
-COPY --chown=appuser:appuser *.txt ./
-COPY --chown=appuser:appuser *.db ./
+# Copy the entire backend directory
+COPY --chown=appuser:appuser . /app/
 
 # Create test script to verify environment
 RUN echo '#!/usr/bin/env python3\n\
@@ -35,12 +31,6 @@ RUN echo '#!/usr/bin/env python3\n\
   print(f"Directory contents: {os.listdir(".")}")\n\
   print(f"App directory contents: {os.listdir("app")}")\n\
   print(f"Python path: {sys.path}")\n\
-  \n\
-  try:\n\
-  import app.main\n\
-  print("Successfully imported app.main")\n\
-  except Exception as e:\n\
-  print(f"Failed to import app.main: {e}")\n\
   \n\
   try:\n\
   from app.main import app\n\

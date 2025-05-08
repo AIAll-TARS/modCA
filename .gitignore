@@ -115,3 +115,6 @@ frontend/.env.production.local
 # Next.js
 .next/
 .next
+
+# Development scripts
+start_dev.sh
