@@ -28,8 +28,11 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./config/nginx:/etc/nginx/conf.d
+      - /etc/letsencrypt/live/ws.janis7ewski.org/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
+      - /etc/letsencrypt/live/ws.janis7ewski.org/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
     depends_on:
       - backend
     networks:
