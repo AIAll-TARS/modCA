@@ -478,6 +478,7 @@ If you encounter issues:
 - Ensure database file exists and has proper permissions
 - Check server logs for errors
 - NumPy installation issues: Try `pip install numpy --upgrade`
+- For HTTPS testing, ensure `jq` is installed: `sudo apt-get install jq`
 
 ### Frontend Issues
 - Verify backend server is running

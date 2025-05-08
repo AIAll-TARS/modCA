@@ -506,6 +506,23 @@ const SimulationContext = React.createContext<{
    pytest app/tests/test_api.py
    ```
 
+3. **HTTPS API Testing**: Test all API endpoints over HTTPS
+   ```
+   cd deployment/scripts
+   ./test_api_endpoints.sh
+   ```
+   This script tests:
+   - Basic API health check
+   - Simulation creation and management
+   - WebSocket connections
+   - Settings management
+   - All endpoints over HTTPS
+   
+   Requirements:
+   - `jq` for JSON processing
+   - `curl` for HTTP requests
+   - `websocat` for WebSocket testing
+
 ### Frontend Testing
 
 1. **Component Tests**: Test React components
