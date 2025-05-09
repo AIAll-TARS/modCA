@@ -9,39 +9,19 @@
     ],
     "headers": [
         {
-            "source": "/(.*)",
+            "source": "/api/(.*)",
             "headers": [
                 {
-                    "key": "X-Content-Type-Options",
-                    "value": "nosniff"
-                },
-                {
-                    "key": "X-Frame-Options",
-                    "value": "DENY"
-                },
-                {
-                    "key": "X-XSS-Protection",
-                    "value": "1; mode=block"
-                },
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=0, must-revalidate"
-                },
-                {
-                    "key": "Access-Control-Allow-Credentials",
-                    "value": "true"
-                },
-                {
                     "key": "Access-Control-Allow-Origin",
-                    "value": "https://janis7ewski.org"
+                    "value": "*"
                 },
                 {
                     "key": "Access-Control-Allow-Methods",
-                    "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+                    "value": "GET, POST, PUT, DELETE, OPTIONS"
                 },
                 {
                     "key": "Access-Control-Allow-Headers",
-                    "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+                    "value": "X-Requested-With, Content-Type, Accept"
                 }
             ]
         },
@@ -70,11 +50,11 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://janis7ewski.org/api/:path*"
+            "destination": "https://ws.janis7ewski.org/api/:path*"
         },
         {
             "source": "/ws/:path*",
-            "destination": "https://janis7ewski.org/ws/:path*"
+            "destination": "https://ws.janis7ewski.org/ws/:path*"
         }
     ]
 }
