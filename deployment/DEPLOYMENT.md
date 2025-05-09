@@ -3,9 +3,18 @@
 ## Current Deployment Status
 
 ### URLs
-- Frontend: https://janis7ewski.org
+- Frontend: https://www.janis7ewski.org
 - WebSocket: wss://ws.janis7ewski.org/ws
 - API: https://ws.janis7ewski.org/api
+
+### Frontend Hosting (Vercel)
+- Framework: Next.js 14
+- Region: fra1 (Frankfurt)
+- Branch: prod
+- Auto-deployment: Enabled
+- Environment Variables:
+  - NEXT_PUBLIC_API_URL
+  - NEXT_PUBLIC_WS_URL
 
 ### Backend Hosting
 - VPS: Hetzner Cloud
@@ -17,20 +26,18 @@
 - Cloudflare CDN & Security
 
 ### Recent Changes
-1. Cloudflare Setup (Completed)
-   - DNS records configured
-   - SSL/TLS set to Full (Strict)
-   - WebSocket proxy enabled
-   - Page Rules configured for API and WebSocket
-   - Security features enabled
-   - Performance optimizations applied
+1. Vercel Configuration
+   - Added Git deployment settings
+   - Configured environment variables
+   - Updated CORS and WebSocket headers
+   - Fixed routing configuration
 
 2. Nginx Configuration
    - Rate limiting implemented
    - Cloudflare IP ranges configured
-   - WebSocket proxy settings
-   - SSL configuration
-   - Security headers
+   - WebSocket proxy settings optimized
+   - SSL configuration updated
+   - Security headers enhanced
 
 3. API Testing
    - All endpoints tested and working
@@ -331,7 +338,7 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
 ## 3. Current Deployment Status (Updated)
 
 ### URLs
-- Frontend: https://janis7ewski.org
+- Frontend: https://www.janis7ewski.org
 - WebSocket: wss://ws.janis7ewski.org/ws
 - API: https://ws.janis7ewski.org/api
 
@@ -672,44 +679,4 @@ For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
 ## 10. Current Deployment Status & Debugging Progress (Updated)
 
 ### Current Issue
-The backend service is failing to start with a `ModuleNotFoundError: No module named 'main'` error, despite our attempts to fix the Python module import path and directory structure.
-
-### Debugging Progress Timeline
-
-1. **Initial Setup**
-   - Backend deployed on Hetzner VPS (49.13.233.118)
-   - Using Docker Compose for containerization
-   - FastAPI application with Uvicorn/Gunicorn workers
-
-2. **First Attempt**
-   - Original Dockerfile used `gunicorn app.main:app` command
-   - Error: `ModuleNotFoundError: No module named 'main'`
-   - Switched to `uvicorn` for better error messages
-
-3. **Directory Structure Investigation**
-   - Confirmed local structure:
-     ```
-     backend/
-     ├── app/
-     │   ├── main.py
-     │   ├── constants.py
-     │   └── db_handler.py
-     ├── Dockerfile
-     └── requirements.txt
-     ```
-
-4. **Dockerfile Modifications**
-   - Added PYTHONPATH environment variable
-   - Added debugging information in startup script
-   - Modified file copying strategy to be more explicit
-   - Added directory structure printing during build
-
-5. **Volume Mounting Changes**
-   - Removed volume mount for backend directory to prevent conflicts
-   - Kept only SQLite data volume mount
-
-6. **Current Dockerfile Features**
-   - Uses Python 3.11-slim base image
-   - Creates non-root user (appuser)
-   - Explicit file copying:
-     ```
+The backend service is failing to start with a `
