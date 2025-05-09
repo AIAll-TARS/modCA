@@ -9,7 +9,7 @@
     ],
     "headers": [
         {
-            "source": "/api/(.*)",
+            "source": "/backend-api/(.*)",
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
@@ -26,7 +26,7 @@
             ]
         },
         {
-            "source": "/ws/(.*)",
+            "source": "/backend-ws/(.*)",
             "headers": [
                 {
                     "key": "Connection",
@@ -49,11 +49,11 @@
     ],
     "rewrites": [
         {
-            "source": "/api/:path*",
+            "source": "/backend-api/:path*",
             "destination": "https://ws.janis7ewski.org/api/:path*"
         },
         {
-            "source": "/ws/:path*",
+            "source": "/backend-ws/:path*",
             "destination": "https://ws.janis7ewski.org/ws/:path*"
         }
     ]
