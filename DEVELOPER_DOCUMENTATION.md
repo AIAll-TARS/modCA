@@ -821,4 +821,54 @@ npm run dev -- --port 3001
 - Your Hetzner VPS IP can be found in the Hetzner Cloud Console or by running `ip a` or `hostname -I` on the server.
 - **Current production backend IP:** `49.13.233.118`
 - Your SSH key is the public key you provided to Hetzner during server creation (typically found in `~/.ssh/id_ed25519.pub` or `~/.ssh/id_rsa.pub` on your local machine).
-- For DNS, see the Cloudflare dashboard and ensure the correct A record is set for your backend/API endpoint. 
+- For DNS, see the Cloudflare dashboard and ensure the correct A record is set for your backend/API endpoint.
+
+## Deployment Architecture
+
+### Frontend (Vercel)
+- Domain: https://www.janis7ewski.org
+- Framework: Next.js 14
+- Environment Variables:
+  - `NEXT_PUBLIC_API_URL`: https://ws.janis7ewski.org/api
+  - `NEXT_PUBLIC_WS_URL`: wss://ws.janis7ewski.org/ws
+- Deployment Branch: `prod`
+- Region: fra1 (Frankfurt)
+
+### Backend (Hetzner VPS)
+- Domain: https://ws.janis7ewski.org
+- IP: 49.13.233.118
+- Stack:
+  - FastAPI/Uvicorn
+  - Nginx (reverse proxy)
+  - Docker & Docker Compose
+  - Let's Encrypt SSL
+  - Cloudflare CDN & Security
+
+### Deployment Flow
+1. Development:
+   - Work on feature branches
+   - Test locally with `npm run dev`
+   - Create pull request to `prod`
+
+2. Production:
+   - Merge to `prod` branch
+   - Vercel automatically deploys frontend
+   - Backend changes require manual deployment
+
+3. Environment Setup:
+   - Frontend uses environment variables for API/WebSocket URLs
+   - Backend uses Docker environment for configuration
+   - Cloudflare handles SSL and security
+
+### Security & Performance
+- SSL/TLS encryption (Full Strict mode)
+- Cloudflare DDoS protection
+- Rate limiting on API endpoints
+- CORS headers configured
+- WebSocket secure connections
+
+### Monitoring & Maintenance
+- Health checks on API endpoints
+- Docker container monitoring
+- Cloudflare analytics
+- Error logging and tracking 
