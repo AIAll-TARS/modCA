@@ -9,7 +9,7 @@
     ],
     "headers": [
         {
-            "source": "/backend-api/(.*)",
+            "source": "/(.*)",
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
@@ -24,37 +24,6 @@
                     "value": "X-Requested-With, Content-Type, Accept"
                 }
             ]
-        },
-        {
-            "source": "/backend-ws/(.*)",
-            "headers": [
-                {
-                    "key": "Connection",
-                    "value": "upgrade"
-                },
-                {
-                    "key": "Upgrade",
-                    "value": "websocket"
-                },
-                {
-                    "key": "Cache-Control",
-                    "value": "no-store, no-cache"
-                },
-                {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                }
-            ]
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/backend-api/:path*",
-            "destination": "https://ws.janis7ewski.org/api/:path*"
-        },
-        {
-            "source": "/backend-ws/:path*",
-            "destination": "https://ws.janis7ewski.org/ws/:path*"
         }
     ]
 }
