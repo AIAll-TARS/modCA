@@ -8,109 +8,188 @@
 - API: https://ws.janis7ewski.org/api
 
 ### Backend Hosting
-- VPS: Hetzner Cloud (49.13.233.118)
+- VPS: Hetzner Cloud
+- IP: 49.13.233.118
 - OS: Ubuntu 24.04 LTS
-- Docker: 26.1.3
-- Docker Compose: v2.27.0
+- Docker & Docker Compose
+- Nginx as reverse proxy
+- Let's Encrypt SSL certificates
+- Cloudflare CDN & Security
 
-### Current Progress
-- ✅ Project structure reorganized
-- ✅ Docker configuration fixed
-- ✅ Nginx configuration updated
-- ✅ Health check endpoint working
-- ✅ API endpoints accessible
-- ✅ WebSocket endpoint configured
-- ✅ SSL certificates installed and configured
-- ✅ Rate limiting configured (10 req/s)
-- ✅ Cloudflare IP ranges configured
-- ⏳ Cloudflare proxy pending
-- ⏳ Monitoring setup pending
+### Recent Changes
+1. Cloudflare Setup (Completed)
+   - DNS records configured
+   - SSL/TLS set to Full (Strict)
+   - WebSocket proxy enabled
+   - Page Rules configured for API and WebSocket
+   - Security features enabled
+   - Performance optimizations applied
 
-## Recent Changes
+2. Nginx Configuration
+   - Rate limiting implemented
+   - Cloudflare IP ranges configured
+   - WebSocket proxy settings
+   - SSL configuration
+   - Security headers
 
-### Nginx Configuration
-- Added rate limiting (10 requests per second)
-- Added Cloudflare IP ranges for proper IP forwarding
-- Configured CF-Connecting-IP header
-- Updated WebSocket proxy configuration
-- Added security headers
-- Configured SSL with modern ciphers
+3. API Testing
+   - All endpoints tested and working
+   - WebSocket connections verified
+   - Cloudflare integration confirmed
+   - SSL/TLS working correctly
 
-### API Testing
-- Added test_api_endpoints.sh script
-- Verified all endpoints over HTTPS
-- Tested WebSocket over WSS
-- Verified rate limiting
-- Confirmed health checks
+### Next Steps
+1. Monitoring Setup
+   - Implement Prometheus metrics
+   - Set up Grafana dashboards
+   - Configure alerting
+   - Monitor WebSocket connections
+   - Track API performance
 
-### Security Updates
-- Added rate limiting to prevent abuse
-- Configured proper SSL ciphers
-- Added Cloudflare IP ranges
-- Set up proper header forwarding
-- Denied access to hidden files
+2. Performance Optimization
+   - Fine-tune Cloudflare caching rules
+   - Optimize API response times
+   - Implement request queuing
+   - Monitor resource usage
 
-## Next Steps
+### Troubleshooting
 
-1. Cloudflare Setup
-   - [ ] Enable Cloudflare proxy
-   - [ ] Configure SSL/TLS settings
-   - [ ] Set up WebSocket proxy
-   - [ ] Configure caching rules
+#### Common Issues
 
-2. Monitoring
-   - [ ] Set up basic system monitoring
-   - [ ] Configure application metrics
-   - [ ] Set up alerting
-   - [ ] Monitor WebSocket performance
+1. API Errors
+   - Check backend logs: `docker logs modca_backend`
+   - Verify Nginx configuration: `nginx -t`
+   - Check Cloudflare status
+   - Verify SSL certificates
 
-## Troubleshooting
+2. WebSocket Connection Issues
+   - Check Cloudflare WebSocket proxy status
+   - Verify SSL/TLS settings
+   - Check backend WebSocket logs
+   - Test direct connection (bypass Cloudflare)
 
-### Common Issues
-1. API 404 errors
-   - Check if the endpoint exists in FastAPI
-   - Verify Nginx proxy configuration
-   - Check backend logs
-
-2. WebSocket connection issues
-   - Verify WebSocket proxy settings
-   - Check SSL configuration
-   - Monitor connection limits
-   - Check rate limiting
-
-3. Container health checks
-   - Check container logs
-   - Verify endpoint accessibility
-   - Review health check configuration
+3. Container Health
+   - Check container status: `docker ps`
+   - View container logs: `docker logs <container_id>`
+   - Check resource usage: `docker stats`
+   - Verify health checks: `curl https://ws.janis7ewski.org/health`
 
 4. SSL Issues
-   - Check certificate validity
-   - Verify Nginx SSL configuration
-   - Check certificate auto-renewal
+   - Check certificate validity: `openssl s_client -connect ws.janis7ewski.org:443`
+   - Verify Cloudflare SSL/TLS settings
+   - Check Let's Encrypt certificate renewal
+   - Verify SSL configuration in Nginx
 
 ### Useful Commands
+
 ```bash
 # Check container status
-docker compose ps
+docker ps
 
 # View container logs
-docker compose logs -f [service]
+docker logs modca_backend
+docker logs modca_nginx
 
 # Test API endpoints
-curl -v https://ws.janis7ewski.org/api/settings
-curl -v https://ws.janis7ewski.org/health
+curl https://ws.janis7ewski.org/api/settings
+curl https://ws.janis7ewski.org/health
 
-# Test WebSocket
-curl -v -N -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Host: ws.janis7ewski.org" -H "Origin: https://ws.janis7ewski.org" wss://ws.janis7ewski.org/ws
+# Test WebSocket connection
+websocat -H="Origin: https://janis7ewski.org" -H="User-Agent: Mozilla/5.0" wss://ws.janis7ewski.org/ws/simulate/<simulation_id>
 
-# SSL Certificate Management
-certbot --nginx -d ws.janis7ewski.org
-certbot renew --dry-run
+# Check SSL certificate
+openssl s_client -connect ws.janis7ewski.org:443
 
-# Run API test script
-cd deployment/scripts
-./test_api_endpoints.sh
+# View Nginx configuration
+cat /etc/nginx/conf.d/modca.conf
+
+# Check Cloudflare status
+curl -I https://ws.janis7ewski.org
 ```
+
+### Repository Structure
+
+```
+deployment/
+├── config/
+│   └── nginx/
+│       └── modca.conf
+├── scripts/
+│   └── test_api_endpoints.sh
+├── certbot/
+├── maintenance/
+├── monitoring/
+├── docker-compose.yml
+└── DEPLOYMENT.md
+```
+
+### Workflow
+
+1. Development
+   - Make changes in development branch
+   - Test locally
+   - Create pull request
+
+2. Deployment
+   - Merge changes to deployment branch
+   - Push to production
+   - Verify deployment
+   - Monitor for issues
+
+3. Maintenance
+   - Regular security updates
+   - SSL certificate renewal
+   - Log rotation
+   - Backup verification
+
+### Security Considerations
+
+1. SSL/TLS
+   - Full (Strict) SSL mode enabled
+   - HSTS configured
+   - Modern TLS protocols only
+   - Strong cipher suites
+
+2. Cloudflare Security
+   - DDoS protection enabled
+   - WAF rules configured
+   - Bot protection active
+   - Rate limiting implemented
+
+3. Server Security
+   - Regular updates
+   - Firewall configured
+   - SSH key authentication
+   - Limited port exposure
+
+### Performance Monitoring
+
+1. Metrics to Track
+   - API response times
+   - WebSocket connection stability
+   - Resource usage
+   - Error rates
+   - Cache hit rates
+
+2. Alerts
+   - High error rates
+   - Resource exhaustion
+   - SSL certificate expiration
+   - Service unavailability
+
+### Backup Strategy
+
+1. Data Backup
+   - Daily database backups
+   - Configuration backups
+   - SSL certificate backups
+   - Log archives
+
+2. Recovery
+   - Documented recovery procedures
+   - Regular backup testing
+   - Disaster recovery plan
+   - Service restoration steps
 
 ## DNS & SSL Status
 
@@ -164,269 +243,6 @@ cd deployment/scripts
 - All endpoints tested over HTTPS
 - WebSocket tested over WSS
 - Cloudflare headers properly forwarded
-
-## Next Session Tasks
-
-1. Cloudflare Integration
-   - Enable proxy
-   - Configure SSL/TLS
-   - Set up WebSocket proxy
-   - Configure caching
-
-2. Monitoring Setup
-   - Install monitoring tools
-   - Configure metrics collection
-   - Set up alerts
-
-# modCA_7web Deployment Documentation
-
-## 1. Repository Structure & Workflow (Summary)
-
-- **dev**: Main integration branch for development and testing.
-- **deploy**: Deployment/production branch, updated from tested dev.
-- **feature/*, bugfix/*, exp/**: For features, bugfixes, and experiments.
-- **master**: (Optional) Stable, tagged releases.
-
-**Directory layout:**
-```
-modca_7web/
-├── backend/      # FastAPI backend
-├── frontend/     # Next.js frontend
-├── deployment/   # Deployment scripts/configs
-├── docs/         # Documentation
-├── recordings/   # Simulation recordings
-├── .github/      # GitHub Actions, templates
-├── ...
-```
-
-**Workflow:**
-- Develop in feature/bugfix/exp branches, merge to dev via PR.
-- Deploy from deploy branch (branched from dev).
-- Tag releases on deploy or master.
-
-See `DEVELOPER_DOCUMENTATION.md` for full details.
-
----
-
-## 2. Technical Specification for Deployment
-
-### 2.1 Architecture
-
-```
-                                   Users (Web Browsers)
-                                           ↓
-                                     Cloudflare CDN
-                                           ↓
-                                    HTTPS/SSL (443)
-                                           ↓
-┌─────────────────┐      ┌──────────────────────┐     ┌──────────────────┐
-│    Vercel       │◆◆◆◆◆│      Next.js 14      │◆◆◆◆◆│    FastAPI       │
-│(Edge Network)   │      │(Frontend + API Routes)│     │(Uvicorn workers) │
-└────┬────────────┘      └──────┬───────────────┘     └────────┬─────────┘
-     ↓                          ↓                             ↓
-┌────────────┐            ┌───────────┐                ┌──────────────┐
-│ CloudFlare │            │  SQLite   │                │   WebSocket  │
-│ Analytics  │            │    DB     │                │   Server     │
-└────────────┘            └───────────┘                └──────────────┘
-```
-
-- Vercel (fra1 region) for frontend (Next.js)
-- FastAPI backend (Uvicorn workers)
-- SQLite for storage
-- WebSocket for real-time
-- Cloudflare for DNS, CDN, SSL, DDoS
-
-### 2.2 Vercel & Next.js Configuration
-- `vercel.json` and `next.config.js` set for production, security headers, and region
-- Environment variables for API and WebSocket URLs
-
-### 2.3 Cloudflare Configuration
-- DNS: A record to Vercel, CNAME for www, TXT for verification
-- SSL/TLS: Full (Strict)
-- Security: Bot Fight, Integrity Check, DDoS
-- Performance: HTTP/3, Brotli, Auto Minify
-- Page Rules: WebSocket and API bypass cache
-
----
-
-## 3. Current Deployment Status (Updated)
-
-### URLs
-- Frontend: https://janis7ewski.org
-- WebSocket: wss://ws.janis7ewski.org/ws
-- API: https://ws.janis7ewski.org/api
-
-### Backend Hosting
-- VPS: Hetzner Cloud (49.13.233.118)
-- OS: Ubuntu 24.04 LTS
-- Docker: 26.1.3
-- Docker Compose: v2.27.0
-
-### Current Progress
-- ✅ Project structure reorganized
-- ✅ Docker configuration fixed
-- ✅ Nginx configuration updated
-- ✅ Health check endpoint working
-- ✅ API endpoints accessible
-- ✅ WebSocket endpoint configured
-- ✅ SSL certificates installed and configured
-- ✅ Rate limiting configured (10 req/s)
-- ✅ Cloudflare IP ranges configured
-- ⏳ Cloudflare proxy pending
-- ⏳ Monitoring setup pending
-
-## Recent Changes
-
-### SSL Configuration
-- Installed Let's Encrypt certificates
-- Configured Nginx for HTTPS
-- Set up HTTP to HTTPS redirect
-- Configured modern SSL ciphers and protocols
-- Added SSL certificate auto-renewal
-
-### Nginx Configuration
-- Fixed API endpoint routing by preserving `/api` prefix
-- Updated WebSocket proxy configuration
-- Configured health check endpoint
-- Added rate limiting (10 requests per second)
-- Added SSL configuration
-- Set up HTTP to HTTPS redirect
-
-### Docker Configuration
-- Updated health check to use correct endpoint
-- Fixed container networking
-- Added proper volume mounts
-- Added SSL certificate volume mounts
-- Exposed port 443 for HTTPS
-
-### API Endpoints
-- `/health` - Health check endpoint
-- `/api/settings` - Get/save simulation settings
-- `/api/simulate` - Start/control simulations
-- `/api/recordings` - Manage simulation recordings
-- `/ws` - WebSocket connection for real-time updates
-
-## Next Steps
-
-1. SSL Configuration
-   - [ ] Install Certbot
-   - [ ] Obtain Let's Encrypt certificates
-   - [ ] Configure SSL in Nginx
-   - [ ] Set up auto-renewal
-
-2. Cloudflare Setup
-   - [ ] Enable Cloudflare proxy
-   - [ ] Configure SSL/TLS settings
-   - [ ] Set up WebSocket proxy
-   - [ ] Configure caching rules
-
-3. Monitoring
-   - [ ] Set up basic system monitoring
-   - [ ] Configure application metrics
-   - [ ] Set up alerting
-   - [ ] Monitor WebSocket performance
-
-4. Performance Optimization
-   - [ ] Tune Nginx settings
-   - [ ] Optimize Docker configuration
-   - [ ] Configure caching
-   - [ ] Set up load balancing if needed
-
-## Troubleshooting
-
-### Common Issues
-1. API 404 errors
-   - Check if the endpoint exists in FastAPI
-   - Verify Nginx proxy configuration
-   - Check backend logs
-
-2. WebSocket connection issues
-   - Verify WebSocket proxy settings
-   - Check SSL configuration
-   - Monitor connection limits
-
-3. Container health checks
-   - Check container logs
-   - Verify endpoint accessibility
-   - Review health check configuration
-
-4. SSL Issues
-   - Check certificate validity
-   - Verify Nginx SSL configuration
-   - Check certificate auto-renewal
-
-### Useful Commands
-```bash
-# Check container status
-docker compose ps
-
-# View container logs
-docker compose logs -f [service]
-
-# Test API endpoints
-curl -v https://ws.janis7ewski.org/api/settings
-curl -v https://ws.janis7ewski.org/health
-
-# Test WebSocket
-curl -v -N -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Host: ws.janis7ewski.org" -H "Origin: https://ws.janis7ewski.org" wss://ws.janis7ewski.org/ws
-
-# SSL Certificate Management
-certbot --nginx -d ws.janis7ewski.org
-certbot renew --dry-run
-
-# Run API test script
-cd deployment/scripts
-./test_api_endpoints.sh
-```
-
-## DNS & SSL Status
-
-### Current DNS Configuration
-- ws.janis7ewski.org → 49.13.233.118
-- Proxy status: Currently DNS only (ready for Cloudflare proxy)
-
-### SSL Setup Progress
-- ✅ Certbot installed
-- ✅ Nginx plugin installed
-- ✅ Certificate obtained
-- ✅ Auto-renewal configured
-- ✅ HTTPS working
-- ✅ HTTP to HTTPS redirect working
-
-## Container Health Status
-
-### Backend Container
-- Status: Running
-- Health check: Passing
-- Ports: 8000 exposed
-- Volumes: Properly mounted
-
-### Nginx Container
-- Status: Running
-- Configuration: Valid
-- Ports: 80, 443 exposed
-- SSL: Configured and working
-
-## Recent API Tests
-
-### Successful Endpoints
-1. ✅ `/health` - Health check
-2. ✅ `/api/settings` - Settings management
-3. ✅ `/api/simulate` - Simulation creation
-4. ✅ `/api/simulate/{id}/status` - Status check
-5. ✅ `/api/simulate/{id}/step` - Step execution
-6. ✅ `/api/recordings` - Recordings list
-7. ✅ `/ws` - WebSocket endpoint (accessible)
-
-### Test Results
-- All API endpoints returning correct status codes
-- WebSocket endpoint properly configured for upgrades
-- Rate limiting working as expected
-- Health checks passing
-- SSL working correctly
-- HTTP to HTTPS redirect working
-- All endpoints tested over HTTPS
-- WebSocket tested over WSS
 
 ## Next Session Tasks
 
@@ -896,26 +712,4 @@ The backend service is failing to start with a `ModuleNotFoundError: No module n
    - Uses Python 3.11-slim base image
    - Creates non-root user (appuser)
    - Explicit file copying:
-     ```dockerfile
-     COPY --chown=appuser:appuser app/ /app/app/
-     COPY --chown=appuser:appuser *.py ./
-     COPY --chown=appuser:appuser *.txt ./
-     COPY --chown=appuser:appuser *.db ./
      ```
-   - Sets PYTHONPATH=/app
-   - Includes comprehensive debugging output
-
-### Current Status
-- The container builds successfully
-- The application fails to start with the same module import error
-- We've confirmed the app directory structure is correct
-- We've verified the Python path is set correctly
-- We've removed potential volume mount conflicts
-
-### Next Steps
-1. Verify the actual contents of the container at runtime
-2. Consider adding a simple test Python script to verify imports
-3. Check if the app directory is being copied correctly during build
-4. Verify the Python environment within the container
-
---- 
