@@ -27,10 +27,11 @@
 ## Network Architecture
 
 ```
-Client → Cloudflare → Vercel (Frontend)
-                    → Hetzner VPS (Backend)
-                      → Nginx (443)
-                        → Backend Container (8000)
+Client → Cloudflare (DNS + SSL) → Vercel (Frontend)
+                               → Hetzner VPS (Backend)
+                                 → Nginx (443)
+                                   → FastAPI Backend (8000)
+                                     → SQLite DB
 ```
 
 ### Routing Configuration
@@ -67,34 +68,22 @@ Client → Cloudflare → Vercel (Frontend)
 │   │   └── __init__.py
 │   ├── data/             # Data storage
 │   ├── recordings/       # Simulation recordings
-│   │   ├── sim_20250404230746_1_frames.json
-│   │   └── sim_20250404230746_1_metadata.json
 │   ├── sqlite_data/      # SQLite database files
 │   │   └── settings.db
 │   ├── venv/             # Python virtual environment
 │   ├── Dockerfile        # Container definition
-│   ├── Procfile         # Process management
 │   ├── requirements.txt  # Dependencies
-│   ├── runtime.txt      # Runtime configuration
 │   └── settings.db      # Database file
-├── backups/             # Backup storage
-│   ├── daily/          # Daily backups
-│   ├── weekly/         # Weekly backups
-│   └── monthly/        # Monthly backups
 ├── certbot/            # SSL certificates
 │   ├── conf/          # Certbot configuration
+│   │   ├── cert.pem
+│   │   ├── chain.pem
+│   │   ├── fullchain.pem
+│   │   └── privkey.pem
 │   └── www/           # Web root for verification
 ├── config/            # Service configurations
 │   └── nginx/         # Nginx configuration
 │       └── modca.conf # Nginx site config
-├── maintenance/       # Maintenance scripts
-│   ├── scripts/      # Utility scripts
-│   ├── cleanup/      # Cleanup tasks
-│   └── updates/      # Update procedures
-├── monitoring/       # Monitoring and logging
-│   ├── logs/        # Application logs
-│   ├── metrics/     # Performance metrics
-│   └── alerts/      # Alert configurations
 └── docker-compose.yml # Container orchestration
 ```
 
@@ -112,7 +101,11 @@ Client → Cloudflare → Vercel (Frontend)
    - `docker-compose.yml`: Docker services configuration
 
 3. **SSL Certificates**
-   - `certbot/`: Let's Encrypt certificates and configuration
+   - `certbot/conf/`: Let's Encrypt certificates
+     - `cert.pem`: Server certificate
+     - `chain.pem`: Intermediate certificates
+     - `fullchain.pem`: Full certificate chain
+     - `privkey.pem`: Private key
 
 4. **Backup Management**
    - `backups/daily/`: Daily database and configuration backups
@@ -175,6 +168,11 @@ Client → Cloudflare → Vercel (Frontend)
    - Security headers enhanced
    - Fixed SSL certificate paths
    - Updated health check endpoint
+   - Added proper WebSocket upgrade handling
+   - Configured proper proxy headers
+   - Added security headers (HSTS, CSP, etc.)
+   - Added CORS headers for WebSocket connections
+   - Improved WebSocket proxy configuration
 
 3. Docker Configuration
    - Updated health check to use correct endpoint
@@ -182,6 +180,30 @@ Client → Cloudflare → Vercel (Frontend)
    - Added proper volume mounts
    - Added SSL certificate volume mounts
    - Exposed port 443 for HTTPS
+   - Fixed container health checks
+   - Added proper restart policies
+   - Configured proper logging
+   - Updated backend container configuration
+
+4. SSL & Security
+   - Successfully obtained Let's Encrypt certificates
+   - Configured auto-renewal
+   - Set up proper SSL termination
+   - Implemented security headers
+   - Configured Cloudflare SSL/TLS settings
+   - Added rate limiting
+   - Implemented proper CORS policies
+   - Enhanced WebSocket security
+
+5. Backend Updates
+   - Fixed grid tuple handling in Simulation class
+   - Added adjustment_info to SimulationResponse model
+   - Updated WebSocket endpoint to handle grid tuples
+   - Improved error handling in simulation reset
+   - Enhanced WebSocket message handling
+   - Added proper CORS headers for WebSocket connections
+   - Fixed simulation state management
+   - Improved grid initialization handling
 
 ### Next Steps
 1. Monitoring Setup
@@ -206,24 +228,46 @@ Client → Cloudflare → Vercel (Frontend)
    - Verify Nginx configuration: `nginx -t`
    - Check Cloudflare status
    - Verify SSL certificates
+   - Check container health status: `docker ps`
+   - Verify environment variables
+   - Check CORS configuration
 
 2. WebSocket Connection Issues
    - Check Cloudflare WebSocket proxy status
    - Verify SSL/TLS settings
    - Check backend WebSocket logs
    - Test direct connection (bypass Cloudflare)
+   - Verify Nginx WebSocket configuration
+   - Check proxy headers
+   - Verify CORS settings
+   - Check rate limiting
 
 3. Container Health
    - Check container status: `docker ps`
    - View container logs: `docker logs <container_id>`
    - Check resource usage: `docker stats`
    - Verify health checks: `curl https://ws.janis7ewski.org/health`
+   - Check container restart policy
+   - Verify volume mounts
+   - Check network configuration
 
 4. SSL Issues
    - Check certificate validity: `openssl s_client -connect ws.janis7ewski.org:443`
    - Verify Cloudflare SSL/TLS settings
    - Check Let's Encrypt certificate renewal
    - Verify SSL configuration in Nginx
+   - Check certificate paths in docker-compose.yml
+   - Verify certificate permissions
+   - Check auto-renewal configuration
+
+5. Nginx Issues
+   - Check Nginx status: `systemctl status nginx`
+   - Verify configuration: `nginx -t`
+   - Check error logs: `tail -f /var/log/nginx/error.log`
+   - Verify SSL configuration
+   - Check proxy settings
+   - Verify rate limiting
+   - Check security headers
 
 ### Useful Commands
 
@@ -248,8 +292,21 @@ openssl s_client -connect ws.janis7ewski.org:443
 # View Nginx configuration
 cat /etc/nginx/conf.d/modca.conf
 
-# Check Cloudflare status
-curl -I https://ws.janis7ewski.org
+# Check Nginx status
+systemctl status nginx
+
+# Test Nginx configuration
+nginx -t
+
+# View Nginx logs
+tail -f /var/log/nginx/error.log
+tail -f /var/log/nginx/access.log
+
+# Check certificate renewal
+certbot certificates
+
+# Test rate limiting
+ab -n 100 -c 10 https://ws.janis7ewski.org/health
 ```
 
 ### Repository Structure

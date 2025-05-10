@@ -100,6 +100,10 @@ class SimulationResponse(BaseModel):
     message: Optional[str] = None
     steps_run: Optional[int] = None
     db_save_success: Optional[bool] = None
+    adjustment_info: Optional[Dict[str, Any]] = Field(
+        default_factory=lambda: {"values_adjusted": False},
+        description="Information about any adjustments made to the simulation parameters"
+    )
 
 
 class UserSettings(SimulationSettings):
