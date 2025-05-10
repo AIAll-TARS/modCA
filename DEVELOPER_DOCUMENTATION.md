@@ -250,6 +250,60 @@ modca_7web/
 └── start_app.bat               # Application starter
 ```
 
+### 5.1 Production VPS Structure
+```
+/root/modca_7web/
+├── backend/
+│   ├── app/               # Core application code
+│   │   ├── constants.py
+│   │   ├── grid.py
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── simulation.py
+│   │   └── __init__.py
+│   ├── data/             # Data storage
+│   ├── recordings/       # Simulation recordings
+│   │   ├── sim_20250404230746_1_frames.json
+│   │   └── sim_20250404230746_1_metadata.json
+│   ├── sqlite_data/      # SQLite database files
+│   │   └── settings.db
+│   ├── venv/             # Python virtual environment
+│   ├── Dockerfile        # Container definition
+│   ├── Procfile         # Process management
+│   ├── requirements.txt  # Dependencies
+│   ├── runtime.txt      # Runtime configuration
+│   └── settings.db      # Database file
+├── certbot/             # SSL certificates
+│   ├── conf/           # Certbot configuration
+│   └── www/            # Web root for verification
+├── config/             # Service configurations
+│   └── nginx/          # Nginx configuration
+│       └── modca.conf  # Nginx site config
+└── docker-compose.yml  # Container orchestration
+```
+
+### 5.2 Key Differences Between Development and Production
+
+1. **Containerization**
+   - Development: Direct Python execution
+   - Production: Docker containers with Nginx reverse proxy
+
+2. **Data Storage**
+   - Development: Local SQLite database
+   - Production: Persistent volume-mounted SQLite database
+
+3. **SSL/TLS**
+   - Development: None (local development)
+   - Production: Let's Encrypt certificates via Certbot
+
+4. **Web Server**
+   - Development: Uvicorn directly
+   - Production: Nginx as reverse proxy
+
+5. **Environment**
+   - Development: Local virtual environment
+   - Production: Containerized environment
+
 ## 6. Backend Documentation
 
 ### 6.1 Setup and Installation
