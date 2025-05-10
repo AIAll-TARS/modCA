@@ -30,16 +30,20 @@ class Simulation:
         Initialize simulation with grid and parameters.
 
         Args:
-            grid (numpy.ndarray): Initial grid state
+            grid (numpy.ndarray or tuple): Initial grid state or tuple of (grid, adjustment_info)
             params (dict): Simulation parameters
             recording_enabled (bool): Whether to record simulation states for playback
             adjustment_info (dict): Information about adjustments made during grid initialization
         """
-        self.grid = grid
-        self.params = params
+        # Handle case where grid is a tuple (grid, adjustment_info)
+        if isinstance(grid, tuple):
+            self.grid = grid[0]
+            self.adjustment_info = grid[1]
+        else:
+            self.grid = grid
+            self.adjustment_info = adjustment_info or {"values_adjusted": False}
 
-        # Store adjustment information
-        self.adjustment_info = adjustment_info or {"values_adjusted": False}
+        self.params = params
 
         # Recording functionality
         self.recording_enabled = recording_enabled
@@ -92,7 +96,7 @@ class Simulation:
         self.prey_hunger[self.grid == PREY] = 0
 
         logger.info(
-            f"Simulation initialized with grid shape {grid.shape} and parameters: {params}")
+            f"Simulation initialized with grid shape {self.grid.shape} and parameters: {params}")
         logger.info(
             f"Initial counts - Predators: {self.stats['predator_count'][0]}, Prey: {self.stats['prey_count'][0]}, Substrate: {self.stats['substrate_count'][0]}")
         logger.info("Starvation tracking initialized for predators and prey")

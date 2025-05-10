@@ -389,6 +389,10 @@ class SimulationResponse(BaseModel):
     message: Optional[str]           # Optional message
     steps_run: Optional[int]         # Steps run in last operation
     db_save_success: Optional[bool]  # Database save success status
+    adjustment_info: Optional[Dict[str, Any]] = Field(
+        default_factory=lambda: {"values_adjusted": False},
+        description="Information about any adjustments made to the simulation parameters"
+    )
 ```
 
 #### SimulationStatistics
@@ -439,11 +443,25 @@ Stores results of completed simulations:
 The simulation engine (`simulation.py`) implements the core cellular automata logic:
 
 ```python
-class SimulationEngine:
-    def __init__(self, settings: SimulationSettings):
-        self.grid = Grid(settings.grid_size)
-        self.settings = settings
-        self.statistics = SimulationStatistics()
+class Simulation:
+    def __init__(self, grid, params=None):
+        """
+        Initialize the simulation with a grid and parameters.
+        
+        Args:
+            grid: Either a numpy.ndarray or a tuple (grid, adjustment_info)
+            params: Optional simulation parameters
+        """
+        if isinstance(grid, tuple):
+            self.grid = grid[0]
+            self.adjustment_info = grid[1]
+        else:
+            self.grid = grid
+            self.adjustment_info = {"values_adjusted": False}
+            
+        self.params = params or {}
+        self.current_step = 0
+        self.statistics = self._calculate_statistics()
         
     def step(self):
         """Execute one simulation step."""
@@ -464,6 +482,7 @@ class SimulationEngine:
         
         # Update statistics
         self._update_statistics()
+        self.current_step += 1
 ```
 
 Key Implementation Details:
@@ -471,6 +490,10 @@ Key Implementation Details:
 - Random number generation uses fixed seeds for reproducibility
 - Optimized grid operations using NumPy arrays
 - Statistics calculation runs in O(n) time
+- Grid initialization returns a tuple (grid, adjustment_info)
+- Proper handling of grid tuples in simulation initialization
+- Enhanced error handling for simulation reset
+- Improved WebSocket message handling
 
 ## 7. Frontend Documentation
 
