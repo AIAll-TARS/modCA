@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: ../backend
+      context: ./backend
       dockerfile: Dockerfile
     container_name: modca_backend
     restart: unless-stopped
@@ -14,7 +14,7 @@ services:
     networks:
       - modca_net
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health" ]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" ]
       interval: 30s
       timeout: 10s
       retries: 3
