@@ -9,7 +9,7 @@
   # On VPS
   cd /root/modca_7web
   git init
-  git remote add origin <repository_url>
+  git remote add origin git@github.com:AIAll-TARS/modCA.git
   git fetch origin
   git checkout -b vps-deploy
   git pull origin prod --no-ff

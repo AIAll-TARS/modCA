@@ -860,7 +860,7 @@ npm run dev -- --port 3001
      ```
    - Clone your repository:
      ```sh
-     git clone <your-repo-url>
+     git clone git@github.com:AIAll-TARS/modCA.git
      cd modca_7web
      ```
 

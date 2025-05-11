@@ -31,7 +31,7 @@ git init
 
 # Add remote repository
 echo -e "${YELLOW}Adding remote repository...${NC}"
-git remote add origin https://github.com/AIAll-TARS/modca_7web.git
+git remote add origin git@github.com:AIAll-TARS/modCA.git
 
 # Create vps-deploy branch
 echo -e "${YELLOW}Creating vps-deploy branch...${NC}"
