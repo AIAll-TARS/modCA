@@ -73,6 +73,12 @@ async def root():
     return {"message": "modCA_7 Web API is running"}
 
 
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for container health monitoring."""
+    return {"status": "healthy"}
+
+
 @app.post("/api/simulate", response_model=SimulationResponse)
 async def start_simulation(settings: SimulationSettings):
     """Start a new simulation with the provided settings."""
