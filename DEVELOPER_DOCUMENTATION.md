@@ -18,13 +18,13 @@
 
 ## 0.1 Branching Model
 
+- **prod** — Main production branch, used for both Vercel frontend and VPS backend deployment.
 - **dev** — Main integration branch for ongoing development and testing.
-- **deploy** (or **production**) — Deployment-ready branch, only updated from tested `dev`.
-- **master** — (Optional) Stable, tagged releases or long-term reference.
+- **vps-deploy** — VPS-specific branch for backend deployment, contains only necessary backend code and VPS configurations.
+- **master** — Stable, tagged releases or long-term reference.
 - **feature/<name>** — For new features.
 - **bugfix/<name>** — For bug fixes.
 - **exp/<name>** — For experiments or prototypes.
-- **release/<version>**, **hotfix/<name>** — (Optional) For prepping releases or urgent fixes.
 
 ## 0.2 Directory Layout
 
@@ -37,6 +37,9 @@ modca_7web/
 ├── deployment/             # Deployment scripts, configs, specs
 ├── docs/                   # Documentation, architecture, API docs
 ├── recordings/             # Simulation recordings (if versioned)
+├── vps_config/            # VPS-specific configurations
+│   ├── .env               # Environment variables
+│   └── ssl/               # SSL certificates
 ├── .github/                # GitHub Actions, issue templates, etc.
 ├── .gitignore
 ├── README.md
@@ -49,31 +52,35 @@ modca_7web/
 
 - All work is done in feature/bugfix/exp branches.
 - Merge to `dev` via Pull Request (PR), with code review and CI checks.
-- When `dev` is stable, fast-forward or merge to `deploy` for production.
-- Tag releases on `deploy` or `master` (e.g., `v1.0.0`).
+- When `dev` is stable, merge to `prod` for production.
+- `vps-deploy` branch is updated from `prod` with VPS-specific configurations.
+- Tag releases on `prod` or `master` (e.g., `v1.0.0`).
 
 ## 0.4 Environment/Config Management
 
 - Use `.env.local`, `.env.production`, etc., and never commit secrets.
+- VPS-specific configs live in `vps_config/`.
 - Deployment-specific configs/scripts live in `deployment/`.
 
 ## 0.5 Branch Table
 
 | Branch         | Purpose                        | Who/What Uses It         |
 |----------------|-------------------------------|--------------------------|
+| prod           | Production deployment          | CI/CD, Vercel, VPS       |
 | dev            | Main development/integration   | Developers, CI           |
-| deploy         | Production deployment          | CI/CD, Vercel, prod      |
+| vps-deploy     | VPS-specific deployment        | VPS Backend              |
 | feature/*      | Isolated feature work          | Developers               |
 | bugfix/*       | Bug fixes                      | Developers               |
 | exp/*          | Experiments                    | Developers               |
-| master         | (Optional) stable reference    | Tagging, releases        |
+| master         | Stable reference               | Tagging, releases        |
 
 ## 0.6 Rationale
 
-- **Isolation:** Dev and deploy are always cleanly separated.
+- **Isolation:** Dev and prod are always cleanly separated.
 - **Safety:** Production is never polluted by half-baked features.
 - **Clarity:** Feature/bugfix/exp branches are self-explanatory.
 - **Scalability:** Easy to add CI/CD, code review, and release automation.
+- **VPS Management:** Dedicated branch for VPS-specific configurations and deployments.
 
 ---
 

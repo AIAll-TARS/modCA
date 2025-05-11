@@ -1,5 +1,98 @@
 # Deployment Documentation
 
+## ⚠️ Immediate Actions Required
+
+### 1. Git Synchronization
+- VPS has not been synchronized with Git repository yet
+- Required steps:
+  ```bash
+  # On VPS
+  cd /root/modca_7web
+  git init
+  git remote add origin <repository_url>
+  git fetch origin
+  git checkout -b vps-deploy
+  git pull origin prod --no-ff
+  ```
+
+### 2. Configuration Path Updates
+- Update Nginx SSL paths in `vps_config/nginx/modca.conf`:
+  ```nginx
+  ssl_certificate /etc/nginx/ssl/fullchain.pem;
+  ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+  ```
+
+- Update Docker Compose volume mounts in `docker-compose.yml`:
+  ```yaml
+  volumes:
+    - ./vps_config/nginx:/etc/nginx/conf.d
+    - ./vps_config/ssl/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
+    - ./vps_config/ssl/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
+  ```
+
+### 3. Post-Update Verification
+```bash
+# Test Nginx configuration
+nginx -t
+
+# Restart containers
+docker-compose down
+docker-compose up -d
+
+# Verify container health
+docker-compose ps
+```
+
+## Git Workflow & Branch Strategy
+
+### Branch Structure
+- `prod`: Main production branch
+  - Frontend auto-deploys to Vercel
+  - Source for VPS backend
+  - Tagged for releases
+- `dev`: Development integration
+  - Feature branches merge here
+  - Testing and integration
+- `vps-deploy`: VPS-specific branch
+  - Contains only backend code
+  - VPS-specific configurations
+- `master`: Stable releases
+  - Tagged versions
+  - Long-term reference
+
+### VPS Deployment Process
+1. **Initial Setup**
+   ```bash
+   # On VPS
+   cd /root/modca_7web
+   git checkout -b vps-deploy
+   mkdir -p vps_config
+   ```
+
+2. **Regular Updates**
+   ```bash
+   # On VPS
+   git fetch origin
+   git checkout vps-deploy
+   git pull origin prod --no-ff
+   # Review changes
+   docker-compose down
+   docker-compose up -d
+   ```
+
+3. **VPS-Specific Configuration**
+   - Store VPS-specific configs in `vps_config/`
+   - Use `.env` for environment variables
+   - Keep SSL certs in `vps_config/ssl/`
+
+### Deployment Flow
+```
+feature/* → dev → prod → master
+   ↑         ↑      ↑
+   └─────────┘      │
+                    └───→ vps-deploy (VPS-specific)
+```
+
 ## Current Deployment Status
 
 ### URLs
@@ -649,3 +742,128 @@ For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
 
 ### Current Issue
 The backend service is failing to start with a `
+
+## VPS Synchronization & Workflow
+
+### Current VPS Structure
+```
+/root/modca_7web/
+├── backend/           # Backend application
+├── vps_config/       # VPS-specific configurations
+│   ├── nginx/        # Nginx configuration
+│   │   └── modca.conf
+│   └── ssl/          # SSL certificates
+│       ├── cert.pem
+│       ├── chain.pem
+│       ├── fullchain.pem
+│       └── privkey.pem
+└── docker-compose.yml
+```
+
+### Synchronization Workflow
+
+1. **Local Development**
+   - Develop in feature branches
+   - Test locally
+   - Merge to `dev` branch
+   - After testing, merge to `prod` branch
+
+2. **VPS Deployment**
+   ```bash
+   # On VPS
+   cd /root/modca_7web
+   git fetch origin
+   git checkout vps-deploy
+   git pull origin prod --no-ff
+   ```
+
+3. **Configuration Management**
+   - VPS-specific configs in `vps_config/`
+   - SSL certificates in `vps_config/ssl/`
+   - Nginx config in `vps_config/nginx/`
+   - Environment variables in `.env`
+
+4. **Update Process**
+   ```bash
+   # After pulling changes
+   docker-compose down
+   docker-compose up -d
+   ```
+
+### Git Branch Strategy
+
+```
+feature/* → dev → prod → master
+   ↑         ↑      ↑
+   └─────────┘      │
+                    └───→ vps-deploy (VPS-specific)
+```
+
+- `prod`: Main production branch
+  - Frontend auto-deploys to Vercel
+  - Source for VPS backend
+  - Tagged for releases
+- `dev`: Development integration
+  - Feature branches merge here
+  - Testing and integration
+- `vps-deploy`: VPS-specific branch
+  - Contains only backend code
+  - VPS-specific configurations
+- `master`: Stable releases
+  - Tagged versions
+  - Long-term reference
+
+### VPS-Specific Files
+
+1. **Nginx Configuration** (`vps_config/nginx/modca.conf`)
+   - Rate limiting
+   - Cloudflare integration
+   - SSL configuration
+   - Security headers
+   - API/WebSocket routing
+
+2. **SSL Certificates** (`vps_config/ssl/`)
+   - `cert.pem`: Server certificate
+   - `chain.pem`: Intermediate certificates
+   - `fullchain.pem`: Full certificate chain
+   - `privkey.pem`: Private key
+
+3. **Docker Compose** (`docker-compose.yml`)
+   - Container orchestration
+   - Service definitions
+   - Volume mappings
+   - Network configuration
+
+### Security Considerations
+
+1. **File Permissions**
+   - SSL certificates: 600 (owner read/write only)
+   - Configuration files: 644 (owner read/write, group/others read)
+   - Scripts: 755 (owner read/write/execute, group/others read/execute)
+
+2. **Environment Variables**
+   - Stored in `.env` file
+   - Not tracked in git
+   - Contains sensitive configuration
+
+3. **SSL Management**
+   - Certificates stored in `vps_config/ssl/`
+   - Auto-renewal configured
+   - Proper permissions set
+
+### Regular Maintenance
+
+1. **Daily Tasks**
+   - Check container health
+   - Monitor logs
+   - Verify SSL status
+
+2. **Weekly Tasks**
+   - Pull latest changes
+   - Update containers
+   - Verify backups
+
+3. **Monthly Tasks**
+   - Security updates
+   - SSL renewal check
+   - Performance review
