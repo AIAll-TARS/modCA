@@ -73,6 +73,12 @@ async def root():
     return {"message": "modCA_7 Web API is running"}
 
 
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for container health monitoring."""
+    return {"status": "healthy"}
+
+
 @app.post("/api/simulate", response_model=SimulationResponse)
 async def start_simulation(settings: SimulationSettings):
     """Start a new simulation with the provided settings."""
@@ -241,17 +247,15 @@ async def start_simulation(settings: SimulationSettings):
         # Initialize the simulation
         sim_data = {
             "simulation": Simulation(
-                grid,
+                (grid, adjustment_info),  # Pass the tuple directly
                 param_dict,
-                recording_enabled=record_simulation,
-                adjustment_info=adjustment_info if adjustment_info.get(
-                    "values_adjusted", False) else None
+                recording_enabled=record_simulation
             ),
             "status": "initialized",
             "current_step": 0,
             "total_steps": settings.steps,
             "parameters": param_dict,
-            "created_at": datetime.now().isoformat()
+            "adjustment_info": adjustment_info
         }
 
         # Store the simulation
@@ -323,7 +327,8 @@ async def get_simulation_status(simulation_id: str):
         "current_step": sim_data["current_step"],
         "total_steps": sim_data["total_steps"],
         "grid": simulation.grid.tolist(),
-        "statistics": simulation.get_statistics()
+        "statistics": simulation.get_statistics(),
+        "adjustment_info": sim_data.get("adjustment_info", {"values_adjusted": False})
     }
 
 
@@ -510,7 +515,8 @@ async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
             "current_step": sim_data["current_step"],
             "total_steps": sim_data["total_steps"],
             "grid": simulation.grid.tolist(),
-            "statistics": simulation.get_statistics()
+            "statistics": simulation.get_statistics(),
+            "adjustment_info": sim_data.get("adjustment_info", {"values_adjusted": False})
         })
 
         # Listen for commands from the client
@@ -561,7 +567,8 @@ async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
                         "current_step": sim_data["current_step"],
                         "total_steps": sim_data["total_steps"],
                         "grid": simulation.grid.tolist(),
-                        "statistics": simulation.get_statistics()
+                        "statistics": simulation.get_statistics(),
+                        "adjustment_info": sim_data.get("adjustment_info", {"values_adjusted": False})
                     }
                     logger.info(
                         f"WebSocket: Sending step response with current_step={response['current_step']}")
@@ -581,17 +588,28 @@ async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
                     logger.info(
                         f"WebSocket: Resetting simulation {simulation_id}")
                     # Reset the simulation
-                    grid = initialize_grid(
+                    grid_result = initialize_grid(
                         sim_data["parameters"]["grid_size"],
                         sim_data["parameters"]["initial_prey"],
                         sim_data["parameters"]["initial_predators"],
                         sim_data["parameters"]["initial_substrate_probability"]
                     )
-                    simulation = Simulation(grid, sim_data["parameters"])
+                    # Handle the tuple returned by initialize_grid
+                    if isinstance(grid_result, tuple) and len(grid_result) == 2:
+                        grid, adjustment_info = grid_result
+                    else:
+                        grid = grid_result
+                        adjustment_info = {"values_adjusted": False}
+                    
+                    simulation = Simulation(
+                        (grid, adjustment_info),
+                        sim_data["parameters"]
+                    )
 
                     sim_data["simulation"] = simulation
                     sim_data["current_step"] = 0
                     sim_data["status"] = "running"
+                    sim_data["adjustment_info"] = adjustment_info
 
                     await websocket.send_json({
                         "simulation_id": simulation_id,
@@ -599,7 +617,8 @@ async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
                         "current_step": sim_data["current_step"],
                         "total_steps": sim_data["total_steps"],
                         "grid": simulation.grid.tolist(),
-                        "statistics": simulation.get_statistics()
+                        "statistics": simulation.get_statistics(),
+                        "adjustment_info": adjustment_info
                     })
                     logger.info(
                         f"WebSocket: Simulation {simulation_id} reset complete")
