@@ -3,16 +3,15 @@
 ## ⚠️ Immediate Actions Required
 
 ### 1. Git Synchronization
-- VPS has not been synchronized with Git repository yet
-- Required steps:
+- VPS has been synchronized with Git repository
+- Current setup:
   ```bash
-  # On VPS
-  cd /root/modca_7web
+  # On VPS as modca user
+  cd /home/modca/modca_7web
   git init
   git remote add origin git@github.com:AIAll-TARS/modCA.git
-  git fetch origin
-  git checkout -b vps-deploy
-  git pull origin prod --no-ff
+  git fetch origin prod
+  git checkout -b vps-deploy origin/prod
   ```
 
 ### 2. Configuration Path Updates
@@ -63,15 +62,15 @@ docker-compose ps
 ### VPS Deployment Process
 1. **Initial Setup**
    ```bash
-   # On VPS
-   cd /root/modca_7web
+   # On VPS as modca user
+   cd /home/modca/modca_7web
    git checkout -b vps-deploy
    mkdir -p vps_config
    ```
 
 2. **Regular Updates**
    ```bash
-   # On VPS
+   # On VPS as modca user
    git fetch origin
    git checkout vps-deploy
    git pull origin prod --no-ff
@@ -110,12 +109,18 @@ feature/* → dev → prod → master
   - NEXT_PUBLIC_WS_URL=wss://ws.janis7ewski.org/ws
 
 ### Backend Hosting (Hetzner VPS)
-- IP: 49.13.233.118
+- IP: 135.181.111.66
 - OS: Ubuntu 24.04 LTS
 - Docker & Docker Compose
 - Nginx as reverse proxy
 - Let's Encrypt SSL certificates
 - Cloudflare CDN & Security
+
+### SSH Access
+- Root access is configured with the SSH key `modca_vps` in the local `~/.ssh/` directory
+- Connection command: `ssh -i ~/.ssh/modca_vps root@135.181.111.66`
+- The `modca` user will be set up for regular development work
+- SSH key fingerprint: SHA256:GOTOYQYkxQkMO8+ysDRwmXliTEMgYk09WhBbJTyinEw
 
 ## Network Architecture
 
@@ -150,7 +155,7 @@ Client → Cloudflare (DNS + SSL) → Vercel (Frontend)
 ## VPS Directory Structure
 
 ```
-/root/modca_7web/
+/home/modca/modca_7web/
 ├── backend/
 │   ├── app/               # Core application code
 │   │   ├── constants.py
@@ -526,7 +531,7 @@ deployment/
 ## DNS & SSL Status
 
 ### Current DNS Configuration
-- ws.janis7ewski.org → 49.13.233.118
+- ws.janis7ewski.org → 135.181.111.66
 - Proxy status: Currently DNS only (ready for Cloudflare proxy)
 
 ### SSL Setup Progress
@@ -658,7 +663,7 @@ See `DEVELOPER_DOCUMENTATION.md` for full details.
        └───────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Backend Hosting**: Hetzner VPS (IP: 49.13.233.118), system updated, firewall enabled, Docker & Docker Compose installed.
+- **Backend Hosting**: Hetzner VPS (IP: 135.181.111.66), system updated, firewall enabled, Docker & Docker Compose installed.
 - **Note:** Docker and Docker Compose are not yet installed. Proceed to the next section for installation instructions.
 - **Deployment**: Use Docker Compose for backend and NGINX containers.
 
@@ -696,7 +701,7 @@ For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
 
 ## 8. Docker Compose v2+ Notes and Troubleshooting (Updated)
 
-- The backend is now deployed on Hetzner VPS (49.13.233.118).
+- The backend is now deployed on Hetzner VPS (135.181.111.66).
 - Use the public IP or ws.janis7ewski.org for API/WebSocket endpoint testing.
 - All other notes remain as before.
 
@@ -733,7 +738,7 @@ For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
 ## Hetzner VPS Deployment Checklist (modCA_7web) (Updated)
 
 - System update and firewall configuration may already be complete.
-- **Current production backend IP:** `49.13.233.118`
+- **Current production backend IP:** `135.181.111.66`
 - Follow the checklist for Docker, DNS, SSL, and Cloudflare proxy as described above.
 
 ---
@@ -747,7 +752,7 @@ The backend service is failing to start with a `
 
 ### Current VPS Structure
 ```
-/root/modca_7web/
+/home/modca/modca_7web/
 ├── backend/           # Backend application
 ├── vps_config/       # VPS-specific configurations
 │   ├── nginx/        # Nginx configuration
@@ -770,8 +775,8 @@ The backend service is failing to start with a `
 
 2. **VPS Deployment**
    ```bash
-   # On VPS
-   cd /root/modca_7web
+   # On VPS as modca user
+   cd /home/modca/modca_7web
    git fetch origin
    git checkout vps-deploy
    git pull origin prod --no-ff
