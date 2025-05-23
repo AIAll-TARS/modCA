@@ -583,6 +583,13 @@ const SimulationContext = React.createContext<{
    ```
 4. Submit pull request
 
+- For local development, always run both backend and frontend servers in parallel:
+  - Backend: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000` (from backend directory, with venv activated)
+  - Frontend: `npm run dev -- --port 3000` (from frontend directory)
+- If you get 'address already in use', kill the process using the port (e.g., `lsof -i :8000` or `lsof -i :3000` then `kill <pid>`)
+- Always activate the Python venv before running backend commands
+- Both backend and frontend must be running for the app to work locally
+
 ## 9. Testing
 
 ### Backend Testing
