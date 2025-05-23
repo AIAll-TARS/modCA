@@ -18,13 +18,13 @@
 
 ## 0.1 Branching Model
 
+- **prod** — Main production branch, used for both Vercel frontend and VPS backend deployment.
 - **dev** — Main integration branch for ongoing development and testing.
-- **deploy** (or **production**) — Deployment-ready branch, only updated from tested `dev`.
-- **master** — (Optional) Stable, tagged releases or long-term reference.
+- **vps-deploy** — VPS-specific branch for backend deployment, contains only necessary backend code and VPS configurations.
+- **master** — Stable, tagged releases or long-term reference.
 - **feature/<name>** — For new features.
 - **bugfix/<name>** — For bug fixes.
 - **exp/<name>** — For experiments or prototypes.
-- **release/<version>**, **hotfix/<name>** — (Optional) For prepping releases or urgent fixes.
 
 ## 0.2 Directory Layout
 
@@ -37,6 +37,9 @@ modca_7web/
 ├── deployment/             # Deployment scripts, configs, specs
 ├── docs/                   # Documentation, architecture, API docs
 ├── recordings/             # Simulation recordings (if versioned)
+├── vps_config/            # VPS-specific configurations
+│   ├── .env               # Environment variables
+│   └── ssl/               # SSL certificates
 ├── .github/                # GitHub Actions, issue templates, etc.
 ├── .gitignore
 ├── README.md
@@ -49,31 +52,35 @@ modca_7web/
 
 - All work is done in feature/bugfix/exp branches.
 - Merge to `dev` via Pull Request (PR), with code review and CI checks.
-- When `dev` is stable, fast-forward or merge to `deploy` for production.
-- Tag releases on `deploy` or `master` (e.g., `v1.0.0`).
+- When `dev` is stable, merge to `prod` for production.
+- `vps-deploy` branch is updated from `prod` with VPS-specific configurations.
+- Tag releases on `prod` or `master` (e.g., `v1.0.0`).
 
 ## 0.4 Environment/Config Management
 
 - Use `.env.local`, `.env.production`, etc., and never commit secrets.
+- VPS-specific configs live in `vps_config/`.
 - Deployment-specific configs/scripts live in `deployment/`.
 
 ## 0.5 Branch Table
 
 | Branch         | Purpose                        | Who/What Uses It         |
 |----------------|-------------------------------|--------------------------|
+| prod           | Production deployment          | CI/CD, Vercel, VPS       |
 | dev            | Main development/integration   | Developers, CI           |
-| deploy         | Production deployment          | CI/CD, Vercel, prod      |
+| vps-deploy     | VPS-specific deployment        | VPS Backend              |
 | feature/*      | Isolated feature work          | Developers               |
 | bugfix/*       | Bug fixes                      | Developers               |
 | exp/*          | Experiments                    | Developers               |
-| master         | (Optional) stable reference    | Tagging, releases        |
+| master         | Stable reference               | Tagging, releases        |
 
 ## 0.6 Rationale
 
-- **Isolation:** Dev and deploy are always cleanly separated.
+- **Isolation:** Dev and prod are always cleanly separated.
 - **Safety:** Production is never polluted by half-baked features.
 - **Clarity:** Feature/bugfix/exp branches are self-explanatory.
 - **Scalability:** Easy to add CI/CD, code review, and release automation.
+- **VPS Management:** Dedicated branch for VPS-specific configurations and deployments.
 
 ---
 
@@ -250,6 +257,69 @@ modca_7web/
 └── start_app.bat               # Application starter
 ```
 
+### 5.1 Production VPS Structure
+```
+/home/modca/modca_7web/
+├── backend/
+│   ├── app/               # Core application code
+│   │   ├── constants.py
+│   │   ├── grid.py
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── simulation.py
+│   │   └── __init__.py
+│   ├── data/             # Data storage
+│   ├── recordings/       # Simulation recordings
+│   │   ├── sim_20250404230746_1_frames.json
+│   │   └── sim_20250404230746_1_metadata.json
+│   ├── sqlite_data/      # SQLite database files
+│   │   └── settings.db
+│   ├── venv/             # Python virtual environment
+│   ├── Dockerfile        # Container definition
+│   ├── Procfile         # Process management
+│   ├── requirements.txt  # Dependencies
+│   ├── runtime.txt      # Runtime configuration
+│   └── settings.db      # Database file
+├── certbot/             # SSL certificates
+│   ├── conf/           # Certbot configuration
+│   └── www/            # Web root for verification
+├── config/             # Service configurations
+│   └── nginx/          # Nginx configuration
+│       └── modca.conf  # Nginx site config
+└── docker-compose.yml  # Container orchestration
+```
+
+### 5.2 Key Differences Between Development and Production
+
+1. **Containerization**
+   - Development: Direct Python execution
+   - Production: Docker containers with Nginx reverse proxy
+
+2. **Data Storage**
+   - Development: Local SQLite database
+   - Production: Persistent volume-mounted SQLite database
+
+3. **SSL/TLS**
+   - Development: None (local development)
+   - Production: Let's Encrypt certificates via Certbot
+
+4. **Web Server**
+   - Development: Uvicorn directly
+   - Production: Nginx as reverse proxy
+
+5. **Environment**
+   - Development: Local virtual environment
+   - Production: Containerized environment
+
+6. **User Management**
+   - Development: Local user
+   - Production: Dedicated `modca` user (UID: 1000) with:
+     - Home directory: `/home/modca`
+     - Project directory: `/home/modca/modca_7web`
+     - SSH key: `githubVPSkey` for GitHub access
+     - Git repository: Connected to GitHub
+     - Branch: `vps-deploy` (based on `prod`)
+
 ## 6. Backend Documentation
 
 ### 6.1 Setup and Installation
@@ -335,6 +405,10 @@ class SimulationResponse(BaseModel):
     message: Optional[str]           # Optional message
     steps_run: Optional[int]         # Steps run in last operation
     db_save_success: Optional[bool]  # Database save success status
+    adjustment_info: Optional[Dict[str, Any]] = Field(
+        default_factory=lambda: {"values_adjusted": False},
+        description="Information about any adjustments made to the simulation parameters"
+    )
 ```
 
 #### SimulationStatistics
@@ -385,11 +459,25 @@ Stores results of completed simulations:
 The simulation engine (`simulation.py`) implements the core cellular automata logic:
 
 ```python
-class SimulationEngine:
-    def __init__(self, settings: SimulationSettings):
-        self.grid = Grid(settings.grid_size)
-        self.settings = settings
-        self.statistics = SimulationStatistics()
+class Simulation:
+    def __init__(self, grid, params=None):
+        """
+        Initialize the simulation with a grid and parameters.
+        
+        Args:
+            grid: Either a numpy.ndarray or a tuple (grid, adjustment_info)
+            params: Optional simulation parameters
+        """
+        if isinstance(grid, tuple):
+            self.grid = grid[0]
+            self.adjustment_info = grid[1]
+        else:
+            self.grid = grid
+            self.adjustment_info = {"values_adjusted": False}
+            
+        self.params = params or {}
+        self.current_step = 0
+        self.statistics = self._calculate_statistics()
         
     def step(self):
         """Execute one simulation step."""
@@ -410,6 +498,7 @@ class SimulationEngine:
         
         # Update statistics
         self._update_statistics()
+        self.current_step += 1
 ```
 
 Key Implementation Details:
@@ -417,6 +506,10 @@ Key Implementation Details:
 - Random number generation uses fixed seeds for reproducibility
 - Optimized grid operations using NumPy arrays
 - Statistics calculation runs in O(n) time
+- Grid initialization returns a tuple (grid, adjustment_info)
+- Proper handling of grid tuples in simulation initialization
+- Enhanced error handling for simulation reset
+- Improved WebSocket message handling
 
 ## 7. Frontend Documentation
 
@@ -465,7 +558,7 @@ const SimulationContext = React.createContext<{
    ```bash
    cd backend
    python -m venv venv
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
+   source venv/bin/activate
    pip install -r requirements.txt
    ```
 3. Set up frontend:
@@ -512,6 +605,23 @@ const SimulationContext = React.createContext<{
    cd backend
    pytest app/tests/test_api.py
    ```
+
+3. **HTTPS API Testing**: Test all API endpoints over HTTPS
+   ```
+   cd deployment/scripts
+   ./test_api_endpoints.sh
+   ```
+   This script tests:
+   - Basic API health check
+   - Simulation creation and management
+   - WebSocket connections
+   - Settings management
+   - All endpoints over HTTPS
+   
+   Requirements:
+   - `jq` for JSON processing
+   - `curl` for HTTP requests
+   - `websocat` for WebSocket testing
 
 ### Frontend Testing
 
@@ -624,100 +734,3 @@ const SimulationContext = React.createContext<{
    - Cache Level: Bypass
    - Security Level: High
    ```
-
-### 10.3 Post-Deployment Verification
-
-1. **SSL Verification**:
-   ```bash
-   curl -I https://yourdomain.com
-   ```
-
-2. **WebSocket Test**:
-   ```javascript
-   const ws = new WebSocket('wss://yourdomain.com/ws');
-   ws.onopen = () => console.log('Connected');
-   ```
-
-3. **Performance Testing**:
-   - Use Lighthouse for performance scores
-   - Check WebSocket latency
-   - Verify API response times
-
-### 10.4 Monitoring
-
-1. **Cloudflare Analytics**:
-   - Traffic overview
-   - Security events
-   - Performance metrics
-
-2. **Vercel Analytics**:
-   - Build performance
-   - Runtime errors
-   - Edge function metrics
-
-3. **Custom Monitoring**:
-   - WebSocket connection status
-   - API endpoint health
-   - User experience metrics
-
-## 11. Troubleshooting
-
-### Common Backend Issues
-
-1. **Database Connection Errors**:
-   - Check if the database file exists and has proper permissions
-   - Verify that the database schema is properly set up
-
-2. **API Endpoint Failures**:
-   - Check server logs for errors
-   - Verify that the request body matches the expected schema
-   - Ensure all required dependencies are installed
-
-3. **Simulation Performance Issues**:
-   - Reduce grid size for better performance
-   - Optimize simulation algorithms
-   - Consider using a worker thread for long-running simulations
-
-### Common Frontend Issues
-
-1. **API Connection Errors**:
-   - Verify that the backend server is running
-   - Check CORS configuration
-   - Ensure API endpoint URLs are correct
-
-2. **WebSocket Connection Issues**:
-   - Check if the backend server supports WebSockets
-   - Verify that the WebSocket URL is correct
-   - Implement proper reconnection logic
-
-3. **Rendering Performance**:
-   - Optimize grid rendering with canvas
-   - Implement virtualization for large grids
-   - Use React.memo or shouldComponentUpdate for expensive components
-
-## Local Development: Manual Startup
-
-To run the app locally, use two terminals:
-
-**Terminal 1 (Backend):**
-```bash
-cd backend
-python3 -m venv venv  # Only first time
-source venv/bin/activate
-pip install -r requirements.txt  # Only first time
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-**Terminal 2 (Frontend):**
-```bash
-cd frontend
-npm install  # Only first time
-npm run dev -- --port 3000
-```
-If port 3000 is busy, use:
-```bash
-npm run dev -- --port 3001
-```
-
-- Access the app at http://localhost:3000 (or 3001 if used)
-- The backend API is at http://localhost:8000 

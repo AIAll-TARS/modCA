@@ -115,3 +115,9 @@ frontend/.env.production.local
 # Next.js
 .next/
 .next
+
+# Development scripts
+start_dev.sh
+vps_config/
+docker-compose.yml
+start-backend.sh

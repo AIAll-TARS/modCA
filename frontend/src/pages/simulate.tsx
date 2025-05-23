@@ -796,13 +796,12 @@ export default function Simulate() {
         }
 
         // Use secure WebSocket if on HTTPS
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const wsUrl = `${protocol}//${window.location.host}/ws/simulate/${simId}`
+        const wsUrl = getWsUrl() + '/simulate/' + simId
 
         console.log(`WebSocket URL: ${wsUrl}`)
 
         try {
-            const ws = new WebSocket(getWsUrl(wsUrl))
+            const ws = new WebSocket(wsUrl)
             wsRef.current = ws
 
             ws.onopen = () => {
