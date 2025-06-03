@@ -7,7 +7,7 @@ export function getApiUrl() {
 
 export function getWsUrl() {
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-        return 'ws://localhost:8000/ws/simulate';
+        return 'ws://localhost:8000/ws';
     }
-    return process.env.NEXT_PUBLIC_WS_URL || 'wss://ws.janis7ewski.org/ws/simulate';
+    return process.env.NEXT_PUBLIC_WS_URL || 'wss://ws.janis7ewski.org/ws';
 } 
