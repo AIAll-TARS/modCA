@@ -29,8 +29,8 @@ services:
       - "443:443"
     volumes:
       - ./config/nginx:/etc/nginx/conf.d
-      - /etc/letsencrypt/live/ws.janis7ewski.org/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
-      - /etc/letsencrypt/live/ws.janis7ewski.org/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
+      - /etc/letsencrypt/live/ws.janis7ewski.org/fullchain.pem:/etc/letsencrypt/live/ws.janis7ewski.org/fullchain.pem:ro
+      - /etc/letsencrypt/live/ws.janis7ewski.org/privkey.pem:/etc/letsencrypt/live/ws.janis7ewski.org/privkey.pem:ro
     depends_on:
       - backend
     networks:
