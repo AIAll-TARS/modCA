@@ -118,6 +118,8 @@ frontend/.env.production.local
 
 # Development scripts
 start_dev.sh
-vps_config/
+vps_config/ssl/*
+vps_config/.env
+!vps_config/nginx/
 docker-compose.yml
 start-backend.sh

@@ -436,19 +436,38 @@ modca_7web/
 │   │   ├── simulation.py          # Simulation engine
 │   │   └── routes/                # API endpoints
 │   ├── venv/                      # Virtual environment
-│   └── requirements.txt           # Python dependencies
+│   ├── sqlite_data/              # SQLite database files
+│   ├── recordings/               # Saved simulation recordings
+│   ├── Dockerfile                # Docker configuration
+│   └── requirements.txt          # Python dependencies
 ├── frontend/                      # Frontend application
 │   ├── src/                       # Source code
 │   │   ├── components/            # React components
 │   │   ├── constants.ts           # Frontend constants
 │   │   ├── pages/                 # Next.js pages
 │   │   └── styles/                # CSS styles
+│   ├── .next/                     # Next.js build output
+│   ├── node_modules/              # Node.js dependencies
 │   ├── package.json               # Node dependencies
-│   └── tsconfig.json              # TypeScript configuration
-├── recordings/                    # Saved simulation recordings
-├── start_app.bat                  # Windows startup script
-├── create_desktop_shortcut.bat    # Desktop shortcut creator
-├── cleanup.bat                    # Cleanup utility
+│   ├── package-lock.json          # Locked Node dependencies
+│   ├── tsconfig.json              # TypeScript configuration
+│   ├── next.config.js             # Next.js configuration
+│   ├── postcss.config.js          # PostCSS configuration
+│   ├── tailwind.config.js         # Tailwind CSS configuration
+│   ├── vercel.json                # Vercel deployment config
+│   └── next-env.d.ts             # Next.js type definitions
+├── vps_config/                    # VPS configuration files
+├── deployment/                    # Deployment scripts
+├── .git/                          # Git repository
+├── .cursor/                       # Cursor IDE configuration
+├── start_dev.sh                   # Development startup script
+├── open_in_nautilus.sh           # File explorer script
+├── modCA_7web.code-workspace     # VS Code workspace config
+├── modca_7web.desktop            # Desktop shortcut
+├── .gitignore                     # Git ignore rules
+├── .gitattributes                # Git attributes
+├── DEVELOPER_DOCUMENTATION.md     # Developer documentation
+├── QUICK_START.md                # Quick start guide
 └── README.md                      # This documentation
 ```
 
