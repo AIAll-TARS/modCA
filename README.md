@@ -456,8 +456,14 @@ modca_7web/
 │   ├── tailwind.config.js         # Tailwind CSS configuration
 │   ├── vercel.json                # Vercel deployment config
 │   └── next-env.d.ts             # Next.js type definitions
-├── vps_config/                    # VPS configuration files
-├── deployment/                    # Deployment scripts
+├── deployment/                  # Deployment configurations
+│   ├── config/                 # Configuration files
+│   │   ├── nginx/             # Nginx configurations
+│   │   ├── prometheus/        # Prometheus configurations
+│   │   └── systemd/           # Systemd service files
+│   ├── docker-compose.yml     # Docker Compose configuration
+│   ├── scripts/               # Deployment and maintenance scripts
+│   └── ssl/                   # SSL certificates
 ├── .git/                          # Git repository
 ├── .cursor/                       # Cursor IDE configuration
 ├── start_dev.sh                   # Development startup script
