@@ -123,3 +123,12 @@ vps_config/.env
 !vps_config/nginx/
 docker-compose.yml
 start-backend.sh
+
+# SSL certificates
+deployment/ssl/*
+!deployment/ssl/.gitkeep
+
+# Environment files
+.env
+.env.*
+!.env.example
