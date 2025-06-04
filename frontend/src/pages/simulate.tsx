@@ -949,7 +949,7 @@ export default function Simulate() {
         // Create a function to attempt the step with retry capability
         const attemptStep = () => {
             // Step the simulation via REST API
-            axios.post(`/api/simulate/${simulationId}/step?steps=${steps}`, {}, {
+            axios.post(`${getApiUrl()}/simulate/${simulationId}/step?steps=${steps}`, {}, {
                 timeout: timeout // Set timeout based on grid size
             })
                 .then(response => {
