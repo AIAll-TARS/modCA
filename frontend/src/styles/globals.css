@@ -11,6 +11,8 @@
 
     body {
         @apply font-sans bg-gray-50 text-gray-800 dark:bg-dark-bg dark:text-dark-text;
+        -webkit-tap-highlight-color: transparent;
+        /* Remove tap highlight on mobile */
     }
 
     h1,
@@ -24,32 +26,61 @@
 }
 
 @layer components {
+
+    /* Base button styles */
+    .btn-base {
+        @apply font-medium rounded transition duration-300;
+    }
+
+    /* Mobile-optimized button styles */
     .btn-primary {
-        @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition duration-300 dark:bg-blue-700 dark:hover:bg-blue-800;
+        @apply btn-base bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 dark:bg-blue-700 dark:hover:bg-blue-800 sm:py-2 sm:px-4 text-sm sm:text-base;
     }
 
     .btn-secondary {
-        @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded transition duration-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+        @apply btn-base bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 sm:py-2 sm:px-4 text-sm sm:text-base;
     }
 
     .btn-danger {
-        @apply bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded transition duration-300 dark:bg-red-600 dark:hover:bg-red-700;
+        @apply btn-base bg-red-500 hover:bg-red-600 text-white py-2 px-4 dark:bg-red-600 dark:hover:bg-red-700 sm:py-2 sm:px-4 text-sm sm:text-base;
     }
 
     .btn-success {
-        @apply bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded transition duration-300 dark:bg-green-600 dark:hover:bg-green-700;
+        @apply btn-base bg-green-500 hover:bg-green-600 text-white py-2 px-4 dark:bg-green-600 dark:hover:bg-green-700 sm:py-2 sm:px-4 text-sm sm:text-base;
     }
 
     .btn-warning {
-        @apply bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded transition duration-300 dark:bg-yellow-600 dark:hover:bg-yellow-700;
+        @apply btn-base bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 dark:bg-yellow-600 dark:hover:bg-yellow-700 sm:py-2 sm:px-4 text-sm sm:text-base;
     }
 
+    /* Mobile-optimized card styles */
     .card {
-        @apply bg-white rounded-lg shadow-md dark:bg-dark-card dark:border dark:border-dark-border;
+        @apply bg-white rounded-lg shadow-md dark:bg-dark-card dark:border dark:border-dark-border p-3 sm:p-4 md:p-6;
     }
 
+    /* Mobile-optimized input styles */
     .input {
-        @apply block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white;
+        @apply block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm sm:text-base focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white;
+    }
+
+    /* Mobile-optimized container */
+    .container-mobile {
+        @apply px-3 sm:px-4 md:px-6;
+    }
+
+    /* Mobile-optimized grid */
+    .grid-mobile {
+        @apply grid gap-3 sm:gap-4 md:gap-6;
+    }
+
+    /* Mobile-optimized text */
+    .text-mobile {
+        @apply text-sm sm:text-base;
+    }
+
+    /* Mobile-optimized spacing */
+    .space-mobile {
+        @apply space-y-3 sm:space-y-4 md:space-y-6;
     }
 }
 
@@ -60,4 +91,61 @@
 
 .dark .chartjs-render-monitor>canvas {
     filter: brightness(0.9);
+}
+
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+
+    /* Improve touch targets */
+    button,
+    [role="button"],
+    a {
+        @apply min-h-[44px] min-w-[44px];
+    }
+
+    /* Improve form elements */
+    input,
+    select,
+    textarea {
+        @apply text-base;
+    }
+
+    /* Improve spacing */
+    .mobile-p-2 {
+        @apply p-2;
+    }
+
+    .mobile-m-2 {
+        @apply m-2;
+    }
+
+    /* Improve text readability */
+    .mobile-text {
+        @apply text-sm leading-relaxed;
+    }
+
+    /* Improve grid layout */
+    .mobile-grid {
+        @apply grid-cols-1 gap-2;
+    }
+
+    /* Improve button layout */
+    .mobile-button-group {
+        @apply flex flex-col space-y-2;
+    }
+
+    /* Improve card layout */
+    .mobile-card {
+        @apply p-3;
+    }
+}
+
+/* Prevent zoom on input focus for iOS */
+@supports (-webkit-touch-callout: none) {
+
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
 }

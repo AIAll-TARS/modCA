@@ -29,12 +29,17 @@ export default function App({ Component, pageProps }: AppProps) {
     return (
         <>
             <Head>
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+                <meta name="theme-color" content={darkMode ? '#1a1a1a' : '#ffffff'} />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content={darkMode ? 'black-translucent' : 'default'} />
             </Head>
-            <div className="fixed top-4 right-4 z-50">
+            <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
                 <button
                     onClick={toggleDarkMode}
-                    className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200
+                             min-h-[44px] min-w-[44px] flex items-center justify-center
+                             shadow-md hover:shadow-lg transition-shadow duration-200"
                     aria-label="Toggle dark mode"
                 >
                     {darkMode ? (
@@ -48,7 +53,11 @@ export default function App({ Component, pageProps }: AppProps) {
                     )}
                 </button>
             </div>
-            <Component {...pageProps} />
+            <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
+                <div className="container-mobile mx-auto">
+                    <Component {...pageProps} />
+                </div>
+            </main>
         </>
     );
 } 
