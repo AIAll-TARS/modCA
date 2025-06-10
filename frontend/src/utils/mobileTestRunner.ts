@@ -26,7 +26,7 @@ class MobileTestRunner {
             await new Promise(resolve => setTimeout(resolve, 100));
 
             // Run tests
-            const results = runMobileTests();
+            const results = await runMobileTests();
             this.results.push({
                 device,
                 viewport,
