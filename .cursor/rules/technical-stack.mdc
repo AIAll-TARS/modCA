@@ -1,15 +1,71 @@
 ---
-description: This is project's tech stack
+description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Technical stack
 
-- Python for the backend
-- html/js for the frontend
-- SQL databases, never JSON file storage
-- Separate databases for dev, test, and prod
-- Elasticsearch for search, using elastic.co hosting
-- Elastic.co will have dev and prod indexes
-- Python tests
+Let me search for documentation about the project's technical stack.
+
+Search files...
+Based on the documentation, I can provide a comprehensive overview of the project's technical stack:
+
+### Backend
+- **Core Language**: Python 3.8+
+- **Web Framework**: FastAPI
+- **Server**: Uvicorn (ASGI server)
+- **Database**: SQLite
+- **Key Libraries**:
+  - NumPy for numerical operations
+  - WebSockets for real-time communication
+  - Logging for diagnostics
+
+### Frontend
+- **Framework**: Next.js 14.2.28
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Key Libraries**:
+  - Chart.js for data visualization
+  - WebSocket API for real-time updates
+  - React Hook Form for form handling
+  - Canvas API for grid rendering
+
+### Deployment & Infrastructure
+- **Frontend Hosting**: Vercel
+  - Region: fra1 (Frankfurt)
+  - Auto-deployment enabled
+  - Edge Functions support
+
+- **Backend Hosting**: Hetzner VPS
+  - OS: Ubuntu 24.04 LTS
+  - Docker & Docker Compose for containerization
+  - Nginx as reverse proxy
+  - Let's Encrypt SSL certificates
+
+- **CDN & Security**: Cloudflare
+  - DNS management
+  - SSL/TLS encryption
+  - DDoS protection
+  - WebSocket proxy
+  - Performance optimization
+
+### Development Tools
+- **Version Control**: Git
+- **Package Managers**:
+  - npm for frontend
+  - pip for backend
+- **Code Quality**:
+  - ESLint for JavaScript/TypeScript
+  - Prettier for code formatting
+- **Testing**:
+  - Jest for frontend
+  - pytest for backend
+
+### Monitoring & Analytics
+- Vercel Analytics for frontend
+- Cloudflare Analytics for traffic and security
+- Custom metrics for WebSocket performance and API response times
+
+
+
