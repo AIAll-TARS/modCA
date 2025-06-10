@@ -56,6 +56,17 @@ export default function Home() {
                         </p>
                     </header>
 
+                    <nav className="flex justify-between items-center mb-8">
+                        <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
+                            MODCA
+                        </Link>
+                        <div className="space-x-4">
+                            <Link href="/mobile-test" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                                Mobile Test
+                            </Link>
+                        </div>
+                    </nav>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                         <div className="card p-6 flex flex-col justify-between">
                             <div>
