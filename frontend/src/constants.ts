@@ -4,22 +4,22 @@
  */
 
 // Grid configuration
-export const GRID_SIZE = 50;  // Size of the square grid (NxN)
-export const STEPS = 100;  // Number of simulation iterations
+export const GRID_SIZE = 75;  // Size of the square grid (NxN)
+export const STEPS = 9999;  // Number of simulation iterations
 export const NEIGHBORHOOD_TYPE = "moore";  // Can be "von_neumann" or "moore"
 export const GRID_TYPE = "torus";  // Grid type, typically "torus"
 
 // Predator parameters
 export const PREDATOR_DEATH_PROBABILITY = 0.1;  // Probability of predator dying
-export const PREDATOR_BIRTH_PROBABILITY = 0.3;  // Chance of predator reproduction
+export const PREDATOR_BIRTH_PROBABILITY = 0.43;  // Chance of predator reproduction
 export const INITIAL_PREDATORS = 20;  // Starting number of predators
-export const PREDATOR_STARVATION_STEPS = 5;  // Steps until predator dies from starvation
+export const PREDATOR_STARVATION_STEPS = 66;  // Steps until predator dies from starvation
 
 // Prey parameters
 export const PREY_HUNTED_PROBABILITY = 0.3;  // Probability that a prey is hunted
 export const PREY_RANDOM_DEATH = 0.1;  // Probability of prey dying randomly
-export const INITIAL_PREY = 100;  // Starting number of prey
-export const PREY_BIRTH_PROBABILITY = 0.3;  // Probability of prey reproduction
+export const INITIAL_PREY = 1000;  // Starting number of prey
+export const PREY_BIRTH_PROBABILITY = 0.64;  // Probability of prey reproduction
 export const PREY_STARVATION_STEPS = 3;  // Steps until prey dies from starvation
 export const PREY_THREAT_RESPONSE = 0.5;  // Probability of prey staying still when threatened
 
