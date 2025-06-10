@@ -637,6 +637,38 @@ const SimulationContext = React.createContext<{
    npm run test:e2e
    ```
 
+3. **Mobile Responsiveness Testing**
+   - Access the mobile test page at `/mobile-test`
+   - Supports testing on various devices:
+     - iPhone 12 Pro (390x844)
+     - iPhone SE (375x667)
+     - iPhone XR (414x896)
+     - iPhone 12 Pro Max (428x926)
+     - Pixel 5 (393x851)
+     - Samsung Galaxy S20 (360x800)
+     - Samsung Galaxy S24 (393x852)
+     - iPad Pro (1024x1366)
+     - iPad Air (820x1180)
+     - iPad Mini (768x1024)
+   
+   Test Categories:
+   - Touch Interactions: Verifies minimum touch target sizes (44x44px)
+   - Text Readability: Checks font sizes and line heights
+   - Layout Responsiveness: Tests container widths and scrolling behavior
+   
+   To run tests:
+   1. Start the development server: `npm run dev`
+   2. Navigate to `/mobile-test`
+   3. Select a device from the dropdown
+   4. Click "Run All Tests"
+   5. Review the test results and fix any issues
+
+   Test Results Include:
+   - Pass/Fail counts for each category
+   - Detailed error messages for failed tests
+   - Summary of total tests and pass rate
+   - Device-specific issues and recommendations
+
 ## 10. Deployment
 
 ### 10.1 Vercel Deployment
