@@ -3,7 +3,7 @@ import { MOBILE_DEVICES, runMobileTests, logTestResults } from './mobileTest';
 interface TestResult {
     device: string;
     viewport: { width: number; height: number };
-    results: Awaited<ReturnType<typeof runMobileTests>>;
+    results: ReturnType<typeof runMobileTests>;
     timestamp: string;
 }
 
@@ -26,7 +26,7 @@ class MobileTestRunner {
             await new Promise(resolve => setTimeout(resolve, 100));
 
             // Run tests
-            const results = await runMobileTests();
+            const results = runMobileTests();
             this.results.push({
                 device,
                 viewport,

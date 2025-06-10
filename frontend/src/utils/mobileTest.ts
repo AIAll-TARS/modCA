@@ -28,7 +28,7 @@ interface TestResults {
     };
 }
 
-export async function runMobileTests(): Promise<TestResults> {
+export function runMobileTests(): TestResults {
     const results: TestResults = {
         touch: { pass: 0, fail: 0, details: [] },
         text: { pass: 0, fail: 0, details: [] },
