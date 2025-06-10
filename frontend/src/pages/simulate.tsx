@@ -949,7 +949,7 @@ export default function Simulate() {
         // Create a function to attempt the step with retry capability
         const attemptStep = () => {
             // Step the simulation via REST API
-            axios.post(`${getApiUrl()}/simulate/${simulationId}/step?steps=${steps}`, {}, {
+            axios.post(`/api/simulate/${simulationId}/step?steps=${steps}`, {}, {
                 timeout: timeout // Set timeout based on grid size
             })
                 .then(response => {
@@ -1234,6 +1234,8 @@ export default function Simulate() {
                     padding: 0.5rem 1rem;
                     border-radius: 0.375rem;
                     transition: background-color 0.2s;
+                    width: 100%;
+                    margin-bottom: 0.5rem;
                 }
                 .btn-primary:hover {
                     background-color: #4B5563;
@@ -1245,6 +1247,8 @@ export default function Simulate() {
                     padding: 0.5rem 1rem;
                     border-radius: 0.375rem;
                     transition: background-color 0.2s;
+                    width: 100%;
+                    margin-bottom: 0.5rem;
                 }
                 .btn-secondary:hover {
                     background-color: #6B7280;
@@ -1256,6 +1260,8 @@ export default function Simulate() {
                     padding: 0.5rem 1rem;
                     border-radius: 0.375rem;
                     transition: background-color 0.2s;
+                    width: 100%;
+                    margin-bottom: 0.5rem;
                 }
                 .btn-success:hover {
                     background-color: #4B5563;
@@ -1267,9 +1273,61 @@ export default function Simulate() {
                     padding: 0.5rem 1rem;
                     border-radius: 0.375rem;
                     transition: background-color 0.2s;
+                    width: 100%;
+                    margin-bottom: 0.5rem;
                 }
                 .btn-warning:hover {
                     background-color: #6B7280;
+                }
+
+                .form-group input,
+                .form-group select {
+                    height: 2.5rem;
+                    padding: 0.5rem;
+                    font-size: 1rem;
+                    border-radius: 0.375rem;
+                    border: 1px solid #D1D5DB;
+                    width: 100%;
+                    background-color: white;
+                    color: #1F2937;
+                }
+
+                .form-group input:focus,
+                .form-group select:focus {
+                    outline: none;
+                    border-color: #3B82F6;
+                    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+                }
+
+                .form-group label {
+                    display: block;
+                    margin-bottom: 0.5rem;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    color: #4B5563;
+                }
+
+                @media (max-width: 640px) {
+                    .form-group {
+                        margin-bottom: 1rem;
+                    }
+                    .form-group input,
+                    .form-group select {
+                        height: 3rem;
+                        font-size: 1rem;
+                    }
+                    .grid-container {
+                        width: 100%;
+                        max-width: 100vw;
+                        overflow-x: auto;
+                        -webkit-overflow-scrolling: touch;
+                    }
+                    .chart-container {
+                        width: 100%;
+                        max-width: 100vw;
+                        overflow-x: auto;
+                        -webkit-overflow-scrolling: touch;
+                    }
                 }
             `}</style>
 
@@ -1277,7 +1335,7 @@ export default function Simulate() {
                 <div className="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center p-2">
                     <div className="relative w-full h-full">
                         <button
-                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
+                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 text-sm sm:text-base"
                             onClick={toggleGridFullscreen}
                         >
                             Exit Fullscreen
@@ -1285,21 +1343,21 @@ export default function Simulate() {
 
                         {/* Zoom controls */}
                         {grid.length > LARGE_GRID_THRESHOLD && (
-                            <div className="absolute top-2 left-2 z-10 flex space-x-2">
+                            <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
                                 <button
-                                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                                    className="bg-blue-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-blue-700 text-sm sm:text-base"
                                     onClick={() => setZoomLevel(prev => Math.min(prev + 0.5, 20))}
                                 >
                                     Zoom In
                                 </button>
                                 <button
-                                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                                    className="bg-blue-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-blue-700 text-sm sm:text-base"
                                     onClick={() => setZoomLevel(prev => Math.max(prev - 0.5, 0.5))}
                                 >
                                     Zoom Out
                                 </button>
                                 <button
-                                    className="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700"
+                                    className="bg-gray-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-gray-700 text-sm sm:text-base"
                                     onClick={() => {
                                         setZoomLevel(1);
                                         setViewportOffset({ x: 0, y: 0 });
@@ -1311,14 +1369,22 @@ export default function Simulate() {
                         )}
 
                         <div className="w-full h-full flex flex-col items-center justify-center">
-                            <h2 className="text-xl text-white mb-2">Grid Visualization (Step {currentStep})</h2>
+                            <h2 className="text-lg sm:text-xl text-white mb-2">Grid Visualization (Step {currentStep})</h2>
                             <div className="w-full h-[calc(100%-40px)] flex items-center justify-center">
-                                <canvas
-                                    ref={canvasRef}
-                                    className="max-w-full max-h-full bg-gray-800"
-                                ></canvas>
+                                <div className="grid-container mb-4 sm:mb-6">
+                                    <div className="relative aspect-square w-full max-w-full mx-auto bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden touch-pan-x touch-pan-y">
+                                        <canvas
+                                            ref={canvasRef}
+                                            className="w-full h-full touch-none"
+                                        ></canvas>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        <canvas
+                            ref={canvasRef}
+                            className="max-w-full max-h-full bg-gray-800"
+                        ></canvas>
                     </div>
                 </div>
             )}
@@ -1327,7 +1393,7 @@ export default function Simulate() {
                 <div className="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center p-2">
                     <div className="relative w-full h-full">
                         <button
-                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
+                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-red-700 text-sm sm:text-base"
                             onClick={toggleChartFullscreen}
                         >
                             Exit Fullscreen
@@ -1336,28 +1402,28 @@ export default function Simulate() {
                         {/* Control buttons for simulation in fullscreen mode */}
                         <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
                             <button
-                                className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
+                                className="bg-green-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-green-700 text-sm sm:text-base"
                                 onClick={() => stepSimulation(1)}
                                 disabled={status === 'completed' || !simulationId}
                             >
                                 Step
                             </button>
                             <button
-                                className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                                className="bg-blue-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-blue-700 text-sm sm:text-base"
                                 onClick={autoRunSimulation}
                                 disabled={status === 'completed' || !simulationId}
                             >
                                 Auto Run
                             </button>
                             <button
-                                className="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700"
+                                className="bg-gray-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-gray-700 text-sm sm:text-base"
                                 onClick={resetSimulation}
                                 disabled={!simulationId}
                             >
                                 Reset
                             </button>
                             <button
-                                className="bg-yellow-600 text-white px-3 py-1 rounded-md hover:bg-yellow-700"
+                                className="bg-yellow-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-yellow-700 text-sm sm:text-base"
                                 onClick={() => router.push("/")}
                             >
                                 Home
@@ -1366,7 +1432,7 @@ export default function Simulate() {
 
                         <div className="w-full h-full flex flex-col items-center justify-center">
                             {/* Combined step counter and population counters in one line with larger text */}
-                            <div className="flex items-center justify-center space-x-6 mb-6 text-2xl">
+                            <div className="flex flex-wrap items-center justify-center gap-4 mb-6 text-lg sm:text-2xl">
                                 <div className="text-white font-bold">Step: {currentStep}</div>
                                 <div className="flex items-center">
                                     <span className="text-red-500 font-bold">{statistics.predator_count || 0}</span>
@@ -1444,7 +1510,7 @@ export default function Simulate() {
                                 </div>
                             </div>
 
-                            <div className="w-full h-[calc(100%-80px)] flex items-center justify-center bg-white dark:bg-dark-card p-4 rounded-md">
+                            <div className="w-full h-[calc(100%-80px)] flex items-center justify-center bg-white dark:bg-dark-card p-2 sm:p-4 rounded-md">
                                 <Line
                                     data={chartData}
                                     options={{
@@ -1518,553 +1584,415 @@ export default function Simulate() {
                 </div>
             )}
 
-            <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
-                {/* Fixed top navigation bar with buttons */}
-                {simulationId && (
-                    <div className="sticky top-0 z-40 bg-white dark:bg-dark-card shadow-md p-3 mb-4">
-                        <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text">
-                                    Simulation #{simulationId}
-                                </h2>
-                                <div className="flex items-center">
-                                    <span className="text-gray-600 dark:text-gray-300 mr-2">
-                                        Step {currentStep} of {totalSteps}
-                                    </span>
-                                    <div className={`h-3 w-3 rounded-full ${status === 'running' ? 'bg-green-500' :
-                                        status === 'completed' ? 'bg-blue-500' :
-                                            status === 'stopped' ? 'bg-red-500' :
-                                                status.startsWith('retrying') ? 'bg-purple-500 animate-pulse' :
-                                                    'bg-yellow-500'
-                                        }`}></div>
-                                    <span className="ml-2 text-sm capitalize dark:text-gray-300">
-                                        {status.startsWith('retrying') ? 'Retrying connection...' : status}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => router.push("/")}
-                                    title="Return to Home"
-                                >
-                                    Home
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => stepSimulation(1)}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Step (1)
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => stepSimulation(5)}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Step (5)
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={autoRunSimulation}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Auto Run
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={resetSimulation}
-                                    disabled={!simulationId}
-                                >
-                                    Reset
-                                </button>
-                                {simulationId && recordingAvailable && !recordingSaved && (
-                                    <button
-                                        type="button"
-                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                        onClick={() => saveRecording()}
-                                    >
-                                        Save Recording
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Display adjustment warning if values were adjusted */}
-                {simulationId && valueAdjustments && valueAdjustments.values_adjusted && (
-                    <div className="container mx-auto max-w-7xl mb-4">
-                        <AdjustmentWarning adjustments={valueAdjustments} />
-                    </div>
-                )}
-
-                <div className="container mx-auto px-4 py-6 max-w-7xl">
-                    {!simulationId ? (
-                        <>
-                            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Set simulation baby and let's roll</h1>
-                            <div className="card p-6 mb-8">
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-4">Configure Simulation</h2>
-
-                                <Formik
-                                    initialValues={defaultSettings}
-                                    validationSchema={SimulationSchema}
-                                    enableReinitialize={true}
-                                    onSubmit={(values: SimulationParams, { setSubmitting }) => {
-                                        // Convert all form values explicitly before calling startSimulation
-                                        const numericValues: SimulationParams = {
-                                            ...values,
-                                            grid_size: Number(values.grid_size) || GRID_SIZE,
-                                            steps: Number(values.steps) || STEPS,
-                                            initial_prey: Number(values.initial_prey) || INITIAL_PREY,
-                                            initial_predators: Number(values.initial_predators) || INITIAL_PREDATORS,
-                                            predator_death_probability: Number(values.predator_death_probability) || PREDATOR_DEATH_PROBABILITY,
-                                            predator_birth_probability: Number(values.predator_birth_probability) || PREDATOR_BIRTH_PROBABILITY,
-                                            predator_starvation_steps: Number(values.predator_starvation_steps) || PREDATOR_STARVATION_STEPS,
-                                            prey_hunted_probability: Number(values.prey_hunted_probability) || PREY_HUNTED_PROBABILITY,
-                                            prey_random_death: Number(values.prey_random_death) || PREY_RANDOM_DEATH,
-                                            prey_birth_probability: Number(values.prey_birth_probability) || PREY_BIRTH_PROBABILITY,
-                                            prey_starvation_steps: Number(values.prey_starvation_steps) || PREY_STARVATION_STEPS,
-                                            prey_threat_response: Number(values.prey_threat_response) || PREY_THREAT_RESPONSE,
-                                            initial_substrate_probability: Number(values.initial_substrate_probability) || INITIAL_SUBSTRATE_PROBABILITY,
-                                            substrate_random_death: Number(values.substrate_random_death) || SUBSTRATE_RANDOM_DEATH,
-                                            substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
-                                            neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
-                                            grid_type: values.grid_type || GRID_TYPE,
-                                            record_simulation: Boolean(values.record_simulation)
-                                        };
-                                        console.log('Form submission - converted numeric values:', numericValues);
-
-                                        // Save settings to localStorage before starting simulation
-                                        saveSettingsToLocalStorage(numericValues);
-
-                                        startSimulation(numericValues);
-                                        setSubmitting(false);
-                                    }}
-                                >
-                                    {({ isSubmitting }) => (
-                                        <Form className="space-y-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                <div>
-                                                    <label htmlFor="grid_size" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Grid Size</label>
+            <main className="min-h-screen bg-gray-100 dark:bg-gray-900">
+                <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+                        {/* Form Section */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 sm:p-6">
+                            <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">Simulation Parameters</h1>
+                            <Formik
+                                initialValues={defaultSettings}
+                                validationSchema={SimulationSchema}
+                                onSubmit={startSimulation}
+                            >
+                                {({ values, errors, touched, setFieldValue }) => (
+                                    <Form className="space-y-3 sm:space-y-4">
+                                        {/* Grid Settings */}
+                                        <div className="space-y-3 sm:space-y-4">
+                                            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Grid Settings</h2>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                <div className="form-group">
+                                                    <label htmlFor="grid_size" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Grid Size
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="grid_size"
-                                                        min={VALIDATION_LIMITS.GRID_SIZE.min}
-                                                        max={VALIDATION_LIMITS.GRID_SIZE.max}
-                                                        className="input"
+                                                        id="grid_size"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="grid_size" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Steps</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Steps
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="steps"
-                                                        min={VALIDATION_LIMITS.STEPS.min}
-                                                        max={VALIDATION_LIMITS.STEPS.max}
-                                                        className="input"
+                                                        id="steps"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="steps" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="neighborhood_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Neighborhood Type</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="neighborhood_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Neighborhood Type
+                                                    </label>
                                                     <Field
                                                         as="select"
                                                         name="neighborhood_type"
-                                                        className="input"
+                                                        id="neighborhood_type"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     >
-                                                        <option value="von_neumann">Von Neumann (4 cells)</option>
-                                                        <option value="moore">Moore (8 cells)</option>
+                                                        <option value="moore">Moore</option>
+                                                        <option value="von_neumann">Von Neumann</option>
                                                     </Field>
                                                     <ErrorMessage name="neighborhood_type" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="grid_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Grid Type</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="grid_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Grid Type
+                                                    </label>
                                                     <Field
                                                         as="select"
                                                         name="grid_type"
-                                                        className="input"
+                                                        id="grid_type"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     >
+                                                        <option value="toroidal">Toroidal</option>
                                                         <option value="finite">Finite</option>
-                                                        <option value="torus">Torus</option>
                                                     </Field>
                                                     <ErrorMessage name="grid_type" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
+                                            </div>
+                                        </div>
 
-                                                <div className="col-span-3 border-t pt-4 mt-2">
-                                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Predator Parameters</h3>
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="initial_predators" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Predators</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="initial_predators"
-                                                        min={VALIDATION_LIMITS.INITIAL_PREDATORS.min}
-                                                        max={VALIDATION_LIMITS.INITIAL_PREDATORS.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="initial_predators" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="predator_death_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Death Probability</label>
+                                        {/* Predator Settings */}
+                                        <div className="space-y-3 sm:space-y-4">
+                                            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Predator Settings</h2>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                <div className="form-group">
+                                                    <label htmlFor="predator_death_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Death Probability
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="predator_death_probability"
+                                                        id="predator_death_probability"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="predator_death_probability" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="predator_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="predator_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Birth Probability
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="predator_birth_probability"
+                                                        id="predator_birth_probability"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="predator_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="predator_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="initial_predators" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Initial Count
+                                                    </label>
+                                                    <Field
+                                                        type="number"
+                                                        name="initial_predators"
+                                                        id="initial_predators"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                                    />
+                                                    <ErrorMessage name="initial_predators" component="div" className="text-red-500 text-sm mt-1" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label htmlFor="predator_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Starvation Steps
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="predator_starvation_steps"
-                                                        min={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.min}
-                                                        max={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.max}
-                                                        className="input"
+                                                        id="predator_starvation_steps"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a predator can survive without food</div>
                                                     <ErrorMessage name="predator_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
+                                            </div>
+                                        </div>
 
-                                                <div className="col-span-3 border-t pt-4 mt-2">
-                                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Prey Parameters</h3>
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="initial_prey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Prey</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="initial_prey"
-                                                        min={VALIDATION_LIMITS.INITIAL_PREY.min}
-                                                        max={VALIDATION_LIMITS.INITIAL_PREY.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="initial_prey" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_hunted_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hunted Probability</label>
+                                        {/* Prey Settings */}
+                                        <div className="space-y-3 sm:space-y-4">
+                                            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Prey Settings</h2>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                <div className="form-group">
+                                                    <label htmlFor="prey_hunted_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Hunted Probability
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="prey_hunted_probability"
+                                                        id="prey_hunted_probability"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="prey_hunted_probability" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="prey_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Random Death
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="prey_random_death"
+                                                        id="prey_random_death"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.PREY_RANDOM_DEATH.min}
-                                                        max={VALIDATION_LIMITS.PREY_RANDOM_DEATH.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="prey_random_death" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="initial_prey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Initial Count
+                                                    </label>
+                                                    <Field
+                                                        type="number"
+                                                        name="initial_prey"
+                                                        id="initial_prey"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                                    />
+                                                    <ErrorMessage name="initial_prey" component="div" className="text-red-500 text-sm mt-1" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label htmlFor="prey_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Birth Probability
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="prey_birth_probability"
+                                                        id="prey_birth_probability"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="prey_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="prey_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Starvation Steps
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="prey_starvation_steps"
-                                                        min={VALIDATION_LIMITS.PREY_STARVATION_STEPS.min}
-                                                        max={VALIDATION_LIMITS.PREY_STARVATION_STEPS.max}
-                                                        className="input"
+                                                        id="prey_starvation_steps"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a prey can survive without substrate</div>
                                                     <ErrorMessage name="prey_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_threat_response" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Threat Response</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="prey_threat_response" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Threat Response
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="prey_threat_response"
+                                                        id="prey_threat_response"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.min}
-                                                        max={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Probability of staying still when threatened</div>
                                                     <ErrorMessage name="prey_threat_response" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
+                                            </div>
+                                        </div>
 
-                                                <div className="col-span-3 border-t pt-4 mt-2">
-                                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Substrate Parameters</h3>
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="initial_substrate_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Probability</label>
+                                        {/* Substrate Settings */}
+                                        <div className="space-y-3 sm:space-y-4">
+                                            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Substrate Settings</h2>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                <div className="form-group">
+                                                    <label htmlFor="initial_substrate_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Initial Probability
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="initial_substrate_probability"
+                                                        id="initial_substrate_probability"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="initial_substrate_probability" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="substrate_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="substrate_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Random Death
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="substrate_random_death"
+                                                        id="substrate_random_death"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min}
-                                                        max={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="substrate_random_death" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Consumption Probability</label>
+                                                <div className="form-group">
+                                                    <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Consumption Probability
+                                                    </label>
                                                     <Field
                                                         type="number"
                                                         name="substrate_consumption_prob"
+                                                        id="substrate_consumption_prob"
                                                         step="0.01"
-                                                        min={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}
-                                                        max={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}
-                                                        className="input"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                                     />
                                                     <ErrorMessage name="substrate_consumption_prob" component="div" className="text-red-500 text-sm mt-1" />
                                                 </div>
-
-                                                <div>
-                                                    <label htmlFor="record_simulation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                        Record Simulation
-                                                    </label>
-                                                    <div className="mt-1 flex items-center">
-                                                        <Field
-                                                            type="checkbox"
-                                                            name="record_simulation"
-                                                            id="record_simulation"
-                                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                        />
-                                                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                                                            Enable to save each step for smoother playback later
-                                                        </span>
-                                                    </div>
-                                                    <ErrorMessage name="record_simulation" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
                                             </div>
-
-                                            <div className="flex justify-end space-x-3 pt-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => router.push('/')}
-                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        // Reset to factory defaults
-                                                        setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
-                                                        saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
-                                                        // Reload the page to apply defaults
-                                                        window.location.reload();
-                                                    }}
-                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                >
-                                                    Reset to Defaults
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    disabled={isSubmitting}
-                                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
-                                                >
-                                                    {isSubmitting ? 'Starting...' : 'Start Simulation'}
-                                                </button>
-                                            </div>
-                                        </Form>
-                                    )}
-                                </Formik>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="space-y-6">
-                            <div className="card p-6">
-                                <div className="flex flex-wrap -mx-2">
-                                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                                        <div className="border dark:border-dark-border rounded-md p-2">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Grid Visualization</h3>
-                                                <button
-                                                    className="btn-secondary text-sm px-2 py-1"
-                                                    onClick={toggleGridFullscreen}
-                                                >
-                                                    Fullscreen
-                                                </button>
-                                            </div>
-                                            <div className="aspect-square bg-gray-100 dark:bg-gray-800 border rounded-md overflow-hidden">
-                                                <canvas
-                                                    ref={canvasRef}
-                                                    width={400}
-                                                    height={400}
-                                                    className="w-full h-full bg-gray-100 dark:bg-gray-800"
-                                                ></canvas>
-                                            </div>
-                                            {grid.length > 100 && (
-                                                <div className="mt-2 text-xs text-gray-500">
-                                                    Large grid ({grid.length}x{grid.length}). Use fullscreen for better visibility.
-                                                </div>
-                                            )}
                                         </div>
-                                    </div>
 
-                                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                                        <div className="border dark:border-dark-border rounded-md p-2">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Population Trends</h3>
-                                                <button
-                                                    className="btn-secondary text-sm px-2 py-1"
-                                                    onClick={toggleChartFullscreen}
-                                                >
-                                                    Fullscreen
-                                                </button>
-                                            </div>
-                                            <div className="aspect-square bg-white dark:bg-dark-card">
-                                                <Line
-                                                    data={chartData}
-                                                    options={{
-                                                        responsive: true,
-                                                        plugins: {
-                                                            legend: {
-                                                                position: 'top',
-                                                                labels: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                }
-                                                            },
-                                                            title: {
-                                                                display: true,
-                                                                text: 'Population Over Time',
-                                                                color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                            },
-                                                        },
-                                                        scales: {
-                                                            y: {
-                                                                beginAtZero: true,
-                                                                ticks: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                },
-                                                                grid: {
-                                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
-                                                                },
-                                                                display: chartData.labels.length > 0
-                                                            },
-                                                            x: {
-                                                                ticks: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                },
-                                                                grid: {
-                                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
-                                                                },
-                                                                display: chartData.labels.length > 0
-                                                            }
-                                                        },
-                                                        elements: {
-                                                            line: {
-                                                                tension: 0.1
-                                                            },
-                                                            point: {
-                                                                radius: 0 // Hide points when not needed
-                                                            }
-                                                        },
-                                                        animation: {
-                                                            duration: 0 // Disable animation for initial render
-                                                        }
-                                                    }}
+                                        {/* Record Simulation */}
+                                        <div className="form-group">
+                                            <label className="flex items-center space-x-2">
+                                                <Field
+                                                    type="checkbox"
+                                                    name="record_simulation"
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                                                 />
-                                            </div>
+                                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Record Simulation</span>
+                                            </label>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <div className="mt-4">
-                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Current Statistics</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-                                            <div className="text-sm text-red-600 dark:text-red-400 font-medium">Predators</div>
-                                            <div className="text-2xl font-bold text-red-800 dark:text-red-300">{statistics.predator_count || 0}</div>
+                                        {/* Simulation Controls */}
+                                        <div className="flex flex-wrap gap-2 mt-4 sm:mt-6">
+                                            <button
+                                                type="submit"
+                                                className="btn-primary flex-1"
+                                                disabled={status === 'running'}
+                                            >
+                                                {status === 'running' ? 'Running...' : 'Start Simulation'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-secondary flex-1"
+                                                onClick={() => stepSimulation(1)}
+                                                disabled={status === 'completed' || !simulationId}
+                                            >
+                                                Step
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-success flex-1"
+                                                onClick={autoRunSimulation}
+                                                disabled={status === 'completed' || !simulationId}
+                                            >
+                                                Auto Run
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-warning flex-1"
+                                                onClick={resetSimulation}
+                                                disabled={!simulationId}
+                                            >
+                                                Reset
+                                            </button>
                                         </div>
-                                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
-                                            <div className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Prey</div>
-                                            <div className="text-2xl font-bold text-yellow-800 dark:text-yellow-300">{statistics.prey_count || 0}</div>
-                                        </div>
-                                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
-                                            <div className="text-sm text-green-600 dark:text-green-400 font-medium">Substrate</div>
-                                            <div className="text-2xl font-bold text-green-800 dark:text-green-300">{statistics.substrate_count || 0}</div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-md p-3">
-                                        <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Population</div>
-                                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-300">
-                                            {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {status === 'error' && (
-                                    <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded">
-                                        An error occurred. Please check the console for details or try again.
-                                    </div>
+                                    </Form>
                                 )}
+                            </Formik>
+                        </div>
+
+                        {/* Visualization Section */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 sm:p-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-4">
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Visualization</h2>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <button
+                                        onClick={toggleGridFullscreen}
+                                        className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm sm:text-base"
+                                    >
+                                        Fullscreen Grid
+                                    </button>
+                                    <button
+                                        onClick={toggleChartFullscreen}
+                                        className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm sm:text-base"
+                                    >
+                                        Fullscreen Chart
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Grid Visualization */}
+                            <div className="grid-container mb-4 sm:mb-6">
+                                <div className="relative aspect-square w-full max-w-full mx-auto bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+                                    <canvas
+                                        ref={canvasRef}
+                                        className="w-full h-full"
+                                    ></canvas>
+                                </div>
+                            </div>
+
+                            {/* Statistics */}
+                            <div className="stats-container grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                                <div className="stats-item bg-gray-100 dark:bg-gray-700 p-2 sm:p-3 rounded-lg">
+                                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Predators</div>
+                                    <div className="text-lg sm:text-xl font-bold text-red-500">{statistics.predator_count || 0}</div>
+                                </div>
+                                <div className="stats-item bg-gray-100 dark:bg-gray-700 p-2 sm:p-3 rounded-lg">
+                                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Prey</div>
+                                    <div className="text-lg sm:text-xl font-bold text-yellow-500">{statistics.prey_count || 0}</div>
+                                </div>
+                                <div className="stats-item bg-gray-100 dark:bg-gray-700 p-2 sm:p-3 rounded-lg">
+                                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Substrate</div>
+                                    <div className="text-lg sm:text-xl font-bold text-green-500">{statistics.substrate_count || 0}</div>
+                                </div>
+                                <div className="stats-item bg-gray-100 dark:bg-gray-700 p-2 sm:p-3 rounded-lg">
+                                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Total</div>
+                                    <div className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                                        {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Chart */}
+                            <div className="chart-container">
+                                <div className="bg-white dark:bg-gray-700 p-2 sm:p-4 rounded-lg">
+                                    <Line
+                                        data={chartData}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            plugins: {
+                                                legend: {
+                                                    position: 'top' as const,
+                                                    labels: {
+                                                        color: '#6B7280',
+                                                        font: {
+                                                            size: 12
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    grid: {
+                                                        color: '#E5E7EB'
+                                                    },
+                                                    ticks: {
+                                                        color: '#6B7280',
+                                                        maxRotation: 45,
+                                                        minRotation: 45
+                                                    }
+                                                },
+                                                y: {
+                                                    grid: {
+                                                        color: '#E5E7EB'
+                                                    },
+                                                    ticks: {
+                                                        color: '#6B7280'
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                        height={300}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </main>
         </>
