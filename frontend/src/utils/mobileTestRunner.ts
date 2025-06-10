@@ -3,7 +3,7 @@ import { MOBILE_DEVICES, runMobileTests, logTestResults } from './mobileTest';
 interface TestResult {
     device: string;
     viewport: { width: number; height: number };
-    results: ReturnType<typeof runMobileTests>;
+    results: Awaited<ReturnType<typeof runMobileTests>>;
     timestamp: string;
 }
 
