@@ -1217,6 +1217,25 @@ export default function Simulate() {
         }
     }
 
+    // Add this function near the other utility functions
+    const loadSettingsFromLocalStorage = () => {
+        try {
+            const savedSettings = localStorage.getItem('simulationSettings');
+            if (savedSettings) {
+                const parsedSettings = JSON.parse(savedSettings);
+                console.log('Loaded saved settings from localStorage:', parsedSettings);
+                setDefaultSettings(parsedSettings);
+                // Reload the page to apply the loaded settings
+                window.location.reload();
+            } else {
+                alert('No saved settings found');
+            }
+        } catch (error) {
+            console.error('Error loading saved settings:', error);
+            alert('Error loading saved settings');
+        }
+    };
+
     return (
         <>
             <Head>
@@ -1906,7 +1925,26 @@ export default function Simulate() {
                                                     onClick={() => router.push('/')}
                                                     className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
                                                 >
-                                                    Cancel
+                                                    Home
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={loadSettingsFromLocalStorage}
+                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                                >
+                                                    Load Settings
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        // Save current form values to localStorage
+                                                        const formValues = formik.values;
+                                                        saveSettingsToLocalStorage(formValues);
+                                                        alert('Settings saved successfully');
+                                                    }}
+                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                                >
+                                                    Save Settings
                                                 </button>
                                                 <button
                                                     type="button"
