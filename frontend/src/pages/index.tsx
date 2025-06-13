@@ -56,20 +56,20 @@ export default function Home() {
                         </p>
                     </header>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        <div className="card p-6 flex flex-col justify-between">
-                            <div>
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8 mb-16">
+                            <div className="flex flex-col items-center">
                                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Start New Simulation</h2>
-                                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                                <p className="text-gray-600 dark:text-gray-300 mb-6 text-center">
                                     Configure and run a new simulation with custom parameters.
                                 </p>
+                                <button
+                                    onClick={() => router.push('/simulate')}
+                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-md transition-colors text-lg"
+                                >
+                                    Start Now
+                                </button>
                             </div>
-                            <button
-                                onClick={() => router.push('/simulate')}
-                                className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                            >
-                                Start Now
-                            </button>
                         </div>
 
                         <div className="card p-6 flex flex-col justify-between">
