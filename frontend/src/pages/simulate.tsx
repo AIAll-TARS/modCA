@@ -46,6 +46,10 @@ import {
 import { ChartData, ChartDataset, Statistics, SimulationParams } from '../types'
 import { fontFamily } from '@/styles/fonts'
 import { getApiUrl, getWsUrl } from '../utils/env'
+import SaveSettingsModal from '../components/SaveSettingsModal';
+import LoadSettingsModal from '../components/LoadSettingsModal';
+import React from 'react';
+import Link from 'next/link';
 
 // Register ChartJS components
 ChartJS.register(
@@ -1241,6 +1245,69 @@ export default function Simulate() {
     // Add formikRef near the top of the component with other refs
     const formikRef = useRef<any>(null);
 
+    const [isSaveModalOpen, setIsSaveModalOpen] = React.useState(false);
+    const [isLoadModalOpen, setIsLoadModalOpen] = React.useState(false);
+    const [settings, setSettings] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+
+    // Load settings when component mounts
+    React.useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch(`${getApiUrl()}/settings`);
+            if (!response.ok) {
+                throw new Error('Failed to load settings');
+            }
+            const data = await response.json();
+            setSettings(data.settings);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load settings');
+            console.error('Error loading settings:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveSettings = async (name: string, description: string) => {
+        try {
+            const response = await fetch(`${getApiUrl()}/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name,
+                    description,
+                    ...formikRef.current.values,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save settings');
+            }
+
+            setIsSaveModalOpen(false);
+            // Reload settings list
+            await loadSettings();
+            // Show success message
+            alert('Settings saved successfully!');
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            alert('Failed to save settings. Please try again.');
+        }
+    };
+
+    const handleLoadSettings = (settings: SimulationParams) => {
+        formikRef.current.setValues(settings);
+        setIsLoadModalOpen(false);
+    };
+
     return (
         <>
             <Head>
@@ -2110,6 +2177,42 @@ export default function Simulate() {
                     )}
                 </div>
             </main>
+
+            <div className="flex justify-end space-x-4 mt-4">
+                <button
+                    onClick={() => setIsLoadModalOpen(true)}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                    Load Settings
+                </button>
+                <button
+                    onClick={() => setIsSaveModalOpen(true)}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                    Save Settings
+                </button>
+                <Link
+                    href="/"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                >
+                    Home
+                </Link>
+            </div>
+
+            <SaveSettingsModal
+                isOpen={isSaveModalOpen}
+                onClose={() => setIsSaveModalOpen(false)}
+                onSave={handleSaveSettings}
+            />
+
+            <LoadSettingsModal
+                isOpen={isLoadModalOpen}
+                onClose={() => setIsLoadModalOpen(false)}
+                onLoad={handleLoadSettings}
+                settings={settings}
+                loading={loading}
+                error={error}
+            />
         </>
     )
 } 
