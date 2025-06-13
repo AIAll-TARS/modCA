@@ -1938,8 +1938,7 @@ export default function Simulate() {
                                                     type="button"
                                                     onClick={() => {
                                                         // Save current form values to localStorage
-                                                        const formValues = formik.values;
-                                                        saveSettingsToLocalStorage(formValues);
+                                                        saveSettingsToLocalStorage(defaultSettings);
                                                         alert('Settings saved successfully');
                                                     }}
                                                     className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
