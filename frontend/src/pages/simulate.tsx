@@ -1303,18 +1303,26 @@ export default function Simulate() {
         }
     };
 
+    const NUMERIC_FIELDS = [
+        'grid_size', 'steps', 'initial_prey', 'initial_predators',
+        'predator_death_probability', 'predator_birth_probability', 'predator_starvation_steps',
+        'prey_hunted_probability', 'prey_random_death', 'prey_birth_probability',
+        'prey_starvation_steps', 'prey_threat_response',
+        'initial_substrate_probability', 'substrate_random_death', 'substrate_consumption_prob'
+    ];
+
     const handleLoadSettings = (settings: SimulationParams) => {
-        // Normalize all values: replace commas with dots and parse as numbers where appropriate
         const normalized = Object.fromEntries(
             Object.entries(settings).map(([key, value]) => {
-                if (typeof value === 'string' && value.includes(',')) {
-                    const asNumber = parseFloat(value.replace(',', '.'));
+                if (NUMERIC_FIELDS.includes(key)) {
+                    // Always convert to string, replace comma, then parse as float
+                    const asNumber = parseFloat(String(value).replace(',', '.'));
                     return [key, isNaN(asNumber) ? value : asNumber];
                 }
                 return [key, value];
             })
         );
-        console.log('Loaded and normalized settings:', normalized);
+        console.log('Loaded and robustly normalized settings:', normalized);
         formikRef.current.setValues(normalized);
         setIsLoadModalOpen(false);
     };
