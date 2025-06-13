@@ -2002,18 +2002,14 @@ export default function Simulate() {
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={loadSettingsFromLocalStorage}
+                                                    onClick={() => setIsLoadModalOpen(true)}
                                                     className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
                                                 >
                                                     Load Settings
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        // Save current form values to localStorage
-                                                        saveSettingsToLocalStorage(defaultSettings);
-                                                        alert('Settings saved successfully');
-                                                    }}
+                                                    onClick={() => setIsSaveModalOpen(true)}
                                                     className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
                                                 >
                                                     Save Settings
@@ -2180,23 +2176,45 @@ export default function Simulate() {
 
             <div className="flex justify-end space-x-4 mt-4">
                 <button
+                    type="button"
+                    onClick={() => router.push('/')}
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                >
+                    Home
+                </button>
+                <button
+                    type="button"
                     onClick={() => setIsLoadModalOpen(true)}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
                 >
                     Load Settings
                 </button>
                 <button
+                    type="button"
                     onClick={() => setIsSaveModalOpen(true)}
-                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
                 >
                     Save Settings
                 </button>
-                <Link
-                    href="/"
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                <button
+                    type="button"
+                    onClick={() => {
+                        // Reset to factory defaults
+                        setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
+                        saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
+                        // Reload the page to apply defaults
+                        window.location.reload();
+                    }}
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
                 >
-                    Home
-                </Link>
+                    Reset to Defaults
+                </button>
+                <button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                >
+                    Start Simulation
+                </button>
             </div>
 
             <SaveSettingsModal
