@@ -60,51 +60,6 @@ export default function Home() {
                                 </button>
                             </div>
                         </div>
-
-                        <div className="card p-6 flex flex-col justify-between">
-                            <div>
-                                <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Load Saved Simulation</h2>
-                                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                                    View or continue your previously saved simulations.
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => router.push('/saved')}
-                                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                            >
-                                View Saved
-                            </button>
-                        </div>
-
-                        <div className="card p-6 flex flex-col justify-between">
-                            <div>
-                                <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">View Recordings</h2>
-                                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                                    Watch recorded simulations with smooth playback at different speeds.
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => router.push('/recordings')}
-                                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                            >
-                                View Recordings
-                            </button>
-                        </div>
-
-                        <div className="card p-6 flex flex-col justify-between">
-                            <div>
-                                <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Documentation</h2>
-                                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                                    Learn more about how the simulation works and how to use it.
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => window.open(getApiUrl().replace(/\/api$/, '/docs'), '_blank')}
-                                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                            >
-                                View Docs
-                            </button>
-                        </div>
                     </div>
 
                     <div className="mt-16 bg-white dark:bg-dark-card rounded-lg shadow-md p-8 max-w-4xl mx-auto">
