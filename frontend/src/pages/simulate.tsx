@@ -1720,6 +1720,7 @@ export default function Simulate() {
                                     validationSchema={SimulationSchema}
                                     enableReinitialize={true}
                                     onSubmit={(values: SimulationParams, { setSubmitting }) => {
+                                        console.log('Submitting values:', values);
                                         // Convert all form values explicitly before calling startSimulation
                                         const numericValues: SimulationParams = {
                                             ...values,
