@@ -17,7 +17,7 @@ from .constants import (
 class SimulationSettings(BaseModel):
     """Settings for a simulation."""
     grid_size: int = Field(
-        default=GRID_SIZE, ge=1, le=400, description="Size of the square grid (NxN), max 400")
+        default=GRID_SIZE, ge=1, le=100, description="Size of the square grid (NxN), max 100")
     steps: int = Field(
         default=STEPS, description="Number of simulation iterations")
     neighborhood_type: str = Field(
@@ -49,7 +49,7 @@ class SimulationSettings(BaseModel):
     prey_birth_probability: float = Field(
         default=PREY_BIRTH_PROBABILITY, description="Probability of prey reproduction")
     prey_starvation_steps: int = Field(
-        default=PREY_STARVATION_STEPS, description="Steps a prey can survive without substrate")
+        default=PREY_STARVATION_STEPS, description="Steps until prey dies from starvation")
     prey_threat_response: float = Field(
         default=PREY_THREAT_RESPONSE, description="Probability of prey staying still when threatened")
 

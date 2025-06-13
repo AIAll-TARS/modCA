@@ -872,3 +872,32 @@ feature/* → dev → prod → master
    - Security updates
    - SSL renewal check
    - Performance review
+
+## Erasing All Saved Simulation Setups (Admin)
+
+If you need to erase all saved simulation setups (settings) from the backend database in a Dockerized environment:
+
+1. **Copy the database file from the backend container to the host:**
+   ```bash
+   docker cp modca_backend:/app/settings.db /tmp/settings.db
+   ```
+
+2. **Delete all settings using sqlite3 on the host:**
+   ```bash
+   sqlite3 /tmp/settings.db "DELETE FROM settings;"
+   ```
+   If `sqlite3` is not installed, install it with:
+   ```bash
+   sudo apt update && sudo apt install sqlite3
+   ```
+
+3. **Copy the cleaned database back into the container:**
+   ```bash
+   docker cp /tmp/settings.db modca_backend:/app/settings.db
+   ```
+
+4. **(Optional) Verify from the frontend that no setups remain.**
+
+**Note:**
+- If the backend container name is not `modca_backend`, adjust the commands accordingly.
+- This operation is destructive and cannot be undone. Back up your database if needed before proceeding.
