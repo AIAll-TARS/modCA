@@ -1225,8 +1225,10 @@ export default function Simulate() {
                 const parsedSettings = JSON.parse(savedSettings);
                 console.log('Loaded saved settings from localStorage:', parsedSettings);
                 setDefaultSettings(parsedSettings);
-                // Reload the page to apply the loaded settings
-                window.location.reload();
+                // Update form values without reloading the page
+                if (formikRef.current) {
+                    formikRef.current.setValues(parsedSettings);
+                }
             } else {
                 alert('No saved settings found');
             }
@@ -1235,6 +1237,9 @@ export default function Simulate() {
             alert('Error loading saved settings');
         }
     };
+
+    // Add formikRef near the top of the component with other refs
+    const formikRef = useRef<any>(null);
 
     return (
         <>
@@ -1632,6 +1637,7 @@ export default function Simulate() {
                                 <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-4">Configure Simulation</h2>
 
                                 <Formik
+                                    innerRef={formikRef}
                                     initialValues={defaultSettings}
                                     validationSchema={SimulationSchema}
                                     enableReinitialize={true}
