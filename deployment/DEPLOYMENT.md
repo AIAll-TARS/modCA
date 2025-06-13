@@ -117,10 +117,21 @@ feature/* → dev → prod → master
 - Cloudflare CDN & Security
 
 ### SSH Access
-- Root access is configured with the SSH key `modca_vps` in the local `~/.ssh/` directory
-- Connection command: `ssh -i ~/.ssh/modca_vps root@135.181.111.66`
-- The `modca` user will be set up for regular development work
+- SSH access is configured for the `modca` user (not root)
+- Connection command: `ssh -i ~/.ssh/modca_vps modca@135.181.111.66`
+- SSH key requirements:
+  - Key file: `~/.ssh/modca_vps`
+  - Permissions: 600 (`chmod 600 ~/.ssh/modca_vps`)
+  - Key type: RSA
 - SSH key fingerprint: SHA256:GOTOYQYkxQkMO8+ysDRwmXliTEMgYk09WhBbJTyinEw
+- Project directory: `/home/modca/modca_7web`
+
+### SSH Troubleshooting
+If you encounter SSH issues:
+1. Verify key permissions: `chmod 600 ~/.ssh/modca_vps`
+2. Check key presence: `ls -l ~/.ssh/modca_vps`
+3. Test connection: `ssh -v -i ~/.ssh/modca_vps modca@135.181.111.66`
+4. Verify SSH agent: `ssh-add -l`
 
 ## Network Architecture
 

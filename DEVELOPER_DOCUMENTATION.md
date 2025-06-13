@@ -187,6 +187,53 @@ npm test
    - Build Next.js application
    - Deploy to Vercel or similar platform
 
+## VPS Access & Deployment
+
+### SSH Access
+- SSH access is configured for the `modca` user
+- Connection command: `ssh -i ~/.ssh/modca_vps modca@135.181.111.66`
+- SSH key requirements:
+  - Key file: `~/.ssh/modca_vps`
+  - Permissions: 600 (`chmod 600 ~/.ssh/modca_vps`)
+  - Key type: RSA
+
+### VPS Deployment Process
+1. **Connect to VPS**:
+   ```bash
+   ssh -i ~/.ssh/modca_vps modca@135.181.111.66
+   cd /home/modca/modca_7web
+   ```
+
+2. **Update Code**:
+   ```bash
+   git fetch origin
+   git checkout vps-deploy
+   git pull origin prod --no-ff
+   ```
+
+3. **Restart Services**:
+   ```bash
+   docker-compose down
+   docker-compose up -d
+   ```
+
+4. **Verify Deployment**:
+   ```bash
+   docker-compose ps
+   curl https://ws.janis7ewski.org/health
+   ```
+
+### Troubleshooting VPS Access
+1. **SSH Issues**:
+   - Verify key permissions: `chmod 600 ~/.ssh/modca_vps`
+   - Check key presence: `ls -l ~/.ssh/modca_vps`
+   - Test connection: `ssh -v -i ~/.ssh/modca_vps modca@135.181.111.66`
+
+2. **Deployment Issues**:
+   - Check container logs: `docker-compose logs`
+   - Verify Nginx config: `nginx -t`
+   - Check SSL certificates: `certbot certificates`
+
 ## Performance Considerations
 
 1. **Grid Size**:
