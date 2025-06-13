@@ -1731,7 +1731,7 @@ export default function Simulate() {
                                     validationSchema={SimulationSchema}
                                     enableReinitialize={true}
                                     onSubmit={(values: SimulationParams, { setSubmitting }) => {
-                                        console.log('Submitting values:', values);
+                                        console.log('Formik onSubmit called', values); // DEBUG LOG
                                         // Convert all form values explicitly before calling startSimulation
                                         const numericValues: SimulationParams = {
                                             ...values,
@@ -1754,17 +1754,15 @@ export default function Simulate() {
                                             grid_type: values.grid_type || GRID_TYPE,
                                             record_simulation: Boolean(values.record_simulation)
                                         };
-                                        console.log('Form submission - converted numeric values:', numericValues);
-
+                                        console.log('Form submission - converted numeric values:', numericValues); // DEBUG LOG
                                         // Save settings to localStorage before starting simulation
                                         saveSettingsToLocalStorage(numericValues);
-
                                         startSimulation(numericValues);
                                         setSubmitting(false);
                                     }}
                                 >
                                     {({ isSubmitting, errors }) => {
-                                        console.log('Formik validation errors:', errors);
+                                        console.log('Formik validation errors:', errors); // DEBUG LOG
                                         return (
                                             <Form className="space-y-4">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2056,6 +2054,7 @@ export default function Simulate() {
                                                         type="submit"
                                                         disabled={isSubmitting}
                                                         className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
+                                                        onClick={() => { console.log('Start Simulation button clicked'); }} // DEBUG LOG
                                                     >
                                                         {isSubmitting ? 'Starting...' : 'Start Simulation'}
                                                     </button>
