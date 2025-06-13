@@ -2174,49 +2174,6 @@ export default function Simulate() {
                 </div>
             </main>
 
-            <div className="flex justify-end space-x-4 mt-4">
-                <button
-                    type="button"
-                    onClick={() => router.push('/')}
-                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                >
-                    Home
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setIsLoadModalOpen(true)}
-                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                >
-                    Load Settings
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setIsSaveModalOpen(true)}
-                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                >
-                    Save Settings
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-                        // Reset to factory defaults
-                        setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
-                        saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
-                        // Reload the page to apply defaults
-                        window.location.reload();
-                    }}
-                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                >
-                    Reset to Defaults
-                </button>
-                <button
-                    type="submit"
-                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                >
-                    Start Simulation
-                </button>
-            </div>
-
             <SaveSettingsModal
                 isOpen={isSaveModalOpen}
                 onClose={() => setIsSaveModalOpen(false)}
