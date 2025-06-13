@@ -54,7 +54,7 @@ export default function Home() {
                                 </p>
                                 <button
                                     onClick={() => router.push('/simulate')}
-                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-md transition-colors text-lg"
+                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-md transition-colors text-lg w-48"
                                 >
                                     Start Now
                                 </button>
@@ -82,8 +82,8 @@ export default function Home() {
                         </div>
                     </div>
 
-                    <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                        <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8">
+                    <div className="mt-16 max-w-4xl mx-auto">
+                        <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8 mb-8">
                             <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Contact Us</h2>
                             <p className="text-gray-600 dark:text-gray-300 mb-4">
                                 Have questions or feedback? We'd love to hear from you.
