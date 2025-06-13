@@ -1304,7 +1304,18 @@ export default function Simulate() {
     };
 
     const handleLoadSettings = (settings: SimulationParams) => {
-        formikRef.current.setValues(settings);
+        // Normalize all values: replace commas with dots and parse as numbers where appropriate
+        const normalized = Object.fromEntries(
+            Object.entries(settings).map(([key, value]) => {
+                if (typeof value === 'string' && value.includes(',')) {
+                    const asNumber = parseFloat(value.replace(',', '.'));
+                    return [key, isNaN(asNumber) ? value : asNumber];
+                }
+                return [key, value];
+            })
+        );
+        console.log('Loaded and normalized settings:', normalized);
+        formikRef.current.setValues(normalized);
         setIsLoadModalOpen(false);
     };
 
