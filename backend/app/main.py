@@ -12,6 +12,7 @@ from .models import SimulationSettings, SimulationResponse
 from .grid import initialize_grid
 from .simulation import Simulation
 from .constants import GRID_SIZE, STEPS, INITIAL_PREY, INITIAL_PREDATORS
+from .db_handler import DatabaseHandler
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -46,6 +47,9 @@ async def initialize_grid_with_timeout(size, initial_prey, initial_predators, in
         initialize_grid,
         size, initial_prey, initial_predators, initial_substrate_prob
     )
+
+# Initialize DatabaseHandler
+db_handler = DatabaseHandler()
 
 @app.get("/")
 async def root():
@@ -373,3 +377,8 @@ async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
             })
         except:
             pass
+
+@app.get("/api/settings")
+async def get_latest_settings(user_id: str = None):
+    settings = db_handler.get_latest_settings(user_id)
+    return {"settings": settings}
