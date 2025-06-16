@@ -446,3 +446,8 @@ async def get_latest_settings(user_id: Optional[str] = None, db: DatabaseHandler
     except Exception as e:
         logger.error(f"Error fetching latest settings: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch settings")
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for container monitoring."""
+    return {"status": "ok"}
