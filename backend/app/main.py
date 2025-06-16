@@ -6,12 +6,14 @@ Handles API endpoints and WebSocket connections.
 import asyncio
 import logging
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .models import SimulationSettings, SimulationResponse
 from .grid import initialize_grid
 from .simulation import Simulation
 from .constants import GRID_SIZE, STEPS, INITIAL_PREY, INITIAL_PREDATORS
+from .db_handler import DatabaseHandler
+from typing import Optional, Dict, Any
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -29,10 +31,13 @@ app.add_middleware(
 )
 
 # Store active simulations
-active_simulations = {}
+active_simulations: Dict[str, Dict[str, Any]] = {}
+
+# Initialize DatabaseHandler
+db_handler = DatabaseHandler()
 
 # Helper functions for async operations
-async def initialize_grid_with_timeout(size, initial_prey, initial_predators, initial_substrate_prob):
+async def initialize_grid_with_timeout(size: int, initial_prey: int, initial_predators: int, initial_substrate_prob: float):
     """
     Async wrapper for initialize_grid to allow timeout handling.
 
@@ -47,13 +52,21 @@ async def initialize_grid_with_timeout(size, initial_prey, initial_predators, in
         size, initial_prey, initial_predators, initial_substrate_prob
     )
 
+# Dependency for database operations
+async def get_db():
+    try:
+        return db_handler
+    except Exception as e:
+        logger.error(f"Database connection error: {str(e)}")
+        raise HTTPException(status_code=503, detail="Database service unavailable")
+
 @app.get("/")
 async def root():
     """Root endpoint to check if API is running."""
     return {"message": "modCA_7 Web API is running"}
 
 @app.post("/api/simulate", response_model=SimulationResponse)
-async def start_simulation(settings: SimulationSettings):
+async def start_simulation(settings: SimulationSettings, db: DatabaseHandler = Depends(get_db)):
     """Start a new simulation with the provided settings."""
     try:
         logger.info(f"Starting new simulation with settings: {settings}")
@@ -153,6 +166,12 @@ async def start_simulation(settings: SimulationSettings):
         record_simulation = settings.record_simulation
         if record_simulation:
             logger.info("Recording enabled for this simulation")
+            try:
+                # Save initial settings to database
+                db.save_simulation_settings(simulation_id, settings.dict())
+            except Exception as e:
+                logger.error(f"Failed to save initial settings to database: {str(e)}")
+                # Continue with simulation even if database save fails
 
         # Create simulation object
         simulation = Simulation(grid, param_dict, record_simulation=record_simulation)
@@ -299,77 +318,131 @@ async def stop_simulation(simulation_id: str):
 @app.websocket("/ws/simulate/{simulation_id}")
 async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
     """WebSocket endpoint for real-time simulation updates."""
-    await websocket.accept()
     try:
+        await websocket.accept()
+        logger.info(f"WebSocket connection accepted for simulation {simulation_id}")
+
+        # Send initial connection success message
+        await websocket.send_json({
+            "type": "connection",
+            "status": "connected",
+            "simulation_id": simulation_id
+        })
+
         while True:
-            # Wait for a message from the client
-            data = await websocket.receive_text()
-            logger.info(f"Received WebSocket message: {data}")
+            try:
+                # Wait for a message from the client
+                data = await websocket.receive_text()
+                logger.info(f"Received WebSocket message: {data}")
 
-            # Check if simulation exists
-            if simulation_id not in active_simulations:
-                await websocket.send_json({
-                    "error": "Simulation not found",
-                    "status": "error"
-                })
+                # Check if simulation exists
+                if simulation_id not in active_simulations:
+                    await websocket.send_json({
+                        "type": "error",
+                        "error": "Simulation not found",
+                        "status": "error"
+                    })
+                    break
+
+                sim_data = active_simulations[simulation_id]
+                simulation = sim_data["simulation"]
+
+                # Handle different commands
+                if data == "ping":
+                    await websocket.send_json({
+                        "type": "pong",
+                        "status": "ok"
+                    })
+                elif data == "step":
+                    try:
+                        # Run one step
+                        simulation.step()
+                        sim_data["current_step"] += 1
+
+                        # Check if simulation is complete
+                        if sim_data["current_step"] >= sim_data["total_steps"]:
+                            sim_data["status"] = "completed"
+
+                        # Send updated state
+                        await websocket.send_json({
+                            "type": "update",
+                            "status": sim_data["status"],
+                            "current_step": sim_data["current_step"],
+                            "total_steps": sim_data["total_steps"],
+                            "grid": simulation.grid.tolist(),
+                            "statistics": simulation.get_statistics()
+                        })
+                    except Exception as e:
+                        logger.error(f"Error during simulation step: {str(e)}")
+                        await websocket.send_json({
+                            "type": "error",
+                            "error": f"Step execution failed: {str(e)}",
+                            "status": "error"
+                        })
+                elif data == "reset":
+                    try:
+                        # Reset simulation to initial state
+                        simulation.reset()
+                        sim_data["current_step"] = 0
+                        sim_data["status"] = "running"
+
+                        # Send reset confirmation
+                        await websocket.send_json({
+                            "type": "reset",
+                            "status": "ok",
+                            "current_step": 0,
+                            "total_steps": sim_data["total_steps"],
+                            "grid": simulation.grid.tolist(),
+                            "statistics": simulation.get_statistics()
+                        })
+                    except Exception as e:
+                        logger.error(f"Error during simulation reset: {str(e)}")
+                        await websocket.send_json({
+                            "type": "error",
+                            "error": f"Reset failed: {str(e)}",
+                            "status": "error"
+                        })
+                else:
+                    await websocket.send_json({
+                        "type": "error",
+                        "error": "Unknown command",
+                        "status": "error"
+                    })
+
+            except WebSocketDisconnect:
+                logger.info(f"WebSocket disconnected for simulation {simulation_id}")
                 break
+            except Exception as e:
+                logger.exception(f"Error in WebSocket message handling: {str(e)}")
+                try:
+                    await websocket.send_json({
+                        "type": "error",
+                        "error": str(e),
+                        "status": "error"
+                    })
+                except:
+                    break
 
-            sim_data = active_simulations[simulation_id]
-            simulation = sim_data["simulation"]
-
-            # Handle different commands
-            if data == "ping":
-                await websocket.send_json({
-                    "type": "pong",
-                    "status": "ok"
-                })
-            elif data == "step":
-                # Run one step
-                simulation.step()
-                sim_data["current_step"] += 1
-
-                # Check if simulation is complete
-                if sim_data["current_step"] >= sim_data["total_steps"]:
-                    sim_data["status"] = "completed"
-
-                # Send updated state
-                await websocket.send_json({
-                    "type": "update",
-                    "status": sim_data["status"],
-                    "current_step": sim_data["current_step"],
-                    "total_steps": sim_data["total_steps"],
-                    "grid": simulation.grid.tolist(),
-                    "statistics": simulation.get_statistics()
-                })
-            elif data == "reset":
-                # Reset simulation to initial state
-                simulation.reset()
-                sim_data["current_step"] = 0
-                sim_data["status"] = "running"
-
-                # Send reset confirmation
-                await websocket.send_json({
-                    "type": "reset",
-                    "status": "ok",
-                    "current_step": 0,
-                    "total_steps": sim_data["total_steps"],
-                    "grid": simulation.grid.tolist(),
-                    "statistics": simulation.get_statistics()
-                })
-            else:
-                await websocket.send_json({
-                    "error": "Unknown command",
-                    "status": "error"
-                })
-
-    except WebSocketDisconnect:
-        logger.info(f"WebSocket disconnected for simulation {simulation_id}")
     except Exception as e:
         logger.exception(f"Error in WebSocket endpoint: {str(e)}")
         try:
             await websocket.send_json({
+                "type": "error",
                 "error": str(e),
                 "status": "error"
             })
         except:
             pass
+    finally:
+        # Clean up if needed
+        logger.info(f"WebSocket connection closed for simulation {simulation_id}")
+
+@app.get("/api/settings")
+async def get_latest_settings(user_id: Optional[str] = None, db: DatabaseHandler = Depends(get_db)):
+    """Get the latest simulation settings for a user."""
+    try:
+        settings = db.get_latest_settings(user_id)
+        return {"settings": settings}
+    except Exception as e:
+        logger.error(f"Error fetching latest settings: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch settings")
