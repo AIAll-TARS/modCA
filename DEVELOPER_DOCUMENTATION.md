@@ -4,6 +4,20 @@
 
 This document provides technical details for developers working on the modCA_7 web application. The application is a web-based implementation of a modified Cellular Automata simulation featuring predator-prey dynamics and substrate interactions.
 
+## ✅ Current Deployment Status
+
+### Production Environment
+- **Frontend**: https://www.janis7ewski.org (Vercel) ✅ Operational
+- **Backend API**: https://ws.janis7ewski.org/api (Hetzner VPS) ✅ Operational  
+- **WebSocket**: wss://ws.janis7ewski.org/ws (Hetzner VPS) ✅ Operational
+- **Database**: SQLite on VPS ✅ Connected
+- **SSL/HTTPS**: Cloudflare + Let's Encrypt ✅ Working
+
+### Development Environment
+- **Backend**: `http://localhost:8000` (local development)
+- **Frontend**: `http://localhost:3000` (local development)
+- **API Docs**: `http://localhost:8000/docs` (FastAPI auto-generated)
+
 ## Architecture
 
 ### Backend (FastAPI)
@@ -15,6 +29,12 @@ The backend is built with FastAPI and provides:
 - Simulation state tracking
 - Parameter validation
 
+**Key Components:**
+- **FastAPI Application**: Main API server (`backend/app/main.py`)
+- **Docker Container**: Containerized for production deployment
+- **SQLite Database**: Persistent storage for settings and recordings
+- **WebSocket Handler**: Real-time simulation updates
+
 ### Frontend (Next.js)
 
 The frontend is built with Next.js and provides:
@@ -22,6 +42,22 @@ The frontend is built with Next.js and provides:
 - Real-time statistics display
 - Parameter configuration interface
 - WebSocket-based live updates
+
+**Key Components:**
+- **Next.js 14**: React framework with SSR/SSG capabilities
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **WebSocket Client**: Real-time backend communication
+
+### Production Infrastructure
+
+```
+Client → Cloudflare (DNS + SSL) → Vercel (Frontend)
+                               → Hetzner VPS (Backend)
+                                 → Nginx (443)
+                                   → FastAPI Backend (8000)
+                                     → SQLite DB
+```
 
 ## Grid Implementation
 
@@ -92,10 +128,19 @@ The frontend is built with Next.js and provides:
    DELETE /api/simulate/{simulation_id}
    ```
 
+5. **Health Check**:
+   ```http
+   GET /api/health
+   ```
+
 ### WebSocket Endpoints
 
 1. **Connect**:
    ```javascript
+   // Production
+   const ws = new WebSocket(`wss://ws.janis7ewski.org/ws/simulate/${simulationId}`);
+   
+   // Development
    const ws = new WebSocket(`ws://localhost:8000/ws/simulate/${simulationId}`);
    ```
 
@@ -115,6 +160,8 @@ class SimulationSettings(BaseModel):
     initial_prey: int = Field(ge=0)
     initial_predators: int = Field(ge=0)
     initial_substrate_probability: float = Field(ge=0.0, le=1.0)
+    record_simulation: bool = False
+    # ... additional parameters
 ```
 
 ### SimulationResponse
@@ -130,15 +177,26 @@ class SimulationResponse(BaseModel):
     message: str
     steps_run: int
     db_save_success: bool
+    adjustment_info: Optional[Dict] = None
 ```
 
 ## Development Setup
+
+### Prerequisites
+- **Python 3.11+** (for backend)
+- **Node.js 18+** (for frontend)
+- **Docker & Docker Compose** (for production-like environment)
+- **Git** (version control)
+
+### Local Development
 
 1. **Backend Setup**:
    ```bash
    cd backend
    python -m venv venv
-   source venv/bin/activate
+   source venv/bin/activate  # Linux/Mac
+   # or
+   venv\Scripts\activate     # Windows
    pip install -r requirements.txt
    ```
 
@@ -153,12 +211,32 @@ class SimulationResponse(BaseModel):
    # Terminal 1 (Backend)
    cd backend
    source venv/bin/activate
-   uvicorn app.main:app --reload
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    
    # Terminal 2 (Frontend)
    cd frontend
    npm run dev
    ```
+
+4. **Access Points**:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+
+### Docker Development
+
+For a production-like environment:
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
 
 ## Testing
 
@@ -176,29 +254,45 @@ cd frontend
 npm test
 ```
 
-## Deployment
+### API Testing
 
-1. **Backend Deployment**:
-   - Build Docker image
-   - Deploy to server
-   - Configure Nginx
+```bash
+# Health check
+curl http://localhost:8000/api/health
 
-2. **Frontend Deployment**:
-   - Build Next.js application
-   - Deploy to Vercel or similar platform
+# Create simulation
+curl -X POST http://localhost:8000/api/simulate \
+  -H "Content-Type: application/json" \
+  -d '{"grid_size": 10, "steps": 100, "initial_prey": 5, "initial_predators": 2}'
+```
 
-## VPS Access & Deployment
+## Production Deployment
 
-### SSH Access
-- SSH access is configured for the `modca` user
-- Connection command: `ssh -i ~/.ssh/modca_vps modca@135.181.111.66`
-- SSH key requirements:
-  - Key file: `~/.ssh/modca_vps`
-  - Permissions: 600 (`chmod 600 ~/.ssh/modca_vps`)
-  - Key type: RSA
+### VPS Access & Management
 
-### VPS Deployment Process
-1. **Connect to VPS**:
+#### SSH Access
+- **User**: `modca` (not root)
+- **Command**: `ssh -i ~/.ssh/modca_vps modca@135.181.111.66`
+- **Project Directory**: `/home/modca/modca_7web`
+
+#### Container Management
+```bash
+# Check container status
+docker-compose ps
+
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs backend
+docker-compose logs nginx
+
+# Restart services
+docker-compose restart
+```
+
+#### Deployment Process
+1. **SSH to VPS**:
    ```bash
    ssh -i ~/.ssh/modca_vps modca@135.181.111.66
    cd /home/modca/modca_7web
@@ -207,8 +301,7 @@ npm test
 2. **Update Code**:
    ```bash
    git fetch origin
-   git checkout vps-deploy
-   git pull origin prod --no-ff
+   git pull origin prod
    ```
 
 3. **Restart Services**:
@@ -220,72 +313,210 @@ npm test
 4. **Verify Deployment**:
    ```bash
    docker-compose ps
-   curl https://ws.janis7ewski.org/health
+   curl https://ws.janis7ewski.org/api/health
    ```
 
-### Troubleshooting VPS Access
-1. **SSH Issues**:
-   - Verify key permissions: `chmod 600 ~/.ssh/modca_vps`
-   - Check key presence: `ls -l ~/.ssh/modca_vps`
-   - Test connection: `ssh -v -i ~/.ssh/modca_vps modca@135.181.111.66`
+### Frontend Deployment (Vercel)
+- **Auto-deployment**: Enabled on `prod` branch
+- **Environment Variables**:
+  - `NEXT_PUBLIC_API_URL=https://ws.janis7ewski.org/api`
+  - `NEXT_PUBLIC_WS_URL=wss://ws.janis7ewski.org/ws`
 
-2. **Deployment Issues**:
-   - Check container logs: `docker-compose logs`
-   - Verify Nginx config: `nginx -t`
-   - Check SSL certificates: `certbot certificates`
+### Environment Configuration
+
+#### Production Environment Variables
+```bash
+# Backend (.env)
+PYTHONUNBUFFERED=1
+DATABASE_URL=sqlite:///./sqlite_data/settings.db
+
+# Frontend (Vercel)
+NEXT_PUBLIC_API_URL=https://ws.janis7ewski.org/api
+NEXT_PUBLIC_WS_URL=wss://ws.janis7ewski.org/ws
+```
+
+#### Development Environment Variables
+```bash
+# Backend (.env.local)
+PYTHONUNBUFFERED=1
+DATABASE_URL=sqlite:///./settings.db
+
+# Frontend (.env.local)
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+```
 
 ## Performance Considerations
 
-1. **Grid Size**:
-   - Maximum size: 100x100
-   - Larger grids may impact performance
+### Grid Size Limits
+- **Maximum**: 100x100 cells
+- **Recommended**: 50x50 for real-time performance
+- **Memory Usage**: ~4MB per 100x100 grid
 
-2. **Simulation Steps**:
-   - Consider step size for real-time updates
-   - WebSocket updates may be throttled for large grids
+### WebSocket Performance
+- **Update Frequency**: Configurable (default: on-demand)
+- **Compression**: Enabled for large grids
+- **Throttling**: Client-side rate limiting
 
-3. **Memory Usage**:
-   - Grid data is stored in memory
-   - Consider cleanup of completed simulations
-
-## Contributing
-
-1. Create a feature branch
-2. Make changes
-3. Run tests
-4. Submit pull request
-
-## Code Style
-
-- Python: Follow PEP 8
-- JavaScript/TypeScript: Follow ESLint configuration
-- Use meaningful variable names
-- Add comments for complex logic
+### Database Performance
+- **SQLite**: Suitable for current scale
+- **Indexing**: Applied to frequently queried fields
+- **Backup**: Automated daily backups
 
 ## Troubleshooting
 
-### Common Issues
+### Common Development Issues
 
-1. **Grid Initialization Failures**:
-   - Check grid size limits
-   - Verify entity counts
+1. **Backend Won't Start**:
+   ```bash
+   # Check Python version
+   python --version  # Should be 3.11+
+   
+   # Verify dependencies
+   pip list
+   
+   # Check for port conflicts
+   lsof -i :8000
+   ```
 
-2. **WebSocket Connection Issues**:
-   - Check server status
-   - Verify connection URL
+2. **Frontend Build Errors**:
+   ```bash
+   # Clear cache and reinstall
+   rm -rf node_modules package-lock.json
+   npm install
+   
+   # Check Node version
+   node --version  # Should be 18+
+   ```
 
-3. **Performance Issues**:
-   - Monitor grid size
-   - Check step frequency
+3. **WebSocket Connection Issues**:
+   - Verify backend is running on correct port
+   - Check CORS configuration
+   - Ensure WebSocket URL is correct
+   - Test with browser developer tools
+
+### Production Troubleshooting
+
+1. **502 Bad Gateway**:
+   ```bash
+   # Check container status
+   docker-compose ps
+   
+   # Restart services
+   docker-compose restart
+   
+   # Check logs
+   docker-compose logs nginx
+   ```
+
+2. **API Timeouts**:
+   ```bash
+   # Check backend health
+   curl https://ws.janis7ewski.org/api/health
+   
+   # Monitor container resources
+   docker stats
+   ```
+
+3. **SSL Certificate Issues**:
+   ```bash
+   # Verify certificate
+   openssl s_client -connect ws.janis7ewski.org:443
+   
+   # Check certificate expiry
+   echo | openssl s_client -connect ws.janis7ewski.org:443 2>/dev/null | openssl x509 -noout -dates
+   ```
+
+## Contributing
+
+### Development Workflow
+1. Create feature branch from `dev`
+2. Implement changes with tests
+3. Test locally with both frontend and backend
+4. Submit pull request to `dev`
+5. After review, merge to `dev`
+6. Deploy to production via `prod` branch
+
+### Code Standards
+- **Python**: Follow PEP 8, use type hints
+- **TypeScript**: Follow ESLint configuration
+- **Git**: Conventional commit messages
+- **Documentation**: Update relevant docs with changes
+
+### Testing Requirements
+- **Backend**: Unit tests for all API endpoints
+- **Frontend**: Component tests for UI elements
+- **Integration**: End-to-end tests for critical workflows
+- **Performance**: Load testing for simulation endpoints
+
+## Security Considerations
+
+### Development Security
+- **Environment Variables**: Never commit secrets
+- **Dependencies**: Regular security audits
+- **CORS**: Properly configured for development
+
+### Production Security
+- **HTTPS**: All traffic encrypted via Cloudflare
+- **Authentication**: SSH key-based access only
+- **Firewall**: Minimal port exposure (22, 80, 443)
+- **Updates**: Regular security patches
 
 ## Future Improvements
 
-1. **Planned Features**:
-   - Additional visualization options
-   - Enhanced statistics
-   - More configuration options
+### Planned Features
+- **Enhanced Visualization**: 3D grid rendering
+- **Advanced Analytics**: Statistical analysis tools
+- **User Accounts**: Persistent simulation storage
+- **Real-time Collaboration**: Multi-user simulations
 
-2. **Technical Improvements**:
-   - Performance optimizations
-   - Better error handling
-   - Enhanced testing coverage
+### Technical Improvements
+- **Performance**: GPU acceleration for large grids
+- **Scalability**: Microservices architecture
+- **Monitoring**: Comprehensive observability
+- **Testing**: Increased coverage and automation
+
+---
+
+## Quick Reference
+
+### Essential URLs
+- **Production Frontend**: https://www.janis7ewski.org
+- **Production API**: https://ws.janis7ewski.org/api
+- **API Documentation**: https://ws.janis7ewski.org/docs
+- **Health Check**: https://ws.janis7ewski.org/api/health
+
+### Development Commands
+```bash
+# Start backend
+cd backend && uvicorn app.main:app --reload
+
+# Start frontend  
+cd frontend && npm run dev
+
+# Run tests
+cd backend && pytest
+cd frontend && npm test
+
+# Docker development
+docker-compose up -d
+```
+
+### Production Commands
+```bash
+# SSH to VPS
+ssh -i ~/.ssh/modca_vps modca@135.181.111.66
+
+# Check services
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Restart services
+docker-compose restart
+```
+
+---
+
+*Last updated: June 18, 2025 - All systems operational*

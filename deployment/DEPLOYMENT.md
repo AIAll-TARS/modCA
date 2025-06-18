@@ -1,137 +1,14 @@
 # Deployment Documentation
 
-## ⚠️ Immediate Actions Required
+## ✅ Current Status - OPERATIONAL
 
-### 1. Git Synchronization
-- VPS has been synchronized with Git repository
-- Current setup:
-  ```bash
-  # On VPS as modca user
-  cd /home/modca/modca_7web
-  git init
-  git remote add origin git@github.com:AIAll-TARS/modCA.git
-  git fetch origin prod
-  git checkout -b vps-deploy origin/prod
-  ```
-
-### 2. Configuration Path Updates
-- Update Nginx SSL paths in `vps_config/nginx/modca.conf`:
-  ```nginx
-  ssl_certificate /etc/nginx/ssl/fullchain.pem;
-  ssl_certificate_key /etc/nginx/ssl/privkey.pem;
-  ```
-
-- Update Docker Compose volume mounts in `docker-compose.yml`:
-  ```yaml
-  volumes:
-    - ./vps_config/nginx:/etc/nginx/conf.d
-    - ./vps_config/ssl/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
-    - ./vps_config/ssl/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
-  ```
-
-### 3. Post-Update Verification
-```bash
-# Test Nginx configuration
-nginx -t
-
-# Restart containers
-docker-compose down
-docker-compose up -d
-
-# Verify container health
-docker-compose ps
-```
-
-## Git Workflow & Branch Strategy
-
-### Branch Structure
-- `prod`: Main production branch
-  - Frontend auto-deploys to Vercel
-  - Source for VPS backend
-  - Tagged for releases
-- `dev`: Development integration
-  - Feature branches merge here
-  - Testing and integration
-- `vps-deploy`: VPS-specific branch
-  - Contains only backend code
-  - VPS-specific configurations
-- `master`: Stable releases
-  - Tagged versions
-  - Long-term reference
-
-### VPS Deployment Process
-1. **Initial Setup**
-   ```bash
-   # On VPS as modca user
-   cd /home/modca/modca_7web
-   git checkout -b vps-deploy
-   mkdir -p vps_config
-   ```
-
-2. **Regular Updates**
-   ```bash
-   # On VPS as modca user
-   git fetch origin
-   git checkout vps-deploy
-   git pull origin prod --no-ff
-   # Review changes
-   docker-compose down
-   docker-compose up -d
-   ```
-
-3. **VPS-Specific Configuration**
-   - Store VPS-specific configs in `vps_config/`
-   - Use `.env` for environment variables
-   - Keep SSL certs in `vps_config/ssl/`
-
-### Deployment Flow
-```
-feature/* → dev → prod → master
-   ↑         ↑      ↑
-   └─────────┘      │
-                    └───→ vps-deploy (VPS-specific)
-```
-
-## Current Deployment Status
-
-### URLs
-- Frontend: https://www.janis7ewski.org (Vercel)
-- WebSocket: wss://ws.janis7ewski.org/ws (Hetzner VPS)
-- API: https://ws.janis7ewski.org/api (Hetzner VPS)
-
-### Frontend Hosting (Vercel)
-- Framework: Next.js 14
-- Region: fra1 (Frankfurt)
-- Branch: prod
-- Auto-deployment: Enabled
-- Environment Variables:
-  - NEXT_PUBLIC_API_URL=https://ws.janis7ewski.org/api
-  - NEXT_PUBLIC_WS_URL=wss://ws.janis7ewski.org/ws
-
-### Backend Hosting (Hetzner VPS)
-- IP: 135.181.111.66
-- OS: Ubuntu 24.04 LTS
-- Docker & Docker Compose
-- Nginx as reverse proxy
-- Let's Encrypt SSL certificates
-- Cloudflare CDN & Security
-
-### SSH Access
-- SSH access is configured for the `modca` user (not root)
-- Connection command: `ssh -i ~/.ssh/modca_vps modca@135.181.111.66`
-- SSH key requirements:
-  - Key file: `~/.ssh/modca_vps`
-  - Permissions: 600 (`chmod 600 ~/.ssh/modca_vps`)
-  - Key type: RSA
-- SSH key fingerprint: SHA256:GOTOYQYkxQkMO8+ysDRwmXliTEMgYk09WhBbJTyinEw
-- Project directory: `/home/modca/modca_7web`
-
-### SSH Troubleshooting
-If you encounter SSH issues:
-1. Verify key permissions: `chmod 600 ~/.ssh/modca_vps`
-2. Check key presence: `ls -l ~/.ssh/modca_vps`
-3. Test connection: `ssh -v -i ~/.ssh/modca_vps modca@135.181.111.66`
-4. Verify SSH agent: `ssh-add -l`
+### Last Updated: June 18, 2025
+- **Frontend**: ✅ Operational (https://www.janis7ewski.org)
+- **Backend API**: ✅ Operational (https://ws.janis7ewski.org/api)
+- **WebSocket**: ✅ Operational (wss://ws.janis7ewski.org/ws)
+- **Database**: ✅ Connected and operational
+- **SSL/HTTPS**: ✅ Working via Cloudflare + Let's Encrypt
+- **Container Health**: ✅ All containers running and healthy
 
 ## Network Architecture
 
@@ -143,772 +20,321 @@ Client → Cloudflare (DNS + SSL) → Vercel (Frontend)
                                      → SQLite DB
 ```
 
-### Routing Configuration
+## Current Deployment Status
 
-1. **Frontend (Vercel)**
-   - Domain: www.janis7ewski.org
-   - Serves static assets and React application
-   - Communicates with backend via API and WebSocket
+### URLs
+- **Frontend**: https://www.janis7ewski.org (Vercel)
+- **API**: https://ws.janis7ewski.org/api (Hetzner VPS)
+- **WebSocket**: wss://ws.janis7ewski.org/ws (Hetzner VPS)
+- **Health Check**: https://ws.janis7ewski.org/api/health
 
-2. **Backend (Hetzner VPS)**
-   - Domain: ws.janis7ewski.org
-   - Docker containers:
-     - Nginx (ports 80/443)
-     - FastAPI backend (port 8000)
-   - SSL termination at Nginx
-   - Cloudflare proxy enabled
+### Frontend Hosting (Vercel)
+- Framework: Next.js 14
+- Region: fra1 (Frankfurt)
+- Branch: prod
+- Auto-deployment: Enabled
+- Environment Variables:
+  - NEXT_PUBLIC_API_URL=https://ws.janis7ewski.org/api
+  - NEXT_PUBLIC_WS_URL=wss://ws.janis7ewski.org/ws
 
-3. **API Endpoints**
-   - REST API: https://ws.janis7ewski.org/api/
-   - WebSocket: wss://ws.janis7ewski.org/ws
-   - Health Check: https://ws.janis7ewski.org/health
-
-## VPS Directory Structure
-
-```
-/home/modca/modca_7web/
-├── backend/
-│   ├── app/               # Core application code
-│   │   ├── constants.py
-│   │   ├── grid.py
-│   │   ├── main.py
-│   │   ├── models.py
-│   │   ├── simulation.py
-│   │   └── __init__.py
-│   ├── data/             # Data storage
-│   ├── recordings/       # Simulation recordings
-│   ├── sqlite_data/      # SQLite database files
-│   │   └── settings.db
-│   ├── venv/             # Python virtual environment
-│   ├── Dockerfile        # Container definition
-│   ├── requirements.txt  # Dependencies
-│   └── settings.db      # Database file
-├── certbot/            # SSL certificates
-│   ├── conf/          # Certbot configuration
-│   │   ├── cert.pem
-│   │   ├── chain.pem
-│   │   ├── fullchain.pem
-│   │   └── privkey.pem
-│   └── www/           # Web root for verification
-├── config/            # Service configurations
-│   └── nginx/         # Nginx configuration
-│       └── modca.conf # Nginx site config
-└── docker-compose.yml # Container orchestration
-```
-
-### Key Directories and Files
-
-1. **Backend Application**
-   - `backend/app/`: Core application code
-   - `backend/data/`: Data storage directory
-   - `backend/recordings/`: Simulation recordings
-   - `backend/sqlite_data/`: SQLite database files
-   - `backend/venv/`: Python virtual environment
-
-2. **Configuration**
-   - `config/nginx/modca.conf`: Nginx configuration
-   - `docker-compose.yml`: Docker services configuration
-
-3. **SSL Certificates**
-   - `certbot/conf/`: Let's Encrypt certificates
-     - `cert.pem`: Server certificate
-     - `chain.pem`: Intermediate certificates
-     - `fullchain.pem`: Full certificate chain
-     - `privkey.pem`: Private key
-
-4. **Backup Management**
-   - `backups/daily/`: Daily database and configuration backups
-   - `backups/weekly/`: Weekly full system backups
-   - `backups/monthly/`: Monthly archival backups
-
-5. **Monitoring & Maintenance**
-   - `monitoring/logs/`: Application and system logs
-   - `monitoring/metrics/`: Performance and health metrics
-   - `monitoring/alerts/`: Alert configurations
-   - `maintenance/scripts/`: Utility and maintenance scripts
-
-### Important Notes
-- The backend application is containerized using Docker
-- Nginx serves as a reverse proxy
-- SSL certificates are managed by Certbot
-- Database files are persisted in `sqlite_data/`
-- Simulation recordings are stored in `recordings/`
-- Regular backups are stored in `backups/`
-- System monitoring and logging in `monitoring/`
-- Maintenance scripts in `maintenance/`
-
-### Security Considerations
-
-1. **File Permissions**
-   - Database files: 600 (owner read/write only)
-   - Configuration files: 644 (owner read/write, group/others read)
-   - Scripts: 755 (owner read/write/execute, group/others read/execute)
-   - SSL certificates: 600 (owner read/write only)
-
-2. **User Management**
-   - Consider creating a dedicated application user
-   - Use sudo for administrative tasks
-   - Implement proper user permissions
-
-3. **Regular Maintenance**
-   - Daily log rotation
-   - Weekly backup verification
-   - Monthly security updates
-   - Quarterly certificate renewal checks
-
-4. **Monitoring & Alerts**
-   - System resource monitoring
-   - Application health checks
-   - Security event logging
-   - Automated alert notifications
-
-### Recent Changes
-1. Vercel Configuration
-   - Added Git deployment settings
-   - Configured environment variables
-   - Updated CORS and WebSocket headers
-   - Fixed routing configuration
-
-2. Nginx Configuration
-   - Rate limiting implemented (10 req/s)
-   - Cloudflare IP ranges configured
-   - WebSocket proxy settings optimized
-   - SSL configuration updated
-   - Security headers enhanced
-   - Fixed SSL certificate paths
-   - Updated health check endpoint
-   - Added proper WebSocket upgrade handling
-   - Configured proper proxy headers
-   - Added security headers (HSTS, CSP, etc.)
-   - Added CORS headers for WebSocket connections
-   - Improved WebSocket proxy configuration
-
-3. Docker Configuration
-   - Updated health check to use correct endpoint
-   - Fixed container networking
-   - Added proper volume mounts
-   - Added SSL certificate volume mounts
-   - Exposed port 443 for HTTPS
-   - Fixed container health checks
-   - Added proper restart policies
-   - Configured proper logging
-   - Updated backend container configuration
-
-4. SSL & Security
-   - Successfully obtained Let's Encrypt certificates
-   - Configured auto-renewal
-   - Set up proper SSL termination
-   - Implemented security headers
-   - Configured Cloudflare SSL/TLS settings
-   - Added rate limiting
-   - Implemented proper CORS policies
-   - Enhanced WebSocket security
-
-5. Backend Updates
-   - Fixed grid tuple handling in Simulation class
-   - Added adjustment_info to SimulationResponse model
-   - Updated WebSocket endpoint to handle grid tuples
-   - Improved error handling in simulation reset
-   - Enhanced WebSocket message handling
-   - Added proper CORS headers for WebSocket connections
-   - Fixed simulation state management
-   - Improved grid initialization handling
-
-## Current Status (Updated)
+### Backend Hosting (Hetzner VPS)
+- **IP**: 135.181.111.66
+- **OS**: Ubuntu 24.04 LTS
+- **Containers**: Docker & Docker Compose
+- **Reverse Proxy**: Nginx
+- **SSL**: Let's Encrypt certificates
+- **CDN**: Cloudflare (Proxied)
 
 ### Container Status
-- Backend Container: ✅ Running and healthy
-- Nginx Container: 🔄 Restarting (SSL certificate issues)
-- Database: ✅ Connected and operational
+- **Backend Container** (`modca_backend`): ✅ Running and healthy
+- **Nginx Container** (`modca_nginx`): ✅ Running on ports 80/443
+- **Database**: ✅ SQLite persistent storage
+- **Network**: `modca_net` bridge network
 
-### Known Issues
-1. Nginx container is restarting due to missing SSL certificate files
-2. SSL certificate paths need to be properly configured in docker-compose.yml
-3. Nginx configuration needs to be updated to handle missing certificate files gracefully
+## VPS Access & Management
 
-### Next Steps
+### SSH Access
+- **User**: `modca` (not root)
+- **Command**: `ssh -i ~/.ssh/modca_vps modca@135.181.111.66`
+- **Project Directory**: `/home/modca/modca_7web`
+- **Key Requirements**:
+  - Key file: `~/.ssh/modca_vps`
+  - Permissions: 600 (`chmod 600 ~/.ssh/modca_vps`)
+  - Key type: RSA
 
-1. SSL Certificate Setup
-   - Verify Let's Encrypt certificate installation
-   - Update docker-compose.yml with correct certificate paths
-   - Ensure proper permissions on certificate files
-   - Test SSL configuration with `openssl s_client`
-
-2. Nginx Configuration
-   - Update Nginx configuration to handle missing certificates gracefully
-   - Implement proper error pages
-   - Configure proper logging
-   - Test configuration with `nginx -t`
-
-3. Container Health
-   - Implement proper health checks for all containers
-   - Set up container monitoring
-   - Configure automatic container restart policies
-   - Implement proper logging rotation
-
-4. Security Hardening
-   - Review and update firewall rules
-   - Implement rate limiting
-   - Configure proper CORS policies
-   - Set up security headers
-
-5. Monitoring Setup
-   - Implement Prometheus metrics
-   - Set up Grafana dashboards
-   - Configure alerting
-   - Monitor WebSocket connections
-   - Track API performance
-
-6. Backup Strategy
-   - Set up automated database backups
-   - Implement configuration backups
-   - Configure SSL certificate backups
-   - Test backup restoration procedures
-
-### Troubleshooting
-
-#### Common Issues
-
-1. API Errors
-   - Check backend logs: `docker logs modca_backend`
-   - Verify Nginx configuration: `nginx -t`
-   - Check Cloudflare status
-   - Verify SSL certificates
-   - Check container health status: `docker ps`
-   - Verify environment variables
-   - Check CORS configuration
-
-2. WebSocket Connection Issues
-   - Check Cloudflare WebSocket proxy status
-   - Verify SSL/TLS settings
-   - Check backend WebSocket logs
-   - Test direct connection (bypass Cloudflare)
-   - Verify Nginx WebSocket configuration
-   - Check proxy headers
-   - Verify CORS settings
-   - Check rate limiting
-
-3. Container Health
-   - Check container status: `docker ps`
-   - View container logs: `docker logs <container_id>`
-   - Check resource usage: `docker stats`
-   - Verify health checks: `curl https://ws.janis7ewski.org/health`
-   - Check container restart policy
-   - Verify volume mounts
-   - Check network configuration
-
-4. SSL Issues
-   - Check certificate validity: `openssl s_client -connect ws.janis7ewski.org:443`
-   - Verify Cloudflare SSL/TLS settings
-   - Check Let's Encrypt certificate renewal
-   - Verify SSL configuration in Nginx
-   - Check certificate paths in docker-compose.yml
-   - Verify certificate permissions
-   - Check auto-renewal configuration
-
-5. Nginx Issues
-   - Check Nginx status: `systemctl status nginx`
-   - Verify configuration: `nginx -t`
-   - Check error logs: `tail -f /var/log/nginx/error.log`
-   - Verify SSL configuration
-   - Check proxy settings
-   - Verify rate limiting
-   - Check security headers
-
-### Useful Commands
-
+### Container Management
 ```bash
 # Check container status
-docker compose ps
+docker-compose ps
 
-# View container logs
-docker logs modca_backend
-docker logs modca_nginx
+# Start all services
+docker-compose up -d
 
-# Test API endpoints
-curl https://ws.janis7ewski.org/api/settings
-curl https://ws.janis7ewski.org/health
+# Stop all services
+docker-compose down
 
-# Test WebSocket connection
-websocat -H="Origin: https://janis7ewski.org" -H="User-Agent: Mozilla/5.0" wss://ws.janis7ewski.org/ws/simulate/<simulation_id>
+# View logs
+docker-compose logs backend
+docker-compose logs nginx
 
-# Check SSL certificate
-openssl s_client -connect ws.janis7ewski.org:443
-
-# View Nginx configuration
-cat /etc/nginx/conf.d/modca.conf
-
-# Check Nginx status
-systemctl status nginx
-
-# Test Nginx configuration
-nginx -t
-
-# View Nginx logs
-tail -f /var/log/nginx/error.log
-tail -f /var/log/nginx/access.log
-
-# Check certificate renewal
-certbot certificates
-
-# Test rate limiting
-ab -n 100 -c 10 https://ws.janis7ewski.org/health
+# Restart services
+docker-compose restart
 ```
 
-### Repository Structure
+## Docker Configuration
 
-```
-deployment/
-├── config/
-│   └── nginx/
-│       └── modca.conf
-├── scripts/
-│   └── test_api_endpoints.sh
-├── certbot/
-├── maintenance/
-├── monitoring/
-├── docker-compose.yml
-└── DEPLOYMENT.md
-```
-
-### Workflow
-
-1. Development
-   - Make changes in development branch
-   - Test locally
-   - Create pull request
-
-2. Deployment
-   - Merge changes to deployment branch
-   - Push to production
-   - Verify deployment
-   - Monitor for issues
-
-3. Maintenance
-   - Regular security updates
-   - SSL certificate renewal
-   - Log rotation
-   - Backup verification
-
-### Security Considerations
-
-1. SSL/TLS
-   - Full (Strict) SSL mode enabled
-   - HSTS configured
-   - Modern TLS protocols only
-   - Strong cipher suites
-
-2. Cloudflare Security
-   - DDoS protection enabled
-   - WAF rules configured
-   - Bot protection active
-   - Rate limiting implemented
-
-3. Server Security
-   - Regular updates
-   - Firewall configured
-   - SSH key authentication
-   - Limited port exposure
-
-### Performance Monitoring
-
-1. Metrics to Track
-   - API response times
-   - WebSocket connection stability
-   - Resource usage
-   - Error rates
-   - Cache hit rates
-
-2. Alerts
-   - High error rates
-   - Resource exhaustion
-   - SSL certificate expiration
-   - Service unavailability
-
-### Backup Strategy
-
-1. Data Backup
-   - Daily database backups
-   - Configuration backups
-   - SSL certificate backups
-   - Log archives
-
-2. Recovery
-   - Documented recovery procedures
-   - Regular backup testing
-   - Disaster recovery plan
-   - Service restoration steps
-
-## DNS & SSL Status
-
-### Current DNS Configuration
-- ws.janis7ewski.org → 135.181.111.66
-- Proxy status: Currently DNS only (ready for Cloudflare proxy)
-
-### SSL Setup Progress
-- ✅ Certbot installed
-- ✅ Nginx plugin installed
-- ✅ Certificate obtained
-- ✅ Auto-renewal configured
-- ✅ HTTPS working
-- ✅ HTTP to HTTPS redirect working
-- ✅ Modern SSL ciphers configured
-
-## Container Health Status
-
-### Backend Container
-- Status: Running
-- Health check: Passing
-- Ports: 8000 exposed
-- Volumes: Properly mounted
-
-### Nginx Container
-- Status: Running
-- Configuration: Valid
-- Ports: 80, 443 exposed
-- SSL: Configured and working
-- Rate limiting: Active
-- Cloudflare headers: Configured
-
-## Recent API Tests
-
-### Successful Endpoints
-1. ✅ `/health` - Health check
-2. ✅ `/api/settings` - Settings management
-3. ✅ `/api/simulate` - Simulation creation
-4. ✅ `/api/simulate/{id}/status` - Status check
-5. ✅ `/api/simulate/{id}/step` - Step execution
-6. ✅ `/api/recordings` - Recordings list
-7. ✅ `/ws` - WebSocket endpoint (accessible)
-
-### Test Results
-- All API endpoints returning correct status codes
-- WebSocket endpoint properly configured for upgrades
-- Rate limiting working as expected
-- Health checks passing
-- SSL working correctly
-- HTTP to HTTPS redirect working
-- All endpoints tested over HTTPS
-- WebSocket tested over WSS
-- Cloudflare headers properly forwarded
-
-## Next Session Tasks
-
-1. Cloudflare Integration
-   - Enable proxy
-   - Configure SSL/TLS
-   - Set up WebSocket proxy
-   - Configure caching
-
-2. Monitoring Setup
-   - Install monitoring tools
-   - Configure metrics collection
-   - Set up alerts
-
-# modCA_7web Deployment Documentation
-
-## 1. Repository Structure & Workflow (Summary)
-
-- **dev**: Main integration branch for development and testing.
-- **deploy**: Deployment/production branch, updated from tested dev.
-- **feature/*, bugfix/*, exp/**: For features, bugfixes, and experiments.
-- **master**: (Optional) Stable, tagged releases.
-
-**Directory layout:**
-```
-modca_7web/
-├── backend/      # FastAPI backend
-├── frontend/     # Next.js frontend
-├── deployment/   # Deployment scripts/configs
-├── docs/         # Documentation
-├── recordings/   # Simulation recordings
-├── .github/      # GitHub Actions, templates
-├── ...
+### docker-compose.yml Structure
+```yaml
+services:
+  backend:
+    build: ./backend
+    container_name: modca_backend
+    expose: ["8000"]  # Internal network only
+    networks: [modca_net]
+    volumes: ["./backend/sqlite_data:/app/sqlite_data"]
+    
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: modca_nginx
+    ports: ["80:80", "443:443"]  # Public access
+    networks: [modca_net]
+    volumes:
+      - ./config/nginx:/etc/nginx/conf.d
+      - /etc/letsencrypt/live/ws.janis7ewski.org/fullchain.pem:/etc/letsencrypt/live/ws.janis7ewski.org/fullchain.pem:ro
+      - /etc/letsencrypt/live/ws.janis7ewski.org/privkey.pem:/etc/letsencrypt/live/ws.janis7ewski.org/privkey.pem:ro
 ```
 
-**Workflow:**
-- Develop in feature/bugfix/exp branches, merge to dev via PR.
-- Deploy from deploy branch (branched from dev).
-- Tag releases on deploy or master.
+### Key Configuration Notes
+- **Backend**: Uses `expose: "8000"` (not `ports`) for internal Docker network only
+- **Nginx**: Proxies to `backend:8000` using Docker service name
+- **SSL**: Let's Encrypt certificates mounted from host
+- **Network**: Both containers on `modca_net` bridge network
 
-See `DEVELOPER_DOCUMENTATION.md` for full details.
+## Nginx Configuration
 
----
+### Proxy Configuration
+```nginx
+# API endpoints
+location /api/ {
+    proxy_pass http://backend:8000/api/;
+    # ... headers and settings
+}
 
-## 2. Technical Specification for Deployment
-
-### 2.1 Architecture
-
-```
-                                  Users (Web Browsers)
-                                          ↓
-                                    Cloudflare CDN
-                                          ↓
-                                    HTTPS/SSL (443)
-                                          ↓
-                               janis7ewski.org domain
-                                          ↓
-                                ┌────────────────────┐
-                                │     Vercel Edge    │
-                                │   (Next.js Frontend│
-                                └──────────┬─────────┘
-                                           │
-                              ┌────────────▼────────────┐
-                              │ Hetzner VPS (Ubuntu)    │
-                              │    Linux + Docker       │
-                              └────────────┬────────────┘
-                                           │
-       ┌───────────────────────────────────┴────────────────────────────────────┐
-       │                            NGINX Reverse Proxy                         │
-       │                           (Listening on 443)                           │
-       │                                                                       │
-       │   ┌───────────────┐       ┌──────────────────┐        ┌────────────┐  │
-       │   │ /api requests │──────►│  FastAPI Backend │◄──────►│  SQLite DB │  │
-       │   └───────────────┘       │  Docker Container │        └────────────┘  │
-       │                           │  Uvicorn (Gunicorn) │                     │
-       │                           └──────────────────┘                        │
-       │                                                                       │
-       │   ┌───────────────┐                                                 │
-       │   │ /ws requests  │──── WebSocket Upgrade ───────────────────────────┘
-       │   └───────────────┘
-       └───────────────────────────────────────────────────────────────────────┘
+# WebSocket endpoint
+location /ws/simulate/ {
+    proxy_pass http://backend:8000/ws/simulate/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    # ... CORS and headers
+}
 ```
 
-- **Backend Hosting**: Hetzner VPS (IP: 135.181.111.66), system updated, firewall enabled, Docker & Docker Compose installed.
-- **Note:** Docker and Docker Compose are not yet installed. Proceed to the next section for installation instructions.
-- **Deployment**: Use Docker Compose for backend and NGINX containers.
+### Security Features
+- **Rate Limiting**: 10 req/s per IP
+- **Cloudflare Integration**: Real IP detection
+- **Security Headers**: HSTS, CSP, XSS protection
+- **CORS**: Configured for frontend domain
+- **SSL**: TLS 1.2/1.3 with modern ciphers
 
-### Components
-- **Cloudflare CDN**: Handles DNS, SSL termination, DDoS protection, and caching.
-- **Vercel Edge (Next.js Frontend)**: Serves the frontend UI and static assets.
-- **VPS (Linux + Docker)**: Hosts the backend stack in containers for portability and reproducibility.
-- **NGINX Reverse Proxy**: Listens on 443, terminates SSL (if not handled by Cloudflare), and routes requests:
-    - `/api` → FastAPI backend (Uvicorn/Gunicorn, Dockerized)
-    - `/ws` → FastAPI WebSocket endpoint (WebSocket upgrade supported)
-    - `/`   → (optionally) static frontend, if needed
-- **FastAPI Backend (Docker Container)**: Runs the simulation API and WebSocket server, connects to SQLite DB.
-- **SQLite DB**: Stores simulation settings and recordings, mounted as a Docker volume for persistence.
+## DNS & Cloudflare Configuration
 
-### Containerization Plan
-- **Dockerfile**: Will be added for the FastAPI backend (Python, Uvicorn/Gunicorn, requirements).
-- **docker-compose.yml**: Will orchestrate backend and NGINX containers, network, and volumes.
-- **NGINX Config**: See `deployment/config/nginx/modca.conf` for production-ready reverse proxy setup.
+### DNS Records (Cloudflare)
+- **A Record**: `ws.janis7ewski.org` → `135.181.111.66` (Proxied ☁️)
+- **A Record**: `api.janis7ewski.org` → `135.181.111.66` (Proxied ☁️)
+- **A Record**: `janis7ewski.org` → `135.181.111.66` (Proxied ☁️)
+- **CNAME**: `www` → `cname.vercel-dns.com` (Proxied ☁️)
 
-### Deployment Flow
-1. Build and run containers on the VPS using Docker Compose.
-2. NGINX listens on 443, proxies API and WebSocket traffic to the backend container.
-3. Cloudflare manages SSL, DNS, and security at the edge.
-4. Vercel serves the frontend, which communicates with the backend via `/api` and `/ws` endpoints.
+### Cloudflare Settings
+- **SSL/TLS**: Full (Strict)
+- **Proxy Status**: Enabled (Orange Cloud)
+- **WebSocket**: Enabled
+- **Security**: DDoS protection, WAF enabled
 
-### Next Steps
-- Add Dockerfile and docker-compose.yml to the repository.
-- Document build and deployment commands for the backend stack.
-- Ensure persistent storage for SQLite DB via Docker volumes.
-- Monitor and tune NGINX and backend performance as needed.
+## Git Workflow & Branch Strategy
 
-For developer and architecture details, see `../DEVELOPER_DOCUMENTATION.md`.
+### Branch Structure
+- **`prod`**: Main production branch
+  - Frontend auto-deploys to Vercel
+  - Source for VPS backend
+  - Tagged for releases
+- **`dev`**: Development integration
+- **`vps-deploy`**: VPS-specific branch (if needed)
+- **`master`**: Stable releases
 
----
-
-## 8. Docker Compose v2+ Notes and Troubleshooting (Updated)
-
-- The backend is now deployed on Hetzner VPS (135.181.111.66).
-- Use the public IP or ws.janis7ewski.org for API/WebSocket endpoint testing.
-- All other notes remain as before.
-
----
-
-## 9. Deployment Validation & Troubleshooting (Updated)
-
-### API Test
-- To verify the backend API is working, run:
-  curl -i -X POST https://ws.janis7ewski.org/api/simulate -H 'Content-Type: application/json' -d '{...}'
-- A 200 OK response with simulation data confirms the backend is healthy and NGINX is proxying correctly.
-
-### WebSocket Test
-- The WebSocket endpoint is available at wss://ws.janis7ewski.org/ws/simulate/<simulation_id>
-- Use a tool like websocat or a browser-based WebSocket client to connect and interact.
-
-### Healthcheck
-- The backend Dockerfile healthcheck now uses /api to match the FastAPI root endpoint.
-- If the backend container is 'unhealthy', ensure the healthcheck path matches your API root.
-
-### NGINX Docker Networking
-- NGINX proxy_pass directives must use the backend Docker Compose service name (modca_backend:8000), not 127.0.0.1.
-- This enables inter-container communication in Docker Compose.
-
-### 502 Bad Gateway Troubleshooting
-- If you see 502 errors:
-  - Ensure the backend container is healthy (docker compose ps)
-  - Check backend logs for import or runtime errors
-  - Confirm NGINX is proxying to the correct service name
-  - Make sure no system NGINX is running on port 80
-
----
-
-## Hetzner VPS Deployment Checklist (modCA_7web) (Updated)
-
-- System update and firewall configuration may already be complete.
-- **Current production backend IP:** `135.181.111.66`
-- Follow the checklist for Docker, DNS, SSL, and Cloudflare proxy as described above.
-
----
-
-## 10. Current Deployment Status & Debugging Progress (Updated)
-
-### Current Issue
-The backend service is failing to start with a `
-
-## VPS Synchronization & Workflow
-
-### Current VPS Structure
-```
-/home/modca/modca_7web/
-├── backend/           # Backend application
-├── vps_config/       # VPS-specific configurations
-│   ├── nginx/        # Nginx configuration
-│   │   └── modca.conf
-│   └── ssl/          # SSL certificates
-│       ├── cert.pem
-│       ├── chain.pem
-│       ├── fullchain.pem
-│       └── privkey.pem
-└── docker-compose.yml
-```
-
-### Synchronization Workflow
-
-1. **Local Development**
-   - Develop in feature branches
-   - Test locally
-   - Merge to `dev` branch
-   - After testing, merge to `prod` branch
-
-2. **VPS Deployment**
+### Deployment Process
+1. **Development**: Work in feature branches → merge to `dev`
+2. **Testing**: Test in `dev` environment
+3. **Production**: Merge `dev` → `prod`
+4. **VPS Update**:
    ```bash
-   # On VPS as modca user
+   # On VPS
    cd /home/modca/modca_7web
    git fetch origin
-   git checkout vps-deploy
-   git pull origin prod --no-ff
-   ```
-
-3. **Configuration Management**
-   - VPS-specific configs in `vps_config/`
-   - SSL certificates in `vps_config/ssl/`
-   - Nginx config in `vps_config/nginx/`
-   - Environment variables in `.env`
-
-4. **Update Process**
-   ```bash
-   # After pulling changes
+   git pull origin prod
    docker-compose down
    docker-compose up -d
    ```
 
-### Git Branch Strategy
+## Monitoring & Health Checks
 
+### Health Check Endpoints
+- **API Health**: https://ws.janis7ewski.org/api/health
+- **Container Health**: `docker-compose ps`
+- **Nginx Status**: `curl -I https://ws.janis7ewski.org`
+
+### Log Monitoring
+```bash
+# Backend logs
+docker logs modca_backend --tail 50 -f
+
+# Nginx logs
+docker logs modca_nginx --tail 50 -f
+
+# System logs
+sudo journalctl -u docker -f
 ```
-feature/* → dev → prod → master
-   ↑         ↑      ↑
-   └─────────┘      │
-                    └───→ vps-deploy (VPS-specific)
+
+## Troubleshooting Guide
+
+### Common Issues & Solutions
+
+#### 1. "521 Web server is down" Error
+**Cause**: Nginx container not running
+**Solution**:
+```bash
+cd /home/modca/modca_7web
+docker-compose up -d
+docker-compose ps  # Verify both containers running
 ```
 
-- `prod`: Main production branch
-  - Frontend auto-deploys to Vercel
-  - Source for VPS backend
-  - Tagged for releases
-- `dev`: Development integration
-  - Feature branches merge here
-  - Testing and integration
-- `vps-deploy`: VPS-specific branch
-  - Contains only backend code
-  - VPS-specific configurations
-- `master`: Stable releases
-  - Tagged versions
-  - Long-term reference
+#### 2. Frontend Cannot Connect to Backend
+**Symptoms**: API calls fail, WebSocket connections fail
+**Diagnosis**:
+```bash
+# Test API connectivity
+curl -i https://ws.janis7ewski.org/api/health
 
-### VPS-Specific Files
+# Check container status
+docker-compose ps
 
-1. **Nginx Configuration** (`vps_config/nginx/modca.conf`)
-   - Rate limiting
-   - Cloudflare integration
-   - SSL configuration
-   - Security headers
-   - API/WebSocket routing
+# Check logs
+docker-compose logs nginx
+docker-compose logs backend
+```
 
-2. **SSL Certificates** (`vps_config/ssl/`)
-   - `cert.pem`: Server certificate
-   - `chain.pem`: Intermediate certificates
-   - `fullchain.pem`: Full certificate chain
-   - `privkey.pem`: Private key
+#### 3. SSL Certificate Issues
+**Check Certificate**:
+```bash
+openssl s_client -connect ws.janis7ewski.org:443 -servername ws.janis7ewski.org
+```
 
-3. **Docker Compose** (`docker-compose.yml`)
-   - Container orchestration
-   - Service definitions
-   - Volume mappings
-   - Network configuration
+#### 4. Container Networking Issues
+**Verify Internal Connectivity**:
+```bash
+# From nginx container to backend
+docker exec modca_nginx wget -qO- http://backend:8000/api/health
+```
 
-### Security Considerations
+### Diagnostic Commands
+```bash
+# Container status
+docker-compose ps
 
-1. **File Permissions**
-   - SSL certificates: 600 (owner read/write only)
-   - Configuration files: 644 (owner read/write, group/others read)
-   - Scripts: 755 (owner read/write/execute, group/others read/execute)
+# Resource usage
+docker stats
 
-2. **Environment Variables**
-   - Stored in `.env` file
-   - Not tracked in git
-   - Contains sensitive configuration
+# Network inspection
+docker network ls
+docker network inspect modca_7web_modca_net
 
-3. **SSL Management**
-   - Certificates stored in `vps_config/ssl/`
-   - Auto-renewal configured
-   - Proper permissions set
+# Port bindings
+docker port modca_nginx
+```
+
+## Security Considerations
+
+### SSL/TLS
+- **Certificates**: Let's Encrypt (auto-renewal configured)
+- **Protocols**: TLS 1.2/1.3 only
+- **Ciphers**: Modern, secure cipher suites
+- **HSTS**: Configured for security
+
+### Access Control
+- **SSH**: Key-based authentication only
+- **Firewall**: UFW enabled, ports 22/80/443 open
+- **User**: Non-root `modca` user for operations
+- **Docker**: Rootless where possible
 
 ### Regular Maintenance
+- **Updates**: Monthly security updates
+- **Certificates**: Auto-renewal (Let's Encrypt)
+- **Backups**: Database and configuration backups
+- **Monitoring**: Log rotation and cleanup
 
-1. **Daily Tasks**
-   - Check container health
-   - Monitor logs
-   - Verify SSL status
+## Backup & Recovery
 
-2. **Weekly Tasks**
-   - Pull latest changes
-   - Update containers
-   - Verify backups
+### Database Backup
+```bash
+# Manual backup
+cd /home/modca/modca_7web
+cp -r backend/sqlite_data/ backup_$(date +%Y%m%d)/
+```
 
-3. **Monthly Tasks**
-   - Security updates
-   - SSL renewal check
-   - Performance review
+### Configuration Backup
+```bash
+# Backup critical configs
+tar -czf config_backup_$(date +%Y%m%d).tar.gz \
+    docker-compose.yml \
+    config/ \
+    deployment/
+```
 
-## Erasing All Saved Simulation Setups (Admin)
+## Performance Optimization
 
-If you need to erase all saved simulation setups (settings) from the backend database in a Dockerized environment:
+### Current Performance
+- **API Response Time**: < 100ms (local)
+- **WebSocket Latency**: < 50ms
+- **SSL Handshake**: < 200ms via Cloudflare
+- **Container Resources**: Low utilization
 
-1. **Copy the database file from the backend container to the host:**
-   ```bash
-   docker cp modca_backend:/app/settings.db /tmp/settings.db
-   ```
+### Monitoring Metrics
+- **Container Memory**: < 512MB per container
+- **CPU Usage**: < 10% under normal load
+- **Disk I/O**: Minimal (SQLite operations)
+- **Network**: Cloudflare CDN acceleration
 
-2. **Delete all settings using sqlite3 on the host:**
-   ```bash
-   sqlite3 /tmp/settings.db "DELETE FROM settings;"
-   ```
-   If `sqlite3` is not installed, install it with:
-   ```bash
-   sudo apt update && sudo apt install sqlite3
-   ```
+---
 
-3. **Copy the cleaned database back into the container:**
-   ```bash
-   docker cp /tmp/settings.db modca_backend:/app/settings.db
-   ```
+## Quick Reference
 
-4. **(Optional) Verify from the frontend that no setups remain.**
+### Essential Commands
+```bash
+# SSH to VPS
+ssh -i ~/.ssh/modca_vps modca@135.181.111.66
 
-**Note:**
-- If the backend container name is not `modca_backend`, adjust the commands accordingly.
-- This operation is destructive and cannot be undone. Back up your database if needed before proceeding.
+# Navigate to project
+cd /home/modca/modca_7web
+
+# Check status
+docker-compose ps
+
+# Restart services
+docker-compose restart
+
+# View logs
+docker-compose logs -f
+
+# Test connectivity
+curl https://ws.janis7ewski.org/api/health
+```
+
+### Emergency Contacts & Resources
+- **VPS Provider**: Hetzner Cloud
+- **DNS/CDN**: Cloudflare
+- **Frontend**: Vercel
+- **SSL**: Let's Encrypt
+
+---
+
+*Last verified: June 18, 2025 - All systems operational*
