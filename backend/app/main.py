@@ -174,7 +174,7 @@ async def start_simulation(settings: SimulationSettings, db: DatabaseHandler = D
                 # Continue with simulation even if database save fails
 
         # Create simulation object
-        simulation = Simulation(grid, param_dict, record_simulation=record_simulation)
+        simulation = Simulation(grid, param_dict, recording_enabled=record_simulation)
         logger.info("Simulation object created successfully")
 
         # Store simulation in active simulations
