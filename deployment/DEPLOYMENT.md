@@ -10,6 +10,24 @@
 - **SSL/HTTPS**: ✅ Working via Cloudflare + Let's Encrypt
 - **Container Health**: ✅ All containers running and healthy
 
+### Container Details (VPS: 135.181.111.66)
+- **Docker Compose File**: `/home/modca/modca_7web/docker-compose.yml`
+- **Project Directory**: `/home/modca/modca_7web/`
+- **Backend Container**: `modca_backend` (Python FastAPI)
+  - **Status**: Up (healthy)
+  - **Internal Port**: 8000 (exposed to Docker network only)
+  - **Health Check**: `/api/health` endpoint
+  - **Database**: SQLite at `/home/modca/modca_7web/backend/sqlite_data/`
+  - **Logs**: `docker-compose logs backend`
+- **Nginx Container**: `modca_nginx` (Reverse Proxy)
+  - **Status**: Up
+  - **Public Ports**: 80:80, 443:443
+  - **Config**: `/home/modca/modca_7web/config/nginx/modca.conf`
+  - **SSL Certs**: `/etc/letsencrypt/live/ws.janis7ewski.org/`
+  - **Logs**: `docker-compose logs nginx`
+- **Docker Network**: `modca_7web_modca_net` (bridge)
+- **Container Communication**: nginx → backend:8000 (internal)
+
 ## Network Architecture
 
 ```
@@ -47,9 +65,24 @@ Client → Cloudflare (DNS + SSL) → Vercel (Frontend)
 
 ### Container Status
 - **Backend Container** (`modca_backend`): ✅ Running and healthy
+  - **Image**: Built from `/home/modca/modca_7web/backend/Dockerfile`
+  - **Port Mapping**: Internal 8000 (exposed to Docker network only)
+  - **Volume**: `/home/modca/modca_7web/backend/sqlite_data:/app/sqlite_data`
+  - **Health Check**: HTTP GET `/api/health` every 30s
+  - **Restart Policy**: `unless-stopped`
 - **Nginx Container** (`modca_nginx`): ✅ Running on ports 80/443
+  - **Image**: `nginx:1.25-alpine`
+  - **Port Mapping**: `80:80`, `443:443` (public access)
+  - **Config Volume**: `/home/modca/modca_7web/config/nginx:/etc/nginx/conf.d:ro`
+  - **SSL Volume**: `/etc/letsencrypt/live/ws.janis7ewski.org:/etc/letsencrypt/live/ws.janis7ewski.org:ro`
+  - **Restart Policy**: `unless-stopped`
 - **Database**: ✅ SQLite persistent storage
-- **Network**: `modca_net` bridge network
+  - **Location**: `/home/modca/modca_7web/backend/sqlite_data/simulation.db`
+  - **Backup**: Manual backups in `/home/modca/modca_7web/backend/sqlite_data/backups/`
+- **Network**: `modca_7web_modca_net` bridge network
+  - **Subnet**: Auto-assigned by Docker
+  - **Internal Communication**: nginx container → backend:8000
+  - **External Access**: Only through nginx on ports 80/443
 
 ## VPS Access & Management
 
@@ -64,6 +97,9 @@ Client → Cloudflare (DNS + SSL) → Vercel (Frontend)
 
 ### Container Management
 ```bash
+# Navigate to project directory
+cd /home/modca/modca_7web
+
 # Check container status
 docker-compose ps
 
@@ -73,12 +109,32 @@ docker-compose up -d
 # Stop all services
 docker-compose down
 
-# View logs
-docker-compose logs backend
-docker-compose logs nginx
+# View logs (recent)
+docker-compose logs backend --tail 50
+docker-compose logs nginx --tail 50
 
-# Restart services
-docker-compose restart
+# Follow logs in real-time
+docker-compose logs -f backend
+docker-compose logs -f nginx
+
+# Restart specific service
+docker-compose restart backend
+docker-compose restart nginx
+
+# Rebuild and restart (after code changes)
+docker-compose down
+docker-compose up -d --build
+
+# Container resource usage
+docker stats modca_backend modca_nginx
+
+# Execute commands inside containers
+docker exec -it modca_backend bash
+docker exec -it modca_nginx sh
+
+# Container inspection
+docker inspect modca_backend
+docker inspect modca_nginx
 ```
 
 ## Docker Configuration
@@ -303,6 +359,157 @@ tar -czf config_backup_$(date +%Y%m%d).tar.gz \
 - **CPU Usage**: < 10% under normal load
 - **Disk I/O**: Minimal (SQLite operations)
 - **Network**: Cloudflare CDN acceleration
+
+---
+
+## 🚀 Recommended: Clean Deployment Workflow (TODO)
+
+> **⚠️ Current Issue**: The existing deployment workflow mixes development files with production configurations on the VPS, creating risks of overwriting critical settings like SSL certificates and Nginx configs.
+
+### Problems with Current Approach
+- **Config Collision**: VPS production configs (SSL certs, nginx settings) risk being overwritten by git pulls
+- **Manual File Copying**: Error-prone `scp` commands don't scale and lack validation
+- **No Separation**: Development and production artifacts mixed together
+- **No Rollback**: If something breaks, hard to revert quickly
+- **Dependency Issues**: Local development dependencies mixed with production
+
+### Recommended Solution: Clean Deployment Pipeline
+
+#### 1. **Separate VPS-Specific Configs**
+```bash
+# On VPS, create a separate config directory outside the git repo
+/home/modca/
+├── modca_7web/           # Git repository (code only)
+├── modca_config/         # VPS-specific configs (never overwritten)
+│   ├── nginx/
+│   ├── ssl/
+│   ├── docker-compose.prod.yml
+│   └── .env.prod
+└── modca_data/           # Persistent data
+    ├── sqlite_data/
+    └── backups/
+```
+
+#### 2. **Environment-Specific Docker Compose**
+```yaml
+# docker-compose.prod.yml (VPS-specific)
+services:
+  backend:
+    build: ./modca_7web/backend
+    volumes:
+      - /home/modca/modca_data/sqlite_data:/app/sqlite_data
+    env_file:
+      - /home/modca/modca_config/.env.prod
+      
+  nginx:
+    volumes:
+      - /home/modca/modca_config/nginx:/etc/nginx/conf.d
+      - /etc/letsencrypt/live/ws.janis7ewski.org:/etc/ssl/certs:ro
+```
+
+#### 3. **Automated Deployment Script**
+```bash
+#!/bin/bash
+# /home/modca/modca_config/deploy.sh
+
+set -e  # Exit on any error
+
+echo "🚀 Starting deployment..."
+
+# 1. Backup current state
+echo "📦 Creating backup..."
+docker-compose -f /home/modca/modca_config/docker-compose.prod.yml down
+cp -r /home/modca/modca_data/sqlite_data /home/modca/modca_data/backup_$(date +%Y%m%d_%H%M%S)
+
+# 2. Update code (safe - only code, no configs)
+echo "📥 Updating code..."
+cd /home/modca/modca_7web
+git fetch origin
+git reset --hard origin/prod  # Force clean update
+
+# 3. Build and deploy
+echo "🔨 Building and starting services..."
+cd /home/modca/modca_config
+docker-compose -f docker-compose.prod.yml build --no-cache backend
+docker-compose -f docker-compose.prod.yml up -d
+
+# 4. Health check
+echo "🏥 Health check..."
+sleep 10
+if curl -f https://ws.janis7ewski.org/api/health; then
+    echo "✅ Deployment successful!"
+else
+    echo "❌ Health check failed - rolling back..."
+    # Rollback logic here
+    exit 1
+fi
+```
+
+#### 4. **Safe Update Process**
+```bash
+# Local development
+git push origin prod
+
+# VPS deployment (one command)
+ssh -i ~/.ssh/modca_vps modca@135.181.111.66 '/home/modca/modca_config/deploy.sh'
+```
+
+#### 5. **Configuration Management**
+- **Secrets**: Use `.env.prod` file outside git repo
+- **SSL Certs**: Keep in system location (`/etc/letsencrypt/`)
+- **Nginx Config**: Template-based with environment substitution
+- **Database**: Persistent volume outside git repo
+
+#### 6. **Rollback Strategy**
+```bash
+#!/bin/bash
+# /home/modca/modca_config/rollback.sh
+
+echo "🔄 Rolling back to previous version..."
+
+# Stop current services
+docker-compose -f /home/modca/modca_config/docker-compose.prod.yml down
+
+# Restore from backup
+LATEST_BACKUP=$(ls -t /home/modca/modca_data/backup_* | head -n1)
+rm -rf /home/modca/modca_data/sqlite_data
+cp -r $LATEST_BACKUP /home/modca/modca_data/sqlite_data
+
+# Revert code
+cd /home/modca/modca_7web
+git reset --hard HEAD~1
+
+# Restart services
+cd /home/modca/modca_config
+docker-compose -f docker-compose.prod.yml up -d
+
+echo "✅ Rollback complete!"
+```
+
+### Implementation Steps (Next Session)
+
+1. **Phase 1**: Create separate config structure
+   - Move VPS-specific files to `/home/modca/modca_config/`
+   - Create production-specific `docker-compose.prod.yml`
+   - Test current setup still works
+
+2. **Phase 2**: Implement deployment script
+   - Create automated deployment script
+   - Add health checks and rollback capability
+   - Test deployment process
+
+3. **Phase 3**: Clean up repository
+   - Remove VPS-specific files from git repo
+   - Update `.gitignore` for development artifacts
+   - Document new workflow
+
+### Benefits of This Approach
+- ✅ **Zero Risk**: Production configs never overwritten
+- ✅ **Atomic Deployments**: Either succeeds completely or rolls back
+- ✅ **Easy Rollback**: One command to revert
+- ✅ **Clean Separation**: Development vs production concerns
+- ✅ **Automated**: No manual file copying
+- ✅ **Testable**: Can test deployment process safely
 
 ---
 
