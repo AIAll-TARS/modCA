@@ -93,12 +93,6 @@ export default function Home() {
                                     aiall@janis7ewski.org
                                 </span>
                                 <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 min-w-max">
-                                    <a
-                                        href="mailto:aiall@janis7ewski.org?subject=modCA%20Contact&body=Hello%2C%0A%0AI%20have%20a%20question%20about%20modCA..."
-                                        className="block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-600"
-                                    >
-                                        ✉️ Send Email
-                                    </a>
                                     <button
                                         onClick={() => {
                                             navigator.clipboard.writeText('aiall@janis7ewski.org');
@@ -106,7 +100,7 @@ export default function Home() {
                                         }}
                                         className="block w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                                     >
-                                        📋 Copy Email
+                                        Copy Email
                                     </button>
                                 </div>
                             </div>
