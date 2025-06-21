@@ -82,7 +82,7 @@ export default function Home() {
                     </div>
 
                     <div className="mt-16 max-w-4xl mx-auto">
-                        <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8 mb-8">
+                        <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8">
                             <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Contact Us</h2>
                             <p className="text-gray-600 dark:text-gray-300 mb-4">
                                 Have questions or feedback? We'd love to hear from you.
@@ -117,16 +117,6 @@ export default function Home() {
                                     </div>
                                 </div>
                             </>
-                        </div>
-
-                        <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8">
-                            <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Support the Project</h2>
-                            <p className="text-gray-600 dark:text-gray-300 mb-4">
-                                Help us improve modCA and make it even better.
-                            </p>
-                            <a href="https://github.com/yourusername/modca" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
-                                Contribute on GitHub →
-                            </a>
                         </div>
                     </div>
                 </div>
