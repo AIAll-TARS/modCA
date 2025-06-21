@@ -217,10 +217,9 @@ export default function Recordings() {
     return (
         <>
             <Head>
-                <title>Recordings - modCA_7</title>
-                <meta name="description" content="View and play back simulation recordings" />
+                <title>modCA - Simulation Recordings</title>
+                <meta name="description" content="View and replay your saved ecosystem simulations" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <link rel="icon" href="/favicon.ico" />
             </Head>
 
             <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
