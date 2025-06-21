@@ -88,8 +88,8 @@ export default function Home() {
                             <p className="text-gray-600 dark:text-gray-300 mb-4">
                                 Have questions or feedback? We'd love to hear from you.
                             </p>
-                            <a href="mailto:contact@modca.com" className="text-blue-600 dark:text-blue-400 hover:underline">
-                                contact@modca.com
+                            <a href="mailto:aiall@janis7ewski.org" className="text-blue-600 dark:text-blue-400 hover:underline">
+                                aiall@janis7ewski.org
                             </a>
                         </div>
 
