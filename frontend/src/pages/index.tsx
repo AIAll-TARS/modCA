@@ -3,7 +3,6 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { getApiUrl } from '../utils/env'
-import { showNotification } from '../utils/notification'
 
 const styles = {
     main: {
@@ -98,7 +97,19 @@ export default function Home() {
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText('aiall@janis7ewski.org');
-                                                showNotification('Email copied to clipboard!');
+                                                const overlay = document.createElement('div');
+                                                overlay.className = 'fixed inset-0 bg-blue-500 bg-opacity-20 flex items-center justify-center transition-opacity duration-1000 z-50';
+                                                const message = document.createElement('div');
+                                                message.className = 'bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-xl text-gray-800 dark:text-gray-200 text-lg font-medium';
+                                                message.textContent = 'Email copied to clipboard!';
+                                                overlay.appendChild(message);
+                                                document.body.appendChild(overlay);
+                                                setTimeout(() => {
+                                                    overlay.style.opacity = '0';
+                                                    setTimeout(() => {
+                                                        document.body.removeChild(overlay);
+                                                    }, 1000);
+                                                }, 1000);
                                             }}
                                             className="block w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                                         >
