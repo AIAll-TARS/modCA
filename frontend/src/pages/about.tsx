@@ -9,7 +9,6 @@ export default function About() {
                 <title>About modCA - Ecosystem Simulation</title>
                 <meta name="description" content="Learn about modCA - a web-based cellular automata simulation for ecosystem modeling" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
             </Head>
 
             <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
