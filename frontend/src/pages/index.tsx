@@ -88,9 +88,25 @@ export default function Home() {
                             <p className="text-gray-600 dark:text-gray-300 mb-4">
                                 Have questions or feedback? We'd love to hear from you.
                             </p>
-                            <a href="mailto:aiall@janis7ewski.org" className="text-blue-600 dark:text-blue-400 hover:underline">
-                                aiall@janis7ewski.org
-                            </a>
+                            <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                <a
+                                    href="mailto:aiall@janis7ewski.org?subject=modCA%20Contact&body=Hello%2C%0A%0AI%20have%20a%20question%20about%20modCA..."
+                                    className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2"
+                                >
+                                    <span>✉️</span>
+                                    aiall@janis7ewski.org
+                                </a>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText('aiall@janis7ewski.org');
+                                        alert('Email address copied to clipboard!');
+                                    }}
+                                    className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2 transition-colors"
+                                >
+                                    <span>📋</span>
+                                    Copy Email
+                                </button>
+                            </div>
                         </div>
 
                         <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8">
