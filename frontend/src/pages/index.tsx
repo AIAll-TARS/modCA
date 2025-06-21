@@ -120,12 +120,6 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
-
-                <footer className="bg-gray-800 text-white py-8 mt-16">
-                    <div className="container mx-auto px-4 text-center">
-                        <p>© {new Date().getFullYear()} modCA - Cellular Automata Ecosystem Simulation</p>
-                    </div>
-                </footer>
             </main>
         </>
     )
