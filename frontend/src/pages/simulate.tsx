@@ -1397,10 +1397,9 @@ export default function Simulate() {
     return (
         <>
             <Head>
-                <title>Run Simulation - modCA_7</title>
-                <meta name="description" content="Configure and run a cellular automata simulation" />
+                <title>modCA - Configure Simulation</title>
+                <meta name="description" content="Configure and run your cellular automata ecosystem simulation" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <link rel="icon" href="/favicon.ico" />
             </Head>
 
             <style jsx global>{`
