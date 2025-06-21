@@ -108,18 +108,30 @@ export default function About() {
                     </div>
 
                     <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8">
-                        <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Get Started</h2>
+                        <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Support the Project</h2>
                         <p className="text-gray-600 dark:text-gray-300 mb-6">
-                            Ready to explore ecosystem dynamics? Start your first simulation now and discover the fascinating
-                            world of predator-prey interactions.
+                            If you find modCA helpful for your research or education, consider supporting its development. Your support helps maintain and improve the platform.
                         </p>
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4 items-center">
                             <Link
                                 href="/simulate"
                                 className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
                             >
                                 Start Simulation
                             </Link>
+                            <a
+                                href="https://www.buymeacoffee.com/aiall"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="transform hover:scale-105 transition-transform"
+                            >
+                                <img
+                                    src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+                                    alt="Buy Me A Coffee"
+                                    height="48"
+                                    className="h-12"
+                                />
+                            </a>
                             <Link
                                 href="/"
                                 className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
