@@ -88,24 +88,27 @@ export default function Home() {
                             <p className="text-gray-600 dark:text-gray-300 mb-4">
                                 Have questions or feedback? We'd love to hear from you.
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-4 items-start">
-                                <a
-                                    href="mailto:aiall@janis7ewski.org?subject=modCA%20Contact&body=Hello%2C%0A%0AI%20have%20a%20question%20about%20modCA..."
-                                    className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2"
-                                >
-                                    <span>✉️</span>
+                            <div className="relative inline-block group">
+                                <span className="text-gray-800 dark:text-gray-200 cursor-pointer select-none">
                                     aiall@janis7ewski.org
-                                </a>
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText('aiall@janis7ewski.org');
-                                        alert('Email address copied to clipboard!');
-                                    }}
-                                    className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2 transition-colors"
-                                >
-                                    <span>📋</span>
-                                    Copy Email
-                                </button>
+                                </span>
+                                <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 min-w-max">
+                                    <a
+                                        href="mailto:aiall@janis7ewski.org?subject=modCA%20Contact&body=Hello%2C%0A%0AI%20have%20a%20question%20about%20modCA..."
+                                        className="block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-600"
+                                    >
+                                        ✉️ Send Email
+                                    </a>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText('aiall@janis7ewski.org');
+                                            alert('Email address copied to clipboard!');
+                                        }}
+                                        className="block w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    >
+                                        📋 Copy Email
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
