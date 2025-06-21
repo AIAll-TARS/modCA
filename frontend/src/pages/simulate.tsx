@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import { Inter } from 'next/font/google'
 import { useRouter } from 'next/router'
@@ -50,6 +50,7 @@ import SaveSettingsModal from '../components/SaveSettingsModal';
 import LoadSettingsModal from '../components/LoadSettingsModal';
 import React from 'react';
 import Link from 'next/link';
+import { showNotification } from '../utils/notification';
 
 // Register ChartJS components
 ChartJS.register(
@@ -510,7 +511,7 @@ export default function Simulate() {
         try {
             // Validate grid size
             if (Number(values.grid_size) > 400) {
-                alert('Grid size cannot exceed 400x400');
+                showNotification('Grid size cannot exceed 400x400');
                 return;
             }
 
@@ -519,7 +520,7 @@ export default function Simulate() {
             const totalEntities = Number(values.initial_predators) + Number(values.initial_prey);
 
             if (totalEntities > totalCells) {
-                alert(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+                showNotification(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
                 return;
             }
 
@@ -724,9 +725,7 @@ export default function Simulate() {
                 // Handle timeout errors specifically
                 if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ECONNRESET') {
                     setStatus('error')
-                    alert(`The server timed out trying to create a ${validatedValues.grid_size}×${validatedValues.grid_size} grid.\n\n` +
-                        `This grid size is too large for the server to process.\n\n` +
-                        `Please try again with a smaller grid size (we recommend 500×500 or less).`)
+                    handleTimeoutError(Number(values.grid_size))
                     return
                 }
 
@@ -755,7 +754,7 @@ export default function Simulate() {
         } catch (error: any) {
             console.error('General error during simulation start:', error)
             setStatus('error')
-            alert(`Error: ${error.message || 'Unknown error occurred'}`)
+            handleSimulationError(error)
         }
     }
 
@@ -771,7 +770,7 @@ export default function Simulate() {
             const errorDetail = error.response.data?.detail || 'Unknown server error';
             const errorMessage = `${message}: ${errorDetail}`;
 
-            alert(errorMessage)
+            handleSettingsError(errorMessage)
 
             // Show more detailed debugging info in the console
             if (error.response.status === 500) {
@@ -780,11 +779,11 @@ export default function Simulate() {
         } else if (error.request) {
             // The request was made but no response was received
             console.error('No response received:', error.request)
-            alert(`${message}: No response from server. Please check if the backend is running.`)
+            handleWebSocketError(message, error)
         } else {
             // Something happened in setting up the request that triggered an Error
             console.error('Error message:', error.message)
-            alert(`${message}: ${error.message}`)
+            handleWebSocketError(message, error)
         }
     }
 
@@ -997,12 +996,7 @@ export default function Simulate() {
                     if (error.code === 'ECONNABORTED' || error.code === 'ECONNRESET') {
                         // For timeout/connection errors with large grids, provide more helpful message
                         if (isLargeGrid) {
-                            alert(`The server is having trouble processing this large grid (${gridSize}×${gridSize}).\n\n` +
-                                `Tips for large grids:\n` +
-                                `- Use smaller step increments (try one step at a time)\n` +
-                                `- Allow more time between steps\n` +
-                                `- Restart the backend server if needed\n` +
-                                `- Consider using a smaller grid size`);
+                            handleLargeGridWarning(gridSize)
                         }
                     }
 
@@ -1057,7 +1051,7 @@ export default function Simulate() {
                 if (consecutiveFailures >= maxConsecutiveFailures) {
                     console.log('Too many consecutive failures, stopping auto-run')
                     clearInterval(interval)
-                    alert('Auto-run stopped due to persistent connection issues. Please try manual stepping or restart the simulation.')
+                    handleConnectionIssues()
                     return
                 }
 
@@ -1112,13 +1106,13 @@ export default function Simulate() {
 
             if (response.data && response.data.status === 'success') {
                 setRecordingSaved(true);
-                alert(`Recording saved successfully with ID: ${response.data.recording_id}`);
+                handleRecordingSaved(response.data.recording_id);
             } else {
-                alert(`Error saving recording: ${response.data.message || 'Unknown error'}`);
+                handleRecordingError(response.data);
             }
         } catch (error) {
             console.error('Error saving recording:', error);
-            alert('Failed to save recording. See console for details.');
+            handleRecordingError(error);
         } finally {
             setStatus(status === 'saving' ? (currentStep >= totalSteps ? 'completed' : 'running') : status);
         }
@@ -1328,6 +1322,76 @@ export default function Simulate() {
             console.log('Formik values after setValues:', formikRef.current.values);
         }, 0);
         setIsLoadModalOpen(false);
+    };
+
+    // Replace all alert() calls with showNotification()
+    const validateGridSize = (values: SimulationParams) => {
+        if (values.grid_size > 400) {
+            showNotification('Grid size cannot exceed 400x400');
+            return false;
+        }
+        return true;
+    };
+
+    const validateEntityCounts = (values: SimulationParams) => {
+        const totalCells = values.grid_size * values.grid_size;
+        if (values.initial_predators + values.initial_prey > totalCells) {
+            showNotification(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+            return false;
+        }
+        return true;
+    };
+
+    const handleTimeoutError = (gridSize: number) => {
+        showNotification(
+            `The server timed out trying to create a ${gridSize}×${gridSize} grid.\n\n` +
+            'Please try:\n' +
+            '1. A smaller grid size\n' +
+            '2. Fewer initial entities\n' +
+            '3. Running the simulation locally'
+        );
+    };
+
+    const handleSimulationError = (error: any) => {
+        showNotification(`Error: ${error.message || 'Unknown error occurred'}`);
+    };
+
+    const handleWebSocketError = (message: string, error?: any) => {
+        if (!error) {
+            showNotification(`${message}: No response from server. Please check if the backend is running.`);
+        } else {
+            showNotification(`${message}: ${error.message}`);
+        }
+    };
+
+    const handleLargeGridWarning = (gridSize: number) => {
+        showNotification(
+            `The server is having trouble processing this large grid (${gridSize}×${gridSize}).\n\n` +
+            'Consider:\n' +
+            '1. Using a smaller grid size\n' +
+            '2. Reducing the number of entities\n' +
+            '3. Running the simulation locally'
+        );
+    };
+
+    const handleConnectionIssues = () => {
+        showNotification('Auto-run stopped due to persistent connection issues. Please try manual stepping or restart the simulation.');
+    };
+
+    const handleRecordingSaved = (recordingId: string) => {
+        showNotification(`Recording saved successfully with ID: ${recordingId}`);
+    };
+
+    const handleRecordingError = (error: any) => {
+        if (error.response?.data?.message) {
+            showNotification(`Error saving recording: ${error.response.data.message}`);
+        } else {
+            showNotification('Failed to save recording. See console for details.');
+        }
+    };
+
+    const handleSettingsError = (message: string) => {
+        showNotification(message);
     };
 
     return (

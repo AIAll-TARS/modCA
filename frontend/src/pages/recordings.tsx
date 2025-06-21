@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import { useRouter } from 'next/router'
 import axios from 'axios'
 import { getApiUrl } from '../utils/env'
+import { showNotification } from '../utils/notification'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -62,11 +63,11 @@ export default function Recordings() {
                     setIsPlaying(false)
                 } else {
                     console.error('Error loading recording:', response.data.message)
-                    alert(`Error: ${response.data.message || 'Failed to load recording'}`)
+                    showNotification(`Error: ${response.data.message || 'Failed to load recording'}`)
                 }
             } catch (error) {
                 console.error('Error loading recording:', error)
-                alert('Failed to load recording. See console for details.')
+                showNotification('Failed to load recording. See console for details.')
             } finally {
                 setLoading(false)
             }
@@ -193,13 +194,13 @@ export default function Recordings() {
                     setSelectedRecording(null)
                     setRecordingData(null)
                 }
-                alert('Recording deleted successfully')
+                showNotification('Recording deleted successfully')
             } else {
-                alert(`Error: ${response.data.message || 'Failed to delete recording'}`)
+                showNotification(`Error: ${response.data.message || 'Failed to delete recording'}`)
             }
         } catch (error) {
             console.error('Error deleting recording:', error)
-            alert('Failed to delete recording. See console for details.')
+            showNotification('Failed to delete recording. See console for details.')
         }
     }
 
