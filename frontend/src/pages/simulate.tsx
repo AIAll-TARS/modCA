@@ -83,7 +83,6 @@ const SimulationSchema = Yup.object().shape({
         .required('Required'),
     grid_type: Yup.string()
         .required('Required'),
-    record_simulation: Yup.boolean(),
     predator_death_probability: Yup.number()
         .required('Required')
         .min(VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min, `Must be at least ${VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}`)
@@ -190,6 +189,16 @@ export default function Simulate() {
     // Load saved settings from localStorage or use defaults
     const [defaultSettings, setDefaultSettings] = useState(DEFAULT_SIMULATION_SETTINGS);
 
+    // Add viewport state for large grids
+    const [viewportOffset, setViewportOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+    const [zoomLevel, setZoomLevel] = useState<number>(1);
+    const [isDragging, setIsDragging] = useState<boolean>(false);
+    const [dragStart, setDragStart] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+    const LARGE_GRID_THRESHOLD = 200; // Grids larger than this will use viewport rendering
+
+    // Add a new state variable to track adjustments
+    const [valueAdjustments, setValueAdjustments] = useState<any>(null);
+
     // Load saved settings from localStorage on component mount
     useEffect(() => {
         try {
@@ -214,20 +223,6 @@ export default function Simulate() {
             console.error('Error saving settings to localStorage:', error);
         }
     };
-
-    // Add viewport state for large grids
-    const [viewportOffset, setViewportOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
-    const [zoomLevel, setZoomLevel] = useState<number>(1);
-    const [isDragging, setIsDragging] = useState<boolean>(false);
-    const [dragStart, setDragStart] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
-    const LARGE_GRID_THRESHOLD = 200; // Grids larger than this will use viewport rendering
-
-    // First, add a new state variable to track whether a recording is available and has been saved
-    const [recordingAvailable, setRecordingAvailable] = useState<boolean>(false);
-    const [recordingSaved, setRecordingSaved] = useState<boolean>(false);
-
-    // Add a new state variable to track adjustments
-    const [valueAdjustments, setValueAdjustments] = useState<any>(null);
 
     // Draw the grid on canvas
     useEffect(() => {
@@ -586,7 +581,6 @@ export default function Simulate() {
                 substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
                 neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
                 grid_type: values.grid_type || GRID_TYPE,
-                record_simulation: Boolean(values.record_simulation)
             };
 
             // DEBUG: Log all conversions to see if they're working correctly
@@ -1815,7 +1809,6 @@ export default function Simulate() {
                                             substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
                                             neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
                                             grid_type: values.grid_type || GRID_TYPE,
-                                            record_simulation: Boolean(values.record_simulation)
                                         };
                                         console.log('Form submission - converted numeric values:', numericValues); // DEBUG LOG
                                         // Save settings to localStorage before starting simulation
@@ -1867,398 +1860,276 @@ export default function Simulate() {
                                                     </div>
 
                                                     <div>
-                                                        <label htmlFor="grid_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Grid Type</label>
+                                                        <label htmlFor="grid_type" className="block text-sm font-medium mb-1">
+                                                            Grid Type
+                                                        </label>
                                                         <Field
                                                             as="select"
                                                             name="grid_type"
-                                                            className="input"
+                                                            id="grid_type"
+                                                            className="w-full px-3 py-2 bg-gray-700 rounded-md"
                                                         >
-                                                            <option value="finite">Finite</option>
                                                             <option value="torus">Torus</option>
                                                         </Field>
                                                         <ErrorMessage name="grid_type" component="div" className="text-red-500 text-sm mt-1" />
                                                     </div>
+                                                </div>
 
-                                                    <div className="col-span-3 border-t pt-4 mt-2">
-                                                        <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Predator Parameters</h3>
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="initial_predators" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Predators</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="initial_predators"
-                                                            min={VALIDATION_LIMITS.INITIAL_PREDATORS.min}
-                                                            max={VALIDATION_LIMITS.INITIAL_PREDATORS.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="initial_predators" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="predator_death_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Death Probability</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="predator_death_probability"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}
-                                                            max={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="predator_death_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="predator_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="predator_birth_probability"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min}
-                                                            max={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="predator_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="predator_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="predator_starvation_steps"
-                                                            min={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.min}
-                                                            max={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.max}
-                                                            className="input"
-                                                        />
-                                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a predator can survive without food</div>
-                                                        <ErrorMessage name="predator_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div className="col-span-3 border-t pt-4 mt-2">
-                                                        <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Prey Parameters</h3>
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="initial_prey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Prey</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="initial_prey"
-                                                            min={VALIDATION_LIMITS.INITIAL_PREY.min}
-                                                            max={VALIDATION_LIMITS.INITIAL_PREY.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="initial_prey" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="prey_hunted_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hunted Probability</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="prey_hunted_probability"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min}
-                                                            max={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="prey_hunted_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="prey_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="prey_random_death"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.PREY_RANDOM_DEATH.min}
-                                                            max={VALIDATION_LIMITS.PREY_RANDOM_DEATH.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="prey_random_death" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="prey_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="prey_birth_probability"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min}
-                                                            max={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="prey_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="prey_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="prey_starvation_steps"
-                                                            min={VALIDATION_LIMITS.PREY_STARVATION_STEPS.min}
-                                                            max={VALIDATION_LIMITS.PREY_STARVATION_STEPS.max}
-                                                            className="input"
-                                                        />
-                                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a prey can survive without substrate</div>
-                                                        <ErrorMessage name="prey_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="prey_threat_response" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Threat Response</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="prey_threat_response"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.min}
-                                                            max={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.max}
-                                                            className="input"
-                                                        />
-                                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Probability of staying still when threatened</div>
-                                                        <ErrorMessage name="prey_threat_response" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div className="col-span-3 border-t pt-4 mt-2">
-                                                        <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Substrate Parameters</h3>
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="initial_substrate_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Probability</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="initial_substrate_probability"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min}
-                                                            max={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="initial_substrate_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="substrate_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="substrate_random_death"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min}
-                                                            max={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="substrate_random_death" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Consumption Probability</label>
-                                                        <Field
-                                                            type="number"
-                                                            name="substrate_consumption_prob"
-                                                            step="0.01"
-                                                            min={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}
-                                                            max={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}
-                                                            className="input"
-                                                        />
-                                                        <ErrorMessage name="substrate_consumption_prob" component="div" className="text-red-500 text-sm mt-1" />
-                                                    </div>
-
-                                                    <div>
-                                                        <label htmlFor="record_simulation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                            Record Simulation
-                                                        </label>
-                                                        <div className="mt-1 flex items-center">
+                                                {/* Predator Parameters */}
+                                                <div className="bg-gray-800 p-6 rounded-lg">
+                                                    <h2 className="text-xl font-semibold mb-4">Predator Parameters</h2>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        <div>
+                                                            <label htmlFor="initial_predators" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Predators</label>
                                                             <Field
-                                                                type="checkbox"
-                                                                name="record_simulation"
-                                                                id="record_simulation"
-                                                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                type="number"
+                                                                name="initial_predators"
+                                                                min={VALIDATION_LIMITS.INITIAL_PREDATORS.min}
+                                                                max={VALIDATION_LIMITS.INITIAL_PREDATORS.max}
+                                                                className="input"
                                                             />
-                                                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                                                                Enable to save each step for smoother playback later
-                                                            </span>
+                                                            <ErrorMessage name="initial_predators" component="div" className="text-red-500 text-sm mt-1" />
                                                         </div>
-                                                        <ErrorMessage name="record_simulation" component="div" className="text-red-500 text-sm mt-1" />
+
+                                                        <div>
+                                                            <label htmlFor="predator_death_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Death Probability</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="predator_death_probability"
+                                                                step="0.01"
+                                                                min={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}
+                                                                max={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="predator_death_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+
+                                                        <div>
+                                                            <label htmlFor="predator_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="predator_birth_probability"
+                                                                step="0.01"
+                                                                min={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min}
+                                                                max={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="predator_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+
+                                                        <div>
+                                                            <label htmlFor="predator_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="predator_starvation_steps"
+                                                                min={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.min}
+                                                                max={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.max}
+                                                                className="input"
+                                                            />
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a predator can survive without food</div>
+                                                            <ErrorMessage name="predator_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex justify-end space-x-3 pt-4">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => router.push('/')}
-                                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                    >
-                                                        Home
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsLoadModalOpen(true)}
-                                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                    >
-                                                        Load Settings
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsSaveModalOpen(true)}
-                                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                    >
-                                                        Save Settings
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            // Reset to factory defaults
-                                                            setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
-                                                            saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
-                                                            // Reload the page to apply defaults
-                                                            window.location.reload();
-                                                        }}
-                                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                    >
-                                                        Reset to Defaults
-                                                    </button>
-                                                    <button
-                                                        type="submit"
-                                                        disabled={isSubmitting}
-                                                        className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
-                                                        onClick={() => { console.log('Start Simulation button clicked'); }} // DEBUG LOG
-                                                    >
-                                                        {isSubmitting ? 'Starting...' : 'Start Simulation'}
-                                                    </button>
-                                                </div>
-                                            </Form>
-                                        );
-                                    }}
-                                </Formik>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="space-y-6">
-                            <div className="card p-6">
-                                <div className="flex flex-wrap -mx-2">
-                                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                                        <div className="border dark:border-dark-border rounded-md p-2">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Grid Visualization</h3>
-                                                <button
-                                                    className="btn-secondary text-sm px-2 py-1"
-                                                    onClick={toggleGridFullscreen}
-                                                >
-                                                    Fullscreen
-                                                </button>
-                                            </div>
-                                            <div className="aspect-square bg-gray-100 dark:bg-gray-800 border rounded-md overflow-hidden">
-                                                <canvas
-                                                    ref={canvasRef}
-                                                    width={400}
-                                                    height={400}
-                                                    className="w-full h-full bg-gray-100 dark:bg-gray-800"
-                                                ></canvas>
-                                            </div>
-                                            {grid.length > 100 && (
-                                                <div className="mt-2 text-xs text-gray-500">
-                                                    Large grid ({grid.length}x{grid.length}). Use fullscreen for better visibility.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                                {/* Prey Parameters */}
+                                                <div className="bg-gray-800 p-6 rounded-lg">
+                                                    <h2 className="text-xl font-semibold mb-4">Prey Parameters</h2>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        <div>
+                                                            <label htmlFor="initial_prey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Prey</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="initial_prey"
+                                                                min={VALIDATION_LIMITS.INITIAL_PREY.min}
+                                                                max={VALIDATION_LIMITS.INITIAL_PREY.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="initial_prey" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
 
-                                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                                        <div className="border dark:border-dark-border rounded-md p-2">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Population Trends</h3>
-                                                <button
-                                                    className="btn-secondary text-sm px-2 py-1"
-                                                    onClick={toggleChartFullscreen}
-                                                >
-                                                    Fullscreen
-                                                </button>
+                                                        <div>
+                                                            <label htmlFor="prey_hunted_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hunted Probability</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="prey_hunted_probability"
+                                                                step="0.01"
+                                                                min={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min}
+                                                                max={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="prey_hunted_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+
+                                                        <div>
+                                                            <label htmlFor="prey_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="prey_random_death"
+                                                                step="0.01"
+                                                                min={VALIDATION_LIMITS.PREY_RANDOM_DEATH.min}
+                                                                max={VALIDATION_LIMITS.PREY_RANDOM_DEATH.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="prey_random_death" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+
+                                                        <div>
+                                                            <label htmlFor="prey_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="prey_birth_probability"
+                                                                step="0.01"
+                                                                min={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min}
+                                                                max={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="prey_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+
+                                                        <div>
+                                                            <label htmlFor="prey_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="prey_starvation_steps"
+                                                                min={VALIDATION_LIMITS.PREY_STARVATION_STEPS.min}
+                                                                max={VALIDATION_LIMITS.PREY_STARVATION_STEPS.max}
+                                                                className="input"
+                                                            />
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a prey can survive without substrate</div>
+                                                            <ErrorMessage name="prey_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Substrate Parameters */}
+                                                <div className="bg-gray-800 p-6 rounded-lg">
+                                                    <h2 className="text-xl font-semibold mb-4">Substrate Parameters</h2>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        <div>
+                                                            <label htmlFor="initial_substrate_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Probability</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="initial_substrate_probability"
+                                                                step="0.01"
+                                                                min={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min}
+                                                                max={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="initial_substrate_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+
+                                                        <div>
+                                                            <label htmlFor="substrate_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="substrate_random_death"
+                                                                step="0.01"
+                                                                min={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min}
+                                                                max={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="substrate_random_death" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+
+                                                        <div>
+                                                            <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Consumption Probability</label>
+                                                            <Field
+                                                                type="number"
+                                                                name="substrate_consumption_prob"
+                                                                step="0.01"
+                                                                min={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}
+                                                                max={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}
+                                                                className="input"
+                                                            />
+                                                            <ErrorMessage name="substrate_consumption_prob" component="div" className="text-red-500 text-sm mt-1" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="prey_threat_response" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Threat Response</label>
+                                                    <Field
+                                                        type="number"
+                                                        name="prey_threat_response"
+                                                        step="0.01"
+                                                        min={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.min}
+                                                        max={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.max}
+                                                        className="input"
+                                                    />
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Probability of staying still when threatened</div>
+                                                    <ErrorMessage name="prey_threat_response" component="div" className="text-red-500 text-sm mt-1" />
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="record_simulation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Record Simulation
+                                                    </label>
+                                                    <div className="mt-1 flex items-center">
+                                                        <Field
+                                                            type="checkbox"
+                                                            name="record_simulation"
+                                                            id="record_simulation"
+                                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                        />
+                                                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                                            Enable to save each step for smoother playback later
+                                                        </span>
+                                                    </div>
+                                                    <ErrorMessage name="record_simulation" component="div" className="text-red-500 text-sm mt-1" />
+                                                </div>
                                             </div>
-                                            <div className="aspect-square bg-white dark:bg-dark-card">
-                                                <Line
-                                                    data={chartData}
-                                                    options={{
-                                                        responsive: true,
-                                                        plugins: {
-                                                            legend: {
-                                                                position: 'top',
-                                                                labels: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                }
-                                                            },
-                                                            title: {
-                                                                display: true,
-                                                                text: 'Population Over Time',
-                                                                color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                            },
-                                                        },
-                                                        scales: {
-                                                            y: {
-                                                                beginAtZero: true,
-                                                                ticks: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                },
-                                                                grid: {
-                                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
-                                                                },
-                                                                display: chartData.labels.length > 0
-                                                            },
-                                                            x: {
-                                                                ticks: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                },
-                                                                grid: {
-                                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
-                                                                },
-                                                                display: chartData.labels.length > 0
-                                                            }
-                                                        },
-                                                        elements: {
-                                                            line: {
-                                                                tension: 0.1
-                                                            },
-                                                            point: {
-                                                                radius: 0 // Hide points when not needed
-                                                            }
-                                                        },
-                                                        animation: {
-                                                            duration: 0 // Disable animation for initial render
-                                                        }
+
+                                            <div className="flex justify-end space-x-3 pt-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => router.push('/')}
+                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                                >
+                                                    Home
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsLoadModalOpen(true)}
+                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                                >
+                                                    Load Settings
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsSaveModalOpen(true)}
+                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                                >
+                                                    Save Settings
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        // Reset to factory defaults
+                                                        setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
+                                                        saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
+                                                        // Reload the page to apply defaults
+                                                        window.location.reload();
                                                     }}
-                                                />
+                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                                >
+                                                    Reset to Defaults
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isSubmitting}
+                                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
+                                                    onClick={() => { console.log('Start Simulation button clicked'); }} // DEBUG LOG
+                                                >
+                                                    {isSubmitting ? 'Starting...' : 'Start Simulation'}
+                                                </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4">
-                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Current Statistics</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-                                            <div className="text-sm text-red-600 dark:text-red-400 font-medium">Predators</div>
-                                            <div className="text-2xl font-bold text-red-800 dark:text-red-300">{statistics.predator_count || 0}</div>
-                                        </div>
-                                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
-                                            <div className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Prey</div>
-                                            <div className="text-2xl font-bold text-yellow-800 dark:text-yellow-300">{statistics.prey_count || 0}</div>
-                                        </div>
-                                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
-                                            <div className="text-sm text-green-600 dark:text-green-400 font-medium">Substrate</div>
-                                            <div className="text-2xl font-bold text-green-800 dark:text-green-300">{statistics.substrate_count || 0}</div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-md p-3">
-                                        <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Population</div>
-                                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-300">
-                                            {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {status === 'error' && (
-                                    <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded">
-                                        An error occurred. Please check the console for details or try again.
-                                    </div>
-                                )}
-                            </div>
+                                        </Form>
+                                    );
+                                }}
+                            </Formik>
                         </div>
-                    )}
+                    </div>
                 </div>
             </main>
 
