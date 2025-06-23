@@ -1388,6 +1388,14 @@ export default function Simulate() {
         showNotification(message);
     };
 
+    const handleResetDefaults = () => {
+        // Reset to factory defaults
+        setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
+        saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
+        // Reload the page to apply defaults
+        window.location.reload();
+    };
+
     return (
         <>
             <Head>
@@ -2003,44 +2011,45 @@ export default function Simulate() {
                                                 </div>
 
                                                 {/* Substrate Parameters */}
-                                                <div className="bg-gray-800 p-6 rounded-lg">
+                                                <div className="bg-gray-800 p-6 rounded-lg mb-6">
                                                     <h2 className="text-xl font-semibold mb-4">Substrate Parameters</h2>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <div>
-                                                            <label htmlFor="initial_substrate_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Probability</label>
+                                                            <label htmlFor="initial_substrate_probability" className="block text-sm font-medium mb-1">
+                                                                Initial Probability
+                                                            </label>
                                                             <Field
                                                                 type="number"
                                                                 name="initial_substrate_probability"
+                                                                id="initial_substrate_probability"
                                                                 step="0.01"
-                                                                min={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min}
-                                                                max={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max}
-                                                                className="input"
+                                                                className="w-full px-3 py-2 bg-gray-700 rounded-md"
                                                             />
                                                             <ErrorMessage name="initial_substrate_probability" component="div" className="text-red-500 text-sm mt-1" />
                                                         </div>
-
                                                         <div>
-                                                            <label htmlFor="substrate_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
+                                                            <label htmlFor="substrate_random_death" className="block text-sm font-medium mb-1">
+                                                                Random Death Probability
+                                                            </label>
                                                             <Field
                                                                 type="number"
                                                                 name="substrate_random_death"
+                                                                id="substrate_random_death"
                                                                 step="0.01"
-                                                                min={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min}
-                                                                max={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max}
-                                                                className="input"
+                                                                className="w-full px-3 py-2 bg-gray-700 rounded-md"
                                                             />
                                                             <ErrorMessage name="substrate_random_death" component="div" className="text-red-500 text-sm mt-1" />
                                                         </div>
-
                                                         <div>
-                                                            <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Consumption Probability</label>
+                                                            <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium mb-1">
+                                                                Consumption Probability
+                                                            </label>
                                                             <Field
                                                                 type="number"
                                                                 name="substrate_consumption_prob"
+                                                                id="substrate_consumption_prob"
                                                                 step="0.01"
-                                                                min={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}
-                                                                max={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}
-                                                                className="input"
+                                                                className="w-full px-3 py-2 bg-gray-700 rounded-md"
                                                             />
                                                             <ErrorMessage name="substrate_consumption_prob" component="div" className="text-red-500 text-sm mt-1" />
                                                         </div>
@@ -2080,58 +2089,35 @@ export default function Simulate() {
                                                 </div>
                                             </div>
 
-                                            <div className="flex justify-end space-x-3 pt-4">
+                                            {/* Action Buttons */ }
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex space-x-4">
+                                                <Link href="/" className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600">
+                                                    Back
+                                                </Link>
                                                 <button
                                                     type="button"
-                                                    onClick={() => router.push('/')}
-                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                >
-                                                    Home
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsLoadModalOpen(true)}
-                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                >
-                                                    Load Settings
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsSaveModalOpen(true)}
-                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                >
-                                                    Save Settings
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        // Reset to factory defaults
-                                                        setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
-                                                        saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
-                                                        // Reload the page to apply defaults
-                                                        window.location.reload();
-                                                    }}
-                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                                    onClick={handleResetDefaults}
+                                                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500"
                                                 >
                                                     Reset to Defaults
                                                 </button>
-                                                <button
-                                                    type="submit"
-                                                    disabled={isSubmitting}
-                                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
-                                                    onClick={() => { console.log('Start Simulation button clicked'); }} // DEBUG LOG
-                                                >
-                                                    {isSubmitting ? 'Starting...' : 'Start Simulation'}
-                                                </button>
                                             </div>
+                                            <button
+                                                type="submit"
+                                                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-500"
+                                            >
+                                                Start Simulation
+                                            </button>
+                                        </div>
                                         </Form>
-                                    );
+                                );
                                 }}
                             </Formik>
                         </div>
-                    </div>
                 </div>
-            </main>
+            </div>
+        </main >
 
             <SaveSettingsModal
                 isOpen={isSaveModalOpen}
