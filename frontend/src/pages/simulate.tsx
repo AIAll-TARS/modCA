@@ -535,222 +535,53 @@ export default function Simulate() {
                 }
             }
 
-            // Additional warning for extremely large grids that may timeout
-            if (Number(values.grid_size) >= 800) {
-                const confirmExtremeGrid = window.confirm(
-                    `WARNING: Extremely large grid (${values.grid_size}×${values.grid_size}).\n\n` +
-                    `Grids larger than 800×800 may cause server timeouts or memory issues.\n\n` +
-                    `- The server may take a long time to respond\n` +
-                    `- The simulation might fail to initialize\n\n` +
-                    `Try reducing the grid size for better reliability.\n\n` +
-                    `Proceed anyway with this extreme grid size?`
-                );
-
-                if (!confirmExtremeGrid) {
-                    return;
-                }
-            }
-
-            setStatus('loading')
-            console.log('Starting simulation with raw form values:', values)
-
-            // Calculate dynamic timeout based on grid size
-            const gridSizeSquared = Number(values.grid_size) * Number(values.grid_size);
-            // Base timeout of 30 seconds, plus 1 second per 10,000 cells
-            const dynamicTimeout = 30000 + Math.floor(gridSizeSquared / 10000) * 1000;
-            console.log(`Using dynamic timeout of ${dynamicTimeout}ms for grid size ${values.grid_size}`);
-
-            // Validate values before sending to server
+            // Convert values to numbers and validate
             const validatedValues = {
                 ...values,
-                // Convert all values to numbers with fallbacks
-                grid_size: Number(values.grid_size) || GRID_SIZE,
-                steps: Number(values.steps) || STEPS,
-                initial_prey: Number(values.initial_prey) || INITIAL_PREY,
-                initial_predators: Number(values.initial_predators) || INITIAL_PREDATORS,
-                predator_death_probability: Number(values.predator_death_probability) || PREDATOR_DEATH_PROBABILITY,
-                predator_birth_probability: Number(values.predator_birth_probability) || PREDATOR_BIRTH_PROBABILITY,
-                predator_starvation_steps: Number(values.predator_starvation_steps) || PREDATOR_STARVATION_STEPS,
-                prey_hunted_probability: Number(values.prey_hunted_probability) || PREY_HUNTED_PROBABILITY,
-                prey_random_death: Number(values.prey_random_death) || PREY_RANDOM_DEATH,
-                prey_birth_probability: Number(values.prey_birth_probability) || PREY_BIRTH_PROBABILITY,
-                prey_starvation_steps: Number(values.prey_starvation_steps) || PREY_STARVATION_STEPS,
-                prey_threat_response: Number(values.prey_threat_response) || PREY_THREAT_RESPONSE,
-                initial_substrate_probability: Number(values.initial_substrate_probability) || INITIAL_SUBSTRATE_PROBABILITY,
-                substrate_random_death: Number(values.substrate_random_death) || SUBSTRATE_RANDOM_DEATH,
-                substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
-                neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
-                grid_type: values.grid_type || GRID_TYPE,
+                grid_size: Number(values.grid_size),
+                steps: Number(values.steps),
+                initial_prey: Number(values.initial_prey),
+                initial_predators: Number(values.initial_predators),
+                predator_death_probability: Number(values.predator_death_probability),
+                predator_birth_probability: Number(values.predator_birth_probability),
+                predator_starvation_steps: Number(values.predator_starvation_steps),
+                prey_hunted_probability: Number(values.prey_hunted_probability),
+                prey_random_death: Number(values.prey_random_death),
+                prey_birth_probability: Number(values.prey_birth_probability),
+                prey_starvation_steps: Number(values.prey_starvation_steps),
+                prey_threat_response: Number(values.prey_threat_response),
+                initial_substrate_probability: Number(values.initial_substrate_probability),
+                substrate_random_death: Number(values.substrate_random_death),
+                substrate_consumption_prob: Number(values.substrate_consumption_prob),
+                neighborhood_type: values.neighborhood_type,
+                grid_type: values.grid_type
             };
 
-            // DEBUG: Log all conversions to see if they're working correctly
-            console.log('Conversion results:')
-            console.log('grid_size:', values.grid_size, '->', validatedValues.grid_size)
-            console.log('steps:', values.steps, '->', validatedValues.steps)
-            console.log('initial_prey:', values.initial_prey, '->', validatedValues.initial_prey)
-            console.log('initial_predators:', values.initial_predators, '->', validatedValues.initial_predators)
-            console.log('predator_death_probability:', values.predator_death_probability, '->', validatedValues.predator_death_probability)
-
-            // Note: Removed value limitations to allow any user input
-
-            console.log('Validated values being sent to backend:', validatedValues)
-
-            // Save the settings to localStorage for future use
+            // Save settings to localStorage
             saveSettingsToLocalStorage(validatedValues);
 
-            // Add timeout to axios request to prevent hanging indefinitely
-            try {
-                console.log('Sending request to /api/simulate with payload:', validatedValues);
-                console.log('API URL:', getApiUrl() || 'Using relative URL');
+            // Start simulation
+            const response = await axios.post(`${getApiUrl()}/simulate`, validatedValues);
+            const { simulation_id, current_step, total_steps, grid, statistics } = response.data;
 
-                const response = await axios.post(`${getApiUrl()}/simulate`, validatedValues, {
-                    timeout: dynamicTimeout, // Dynamic timeout based on grid size
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
+            // Update state with initial simulation data
+            setSimulationId(simulation_id);
+            setCurrentStep(current_step);
+            setTotalSteps(total_steps);
+            setGrid(grid);
+            setStatistics(statistics);
+            setStatus('running');
 
-                console.log('Raw response from backend:', response)
-                console.log('Simulation started successfully, response data:', response.data)
+            console.log(`Simulation ${simulation_id} started at step ${current_step} of ${total_steps}`);
 
-                if (!response.data || !response.data.simulation_id) {
-                    throw new Error('Invalid response from server - missing simulation ID')
-                }
-
-                const { simulation_id, status, current_step, total_steps, grid, statistics, db_save_success, adjustments } = response.data
-
-                // Ensure all required data is present
-                if (!simulation_id || !grid || !statistics) {
-                    console.error('Invalid or incomplete simulation data received:', response.data)
-                    throw new Error('Incomplete simulation data received from server')
-                }
-
-                // Validate that received data matches expectations
-                console.log('Checking received data:')
-                console.log('Grid dimensions:', grid.length > 0 ? `${grid.length}x${grid[0].length}` : 'Empty grid')
-                console.log('Statistics received:', JSON.stringify(statistics))
-                console.log('Current step:', current_step, 'of', total_steps)
-
-                // Set all the state values
-                setSimulationId(simulation_id)
-                setStatus(status)
-                setCurrentStep(current_step)
-                setTotalSteps(total_steps)
-                setGrid(grid)
-                setStatistics(statistics)
-
-                // Store adjustment information if present
-                if (adjustments && adjustments.values_adjusted) {
-                    console.log("Values were adjusted during initialization:", adjustments);
-                    setValueAdjustments(adjustments);
-                } else if (statistics && statistics.values_adjusted) {
-                    // Some statistics objects might contain the adjustment info directly
-                    console.log("Values were adjusted (from statistics):", statistics);
-                    setValueAdjustments(statistics);
-                } else {
-                    console.log("No value adjustments were made");
-                    setValueAdjustments(null);
-                }
-
-                // Check if recording is enabled and reset recording status
-                setRecordingAvailable(validatedValues.record_simulation);
-                setRecordingSaved(false);
-
-                console.log(`Simulation ${simulation_id} started at step ${current_step} of ${total_steps}`)
-
-                // Show database warning if save failed
-                if (db_save_success === false) {
-                    console.warn('Database save failed - settings will not be persisted')
-                    // You could show a toast notification here if you want to inform the user
-                }
-
-                // Reset chart data
-                setChartData({
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'Predators',
-                            data: [],
-                            borderColor: CHART_COLORS[PREDATOR].border,
-                            backgroundColor: CHART_COLORS[PREDATOR].background,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'Prey',
-                            data: [],
-                            borderColor: CHART_COLORS[PREY].border,
-                            backgroundColor: CHART_COLORS[PREY].background,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'Substrate',
-                            data: [],
-                            borderColor: CHART_COLORS[SUBSTRATE].border,
-                            backgroundColor: CHART_COLORS[SUBSTRATE].background,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'Total',
-                            data: [],
-                            borderColor: 'rgba(150, 150, 150, 1)',
-                            backgroundColor: 'rgba(150, 150, 150, 0.5)',
-                            tension: 0.1,
-                            borderWidth: 3
-                        }
-                    ],
-                })
-
-                // Add a slight delay before connecting to WebSocket to ensure backend is ready
-                setTimeout(() => {
-                    console.log(`Connecting to WebSocket for simulation ${simulation_id}`)
-                    connectWebSocket(simulation_id)
-
-                    // Try to immediately step the simulation to verify it's working
-                    setTimeout(() => {
-                        if (status !== 'completed') {
-                            console.log('Testing simulation stepping functionality')
-                            stepSimulation(1)
-                        }
-                    }, 1000)
-                }, 500)
-            } catch (axiosError: any) {
-                console.error('Axios error starting simulation:', axiosError)
-
-                // Handle timeout errors specifically
-                if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ECONNRESET') {
-                    setStatus('error')
-                    handleTimeoutError(Number(values.grid_size))
-                    return
-                }
-
-                // Special handling for common error cases
-                if (axiosError.response?.status === 500) {
-                    // Check for specific error messages
-                    const errorDetail = axiosError.response.data?.detail || '';
-
-                    if (errorDetail.includes('grid initialization failed')) {
-                        handleAxiosError(axiosError, 'Error initializing grid. Try reducing grid size or entity counts.')
-                    } else if (errorDetail.includes('simulation initialization failed')) {
-                        handleAxiosError(axiosError, 'Error creating simulation. Try with different parameters.')
-                    } else if (errorDetail.includes('database')) {
-                        // Database errors shouldn't prevent simulation
-                        handleAxiosError(axiosError, 'Warning: Database error occurred but simulation will still run.')
-                    } else {
-                        // Generic server error
-                        handleAxiosError(axiosError, 'Server error')
-                    }
-                } else {
-                    // For other error types
-                    handleAxiosError(axiosError, 'Error starting simulation')
-                }
-            }
+            // Connect to WebSocket for real-time updates
+            connectWebSocket(simulation_id);
 
         } catch (error: any) {
-            console.error('General error during simulation start:', error)
-            setStatus('error')
-            handleSimulationError(error)
+            console.error('Error starting simulation:', error);
+            handleSimulationError(error);
         }
-    }
+    };
 
     // Helper to handle Axios errors
     const handleAxiosError = (error: any, message: string) => {
@@ -1090,28 +921,6 @@ export default function Simulate() {
         }
     }, [])
 
-    // Save the current simulation recording
-    const saveRecording = async () => {
-        if (!simulationId) return;
-
-        try {
-            setStatus('saving');
-            const response = await axios.post(`/api/simulate/${simulationId}/save-recording`);
-
-            if (response.data && response.data.status === 'success') {
-                setRecordingSaved(true);
-                handleRecordingSaved(response.data.recording_id);
-            } else {
-                handleRecordingError(response.data);
-            }
-        } catch (error) {
-            console.error('Error saving recording:', error);
-            handleRecordingError(error);
-        } finally {
-            setStatus(status === 'saving' ? (currentStep >= totalSteps ? 'completed' : 'running') : status);
-        }
-    }
-
     // Adjustment warning component to display when values are adjusted
     const AdjustmentWarning = ({ adjustments }: { adjustments: any }) => {
         if (!adjustments) return null;
@@ -1370,18 +1179,6 @@ export default function Simulate() {
 
     const handleConnectionIssues = () => {
         showNotification('Auto-run stopped due to persistent connection issues. Please try manual stepping or restart the simulation.');
-    };
-
-    const handleRecordingSaved = (recordingId: string) => {
-        showNotification(`Recording saved successfully with ID: ${recordingId}`);
-    };
-
-    const handleRecordingError = (error: any) => {
-        if (error.response?.data?.message) {
-            showNotification(`Error saving recording: ${error.response.data.message}`);
-        } else {
-            showNotification('Failed to save recording. See console for details.');
-        }
     };
 
     const handleSettingsError = (message: string) => {
@@ -1762,15 +1559,6 @@ export default function Simulate() {
                                 >
                                     Reset
                                 </button>
-                                {simulationId && recordingAvailable && !recordingSaved && (
-                                    <button
-                                        type="button"
-                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                        onClick={() => saveRecording()}
-                                    >
-                                        Save Recording
-                                    </button>
-                                )}
                             </div>
                         </div>
                     </div>
