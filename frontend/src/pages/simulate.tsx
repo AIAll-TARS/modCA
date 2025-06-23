@@ -61,11 +61,32 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend
-)
+);
 
-// Configure Chart.js defaults to not show zero lines
-ChartJS.defaults.datasets.line.spanGaps = true;
-ChartJS.defaults.elements.line.borderWidth = 2;
+// Define chart options
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            display: true,
+            position: 'top' as const
+        }
+    },
+    scales: {
+        y: {
+            beginAtZero: true,
+            grid: {
+                display: false
+            }
+        },
+        x: {
+            grid: {
+                display: false
+            }
+        }
+    }
+} as const;
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -1208,7 +1229,7 @@ export default function Simulate() {
                     <Formik
                         initialValues={defaultSettings}
                         validationSchema={SimulationSchema}
-                        onSubmit={handleStartSimulation}
+                        onSubmit={startSimulation}
                     >
                         {({ values, errors, touched }) => (
                             <Form className="space-y-8">
