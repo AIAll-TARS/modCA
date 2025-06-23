@@ -46,8 +46,6 @@ import {
 import { ChartData, ChartDataset, Statistics, SimulationParams } from '../types'
 import { fontFamily } from '@/styles/fonts'
 import { getApiUrl, getWsUrl } from '../utils/env'
-import SaveSettingsModal from '../components/SaveSettingsModal';
-import LoadSettingsModal from '../components/LoadSettingsModal';
 import React from 'react';
 import Link from 'next/link';
 import { showNotification } from '../utils/notification';
@@ -2071,20 +2069,6 @@ export default function Simulate() {
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => setIsLoadModalOpen(true)}
-                                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                    >
-                                                        Load Settings
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsSaveModalOpen(true)}
-                                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                    >
-                                                        Save Settings
-                                                    </button>
-                                                    <button
-                                                        type="button"
                                                         onClick={() => {
                                                             // Reset to factory defaults
                                                             setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
@@ -2245,20 +2229,7 @@ export default function Simulate() {
                 </div>
             </main>
 
-            <SaveSettingsModal
-                isOpen={isSaveModalOpen}
-                onClose={() => setIsSaveModalOpen(false)}
-                onSave={handleSaveSettings}
-            />
 
-            <LoadSettingsModal
-                isOpen={isLoadModalOpen}
-                onClose={() => setIsLoadModalOpen(false)}
-                onLoad={handleLoadSettings}
-                settings={settings}
-                loading={loading}
-                error={error}
-            />
         </>
     )
 } 
