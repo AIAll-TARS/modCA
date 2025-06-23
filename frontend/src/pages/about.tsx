@@ -46,10 +46,6 @@ export default function About() {
                                 <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">Real-time Statistics</h3>
                                 <p className="text-gray-600 dark:text-gray-300">Track population trends and ecosystem metrics as they change.</p>
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">Save & Load</h3>
-                                <p className="text-gray-600 dark:text-gray-300">Save your simulation configurations and results for later analysis.</p>
-                            </div>
                         </div>
                     </div>
 
