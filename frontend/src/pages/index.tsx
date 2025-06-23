@@ -76,7 +76,7 @@ export default function Home() {
                                 This web version allows you to configure, run, and analyze simulations directly in your browser. Watch the ecosystem evolve in real-time and observe complex emergent behaviors.
                             </p>
                             <Link href="/about" className="text-blue-600 dark:text-blue-400 hover:underline">
-                                Read more about modCA →
+                                Read more →
                             </Link>
                         </div>
                     </div>
@@ -85,11 +85,11 @@ export default function Home() {
                         <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8">
                             <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Contact Us</h2>
                             <p className="text-gray-600 dark:text-gray-300 mb-4">
-                                Have questions or feedback? We'd love to hear from you.
+                                Want to contribute to the project? Have questions or feedback? We'd love to hear from you.
                             </p>
                             <>
                                 <div className="relative inline-block group">
-                                    <span className="text-gray-800 dark:text-gray-200 cursor-pointer select-none">
+                                    <span className="text-blue-600 dark:text-blue-400 cursor-pointer select-none">
                                         aiall@janis7ewski.org
                                     </span>
                                     <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 min-w-max">
