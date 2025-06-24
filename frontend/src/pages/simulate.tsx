@@ -1394,7 +1394,7 @@ export default function Simulate() {
     return (
         <>
             <Head>
-                <title>modCA - Configure Simulation</title>
+                <title>modCA - Ecosystem Simulation Setup</title>
                 <meta name="description" content="Configure and run your cellular automata ecosystem simulation" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
             </Head>
@@ -1781,7 +1781,7 @@ export default function Simulate() {
                 <div className="container mx-auto px-4 py-6 max-w-7xl">
                     {!simulationId ? (
                         <>
-                            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Set simulation baby and let's roll</h1>
+                            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Ecosystem Simulation Setup</h1>
                             <div className="card p-6 mb-8">
                                 <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-4">Configure Simulation</h2>
 
