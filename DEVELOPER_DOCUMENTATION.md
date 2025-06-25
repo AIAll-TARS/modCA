@@ -250,11 +250,13 @@ modca_7web/
 ├── frontend/                   # Frontend application
 │   ├── src/                    # Source code
 │   │   ├── components/         # React components
+│   │   │   ├── SimulationSetup.tsx     # Initial setup form and validation
+│   │   │   └── RunningSimulation.tsx   # Active simulation visualization
 │   │   ├── pages/             # Next.js pages
 │   │   │   ├── _app.tsx       # App wrapper
 │   │   │   ├── index.tsx      # Home page
-│   │   │   ├── recordings.tsx # Recordings page
-│   │   │   └── simulate.tsx   # Simulation page
+│   │   │   ├── about.tsx      # About page
+│   │   │   └── simulate.tsx   # Main simulation page
 │   │   ├── styles/            # CSS and styling
 │   │   ├── utils/             # Utility functions
 │   │   ├── constants.ts       # Constants and config
@@ -519,37 +521,130 @@ Key Implementation Details:
 ### 7.1 Component Structure
 
 ```
-components/
-├── Grid/
-│   ├── Cell.tsx
-│   ├── Grid.tsx
-│   └── types.ts
-├── Controls/
-│   ├── SimulationControls.tsx
-│   ├── ParameterControls.tsx
-│   └── types.ts
-└── Statistics/
-    ├── PopulationGraph.tsx
-    ├── StatisticsSummary.tsx
-    └── types.ts
+frontend/
+├── src/
+    ├── components/
+    │   ├── SimulationSetup.tsx     # Initial setup form and validation
+    │   └── RunningSimulation.tsx   # Active simulation visualization
+    ├── pages/
+    │   ├── _app.tsx               # App wrapper
+    │   ├── index.tsx              # Home page
+    │   ├── about.tsx              # About page
+    │   └── simulate.tsx           # Main simulation page
+    ├── styles/
+    │   ├── fonts.ts              # Font configurations
+    │   ├── globals.css           # Global styles
+    │   └── index.ts             # Style exports
+    ├── utils/
+    │   ├── env.ts               # Environment utilities
+    │   └── notification.ts      # Notification system
+    ├── constants.ts             # Application constants
+    └── types.ts                # TypeScript type definitions
+
+Component Responsibilities:
+
+1. Pages:
+   - simulate.tsx: Main simulation page that coordinates between setup and running states
+   - about.tsx: Information about the project
+   - index.tsx: Landing page
+
+2. Core Components:
+   - SimulationSetup: Handles initial simulation configuration
+     - Form validation using Formik + Yup
+     - Parameter input and validation
+   
+   - RunningSimulation: Manages active simulation display
+     - Grid visualization using Canvas
+     - Population trends with Chart.js
+     - Real-time statistics display
+     - Fullscreen modes for grid and charts
+     - Pan and zoom controls for large grids
+
+3. State Management:
+   - Local state for component-specific data
+   - Props for component communication
+   - WebSocket connection for real-time updates
 ```
 
-### 7.2 State Management
+### 7.2 Component Communication
 
-The application uses React's Context API for global state management:
+```
+simulate.tsx (Page)
+├── Manages global simulation state
+├── Handles WebSocket connection
+├── Coordinates between components
+│
+├── SimulationSetup
+│   ├── Receives: onStartSimulation callback
+│   └── Emits: simulation parameters
+│
+└── RunningSimulation
+    ├── Receives: simulation state, grid data, statistics
+    └── Emits: control actions (step, reset, etc.)
+```
+
+### 7.3 State Management
+
+The application uses React's built-in state management with hooks:
 
 ```typescript
+// Main simulation state in simulate.tsx
 interface SimulationState {
-  settings: SimulationSettings;
-  statistics: SimulationStatistics;
-  status: SimulationStatus;
-  grid: Grid;
+  simulationId: string | null;
+  status: string;
+  currentStep: number;
+  totalSteps: number;
+  grid: number[][];
+  statistics: any;
+  chartData: ChartData;
+  isGridFullscreen: boolean;
+  isChartFullscreen: boolean;
+  wsConnected: boolean;
+  valueAdjustments: any;
 }
 
-const SimulationContext = React.createContext<{
-  state: SimulationState;
-  dispatch: React.Dispatch<SimulationAction>;
-}>(initialContext);
+// Viewport state for large grids
+interface ViewportState {
+  offset: { x: number, y: number };
+  zoomLevel: number;
+  isDragging: boolean;
+}
+```
+
+### 7.4 WebSocket Integration
+
+WebSocket communication is managed in the main simulation page:
+```typescript
+// In simulate.tsx
+const wsRef = useRef<WebSocket | null>(null);
+
+const connectWebSocket = (simId: string) => {
+  const wsUrl = getWsUrl() + '/simulate/' + simId;
+  const ws = new WebSocket(wsUrl);
+  
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    // Update simulation state based on received data
+  };
+  
+  // Handle connection lifecycle
+  ws.onopen = () => setWsConnected(true);
+  ws.onclose = () => setWsConnected(false);
+  ws.onerror = (error) => handleWebSocketError(error);
+};
+```
+
+### 7.5 Form Validation
+
+Validation schema in SimulationSetup:
+```typescript
+const SimulationSchema = Yup.object().shape({
+  grid_size: Yup.number()
+    .required('Required')
+    .min(VALIDATION_LIMITS.GRID_SIZE.min)
+    .max(VALIDATION_LIMITS.GRID_SIZE.max),
+  // ... other validations
+});
 ```
 
 ## 8. Development Workflow
