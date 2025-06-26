@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, SetStateAction } from "react";
 import { Line } from 'react-chartjs-2';
 import {
     COLORS,
@@ -8,7 +8,7 @@ import {
     SUBSTRATE,
     LARGE_GRID_THRESHOLD
 } from '../constants';
-import { SimulationChartData } from '../types';
+import { ChartData } from '../types';
 
 interface RunningSimulationProps {
     simulationId: string;
@@ -17,15 +17,15 @@ interface RunningSimulationProps {
     totalSteps: number;
     statistics: any;
     status: string;
-    chartData: SimulationChartData;
+    chartData: ChartData;
     isGridFullscreen: boolean;
     isChartFullscreen: boolean;
-    setIsGridFullscreen: (value: boolean) => void;
-    setIsChartFullscreen: (value: boolean) => void;
+    setIsGridFullscreen: (value: SetStateAction<boolean>) => void;
+    setIsChartFullscreen: (value: SetStateAction<boolean>) => void;
     viewportOffset: { x: number; y: number };
-    setViewportOffset: (value: { x: number; y: number }) => void;
+    setViewportOffset: (value: SetStateAction<{ x: number; y: number }>) => void;
     zoomLevel: number;
-    setZoomLevel: (value: number) => void;
+    setZoomLevel: (value: SetStateAction<number>) => void;
 }
 
 export const RunningSimulation: React.FC<RunningSimulationProps> = ({
@@ -197,7 +197,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
         const handleWheel = (e: WheelEvent) => {
             e.preventDefault();
             const zoomChange = e.deltaY < 0 ? 0.2 : -0.2;
-            setZoomLevel(prev => Math.min(Math.max(prev + zoomChange, 0.5), 20));
+            setZoomLevel((prev: number) => Math.min(Math.max(prev + zoomChange, 0.5), 20));
         };
 
         const handleMouseDown = (e: MouseEvent) => {
@@ -215,7 +215,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
             const dy = e.clientY - dragStart.y;
             const dragScale = 1 / zoomLevel;
 
-            setViewportOffset(prev => ({
+            setViewportOffset((prev: { x: number; y: number }) => ({
                 x: Math.max(0, prev.x - dx * dragScale),
                 y: Math.max(0, prev.y - dy * dragScale)
             }));
