@@ -1680,7 +1680,7 @@ export default function Simulate() {
             )}
 
             <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
-                {/* Fixed top navigation bar */}
+                {/* Fixed top navigation bar - only shows simulation info */}
                 {simulationId && (
                     <div className="sticky top-0 z-40 bg-white dark:bg-dark-card shadow-md p-3 mb-4">
                         <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-between">

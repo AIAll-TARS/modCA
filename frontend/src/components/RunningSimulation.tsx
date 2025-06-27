@@ -51,7 +51,14 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDragging, setIsDragging] = React.useState(false);
     const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+    const [hasStarted, setHasStarted] = React.useState(false);
     const router = useRouter();
+
+    // Function to handle simulation start
+    const handleSimulationStart = () => {
+        setHasStarted(true);
+        autoRunSimulation();
+    };
 
     // Draw grid effect
     useEffect(() => {
@@ -263,7 +270,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                 <button
                     type="button"
                     className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                    onClick={autoRunSimulation}
+                    onClick={handleSimulationStart}
                     disabled={status === 'completed' || !simulationId}
                 >
                     Run Simulation
@@ -271,7 +278,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
             </div>
 
             {/* Main content - blurred until simulation starts */}
-            <div className={`${status === 'idle' ? 'blur-sm' : ''}`}>
+            <div className={`${!hasStarted ? 'blur-sm' : ''}`}>
                 <div className="card p-6 bg-gray-900">
                     <div className="flex flex-wrap -mx-2">
                         <div className="w-full lg:w-1/2 px-2 mb-4">
