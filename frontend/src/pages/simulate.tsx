@@ -1680,7 +1680,7 @@ export default function Simulate() {
             )}
 
             <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
-                {/* Fixed top navigation bar with buttons */}
+                {/* Fixed top navigation bar */}
                 {simulationId && (
                     <div className="sticky top-0 z-40 bg-white dark:bg-dark-card shadow-md p-3 mb-4">
                         <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-between">
@@ -1703,25 +1703,6 @@ export default function Simulate() {
                                     </span>
                                 </div>
                             </div>
-
-                            <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => router.push("/")}
-                                    title="Return to Home"
-                                >
-                                    Home
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={autoRunSimulation}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Run Simulation
-                                </button>
-                            </div>
                         </div>
                     </div>
                 )}
@@ -1743,26 +1724,24 @@ export default function Simulate() {
                             </div>
                         </>
                     ) : (
-                        <div className="bg-gray-900">
-                            <RunningSimulation
-                                simulationId={simulationId}
-                                grid={grid}
-                                currentStep={currentStep}
-                                totalSteps={totalSteps}
-                                statistics={statistics}
-                                status={status}
-                                chartData={chartData}
-                                isGridFullscreen={isGridFullscreen}
-                                isChartFullscreen={isChartFullscreen}
-                                setIsGridFullscreen={setIsGridFullscreen}
-                                setIsChartFullscreen={setIsChartFullscreen}
-                                viewportOffset={viewportOffset}
-                                setViewportOffset={setViewportOffset}
-                                zoomLevel={zoomLevel}
-                                setZoomLevel={setZoomLevel}
-                                autoRunSimulation={autoRunSimulation}
-                            />
-                        </div>
+                        <RunningSimulation
+                            simulationId={simulationId}
+                            grid={grid}
+                            currentStep={currentStep}
+                            totalSteps={totalSteps}
+                            statistics={statistics}
+                            status={status}
+                            chartData={chartData}
+                            isGridFullscreen={isGridFullscreen}
+                            isChartFullscreen={isChartFullscreen}
+                            setIsGridFullscreen={setIsGridFullscreen}
+                            setIsChartFullscreen={setIsChartFullscreen}
+                            viewportOffset={viewportOffset}
+                            setViewportOffset={setViewportOffset}
+                            zoomLevel={zoomLevel}
+                            setZoomLevel={setZoomLevel}
+                            autoRunSimulation={autoRunSimulation}
+                        />
                     )}
                 </div>
             </main>

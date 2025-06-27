@@ -251,38 +251,27 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
 
     return (
         <div className="space-y-6">
-            {/* Top navigation bar - NO BLUR */}
-            <div className="sticky top-0 z-40 bg-gray-900 shadow-md p-3 mb-4">
-                <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                        <h2 className="text-xl font-semibold text-gray-300">
-                            Simulation #{simulationId}
-                        </h2>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                        <button
-                            type="button"
-                            className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                            onClick={() => router.push("/")}
-                        >
-                            Home
-                        </button>
-                        <button
-                            type="button"
-                            className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                            onClick={autoRunSimulation}
-                            disabled={status === 'completed' || !simulationId}
-                        >
-                            Run Simulation
-                        </button>
-                    </div>
+            <div className="card p-6 bg-gray-900">
+                {/* Navigation buttons */}
+                <div className="flex justify-end mb-4 space-x-2">
+                    <button
+                        type="button"
+                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                        onClick={() => router.push("/")}
+                    >
+                        Home
+                    </button>
+                    <button
+                        type="button"
+                        className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                        onClick={autoRunSimulation}
+                        disabled={status === 'completed' || !simulationId}
+                    >
+                        Run Simulation
+                    </button>
                 </div>
-            </div>
 
-            {/* Main content - BLURRED */}
-            <div className="blur-sm">
-                <div className="card p-6 bg-gray-900">
+                <div className={`${status !== 'running' ? 'blur-sm' : ''}`}>
                     <div className="flex flex-wrap -mx-2">
                         <div className="w-full lg:w-1/2 px-2 mb-4">
                             <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
@@ -402,13 +391,13 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                             </div>
                         </div>
                     </div>
-
-                    {status === 'error' && (
-                        <div className="mt-4 p-4 bg-red-900/30 text-red-300 rounded">
-                            An error occurred. Please check the console for details or try again.
-                        </div>
-                    )}
                 </div>
+
+                {status === 'error' && (
+                    <div className="mt-4 p-4 bg-red-900/30 text-red-300 rounded">
+                        An error occurred. Please check the console for details or try again.
+                    </div>
+                )}
             </div>
         </div>
     );
