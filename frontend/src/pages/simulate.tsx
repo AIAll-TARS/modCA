@@ -1044,7 +1044,8 @@ export default function Simulate() {
             // Check if enough time has passed since the last step
             if (timestamp - lastStepTime >= stepInterval) {
                 // Check if we're in a retry or error state
-                if (status.startsWith('retrying') || status === 'error') {
+                const isRetrying = status === 'retrying-1' || status === 'retrying-2' || status === 'retrying-3';
+                if (isRetrying || status === 'error') {
                     consecutiveFailures++;
                     console.log(`Auto-run detected error/retry state (${consecutiveFailures}/${maxConsecutiveFailures})`)
 
@@ -1064,7 +1065,7 @@ export default function Simulate() {
                     // Check current state to decide whether to continue
                     if (currentStep >= totalSteps) {
                         console.log('Auto-run complete: reached total steps')
-                        setStatus('completed' as SimulationStatus)
+                        setStatus('completed')
                         return
                     }
 
