@@ -780,7 +780,7 @@ export default function Simulate() {
                     const data = JSON.parse(event.data)
                     console.log('WebSocket message:', data)
 
-                    if (data.error) {
+                    if (data.type === 'error') {
                         console.error('WebSocket error:', data.error)
                         setStatus('error')
                         // Only show notification for non-connection errors
@@ -791,7 +791,7 @@ export default function Simulate() {
                     }
 
                     // Handle simulation updates
-                    if (data.grid && data.statistics) {
+                    if (data.type === 'update' && data.grid && data.statistics) {
                         setStatus(data.status as SimulationStatus)
                         setCurrentStep(data.current_step)
                         setTotalSteps(data.total_steps)
@@ -888,7 +888,7 @@ export default function Simulate() {
             })
 
             console.log(`Sending WebSocket command: ${message}`)
-            wsRef.current.send(message)
+            wsRef.current.send(action) // Send just the action string as expected by the backend
             return true
         } catch (error) {
             console.error('Error sending WebSocket command:', error)
@@ -1091,8 +1091,8 @@ export default function Simulate() {
                     if (status === ('loading' as SimulationStatus)) {
                         console.log('Skipping auto-run step: simulation is still processing previous step')
                     } else {
-                        // Use standard stepping method with just 1 step at a time for better reliability
-                        stepSimulation(1)
+                        // Send step command via WebSocket
+                        sendWsCommand('step')
                     }
 
                     lastStepTime = timestamp;
