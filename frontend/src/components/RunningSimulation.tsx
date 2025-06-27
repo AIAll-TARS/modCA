@@ -247,12 +247,12 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
 
     return (
         <div className="space-y-6">
-            <div className="card p-6 bg-[#111111]">
+            <div className="card p-6 bg-gray-900">
                 <div className="flex flex-wrap -mx-2">
                     <div className="w-full lg:w-1/2 px-2 mb-4">
-                        <div className="border dark:border-dark-border rounded-md p-2 bg-[#111111]">
+                        <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
                             <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Grid Visualization</h3>
+                                <h3 className="text-lg font-medium text-gray-300">Grid Visualization</h3>
                                 <button
                                     className="btn-secondary text-sm px-2 py-1"
                                     onClick={() => setIsGridFullscreen(!isGridFullscreen)}
@@ -260,16 +260,16 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                     Fullscreen
                                 </button>
                             </div>
-                            <div className="aspect-square bg-[#111111] dark:bg-[#111111] border rounded-md overflow-hidden">
+                            <div className="aspect-square bg-gray-900 border rounded-md overflow-hidden">
                                 <canvas
                                     ref={canvasRef}
                                     width={400}
                                     height={400}
-                                    className="w-full h-full bg-[#111111] dark:bg-[#111111]"
+                                    className="w-full h-full bg-gray-900"
                                 ></canvas>
                             </div>
                             {grid.length > 100 && (
-                                <div className="mt-2 text-xs text-gray-500">
+                                <div className="mt-2 text-xs text-gray-400">
                                     Large grid ({grid.length}x{grid.length}). Use fullscreen for better visibility.
                                 </div>
                             )}
@@ -277,9 +277,9 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                     </div>
 
                     <div className="w-full lg:w-1/2 px-2 mb-4">
-                        <div className="border dark:border-dark-border rounded-md p-2 bg-[#111111]">
+                        <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
                             <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Population Trends</h3>
+                                <h3 className="text-lg font-medium text-gray-300">Population Trends</h3>
                                 <button
                                     className="btn-secondary text-sm px-2 py-1"
                                     onClick={() => setIsChartFullscreen(!isChartFullscreen)}
@@ -287,7 +287,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                     Fullscreen
                                 </button>
                             </div>
-                            <div className="aspect-square bg-[#111111] dark:bg-[#111111]">
+                            <div className="aspect-square bg-gray-900">
                                 <Line
                                     data={chartData}
                                     options={{
@@ -345,7 +345,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                 </div>
 
                 <div className="mt-4">
-                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Current Statistics</h3>
+                    <h3 className="text-lg font-medium text-gray-300 mb-2">Current Statistics</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                         <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
                             <div className="text-red-400 text-sm font-medium">Predators</div>
