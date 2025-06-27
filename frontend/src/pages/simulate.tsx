@@ -43,7 +43,7 @@ import {
     VALIDATION_LIMITS,
     PREY_THREAT_RESPONSE
 } from '../constants'
-import { ChartData, ChartDataset, Statistics, SimulationParams } from '../types'
+import { ChartData, ChartDataset, Statistics, SimulationParams, SimulationStatus } from '../types'
 import { fontFamily } from '@/styles/fonts'
 import { getApiUrl, getWsUrl } from '../utils/env'
 import React from 'react';
@@ -140,7 +140,7 @@ const SimulationSchema = Yup.object().shape({
 export default function Simulate() {
     const router = useRouter()
     const [simulationId, setSimulationId] = useState<string | null>(null)
-    const [status, setStatus] = useState<string>('idle')  // Start with idle status for initial blur
+    const [status, setStatus] = useState<SimulationStatus>('setup')  // Start with setup status
     const [currentStep, setCurrentStep] = useState<number>(0)
     const [totalSteps, setTotalSteps] = useState<number>(0)
     const [grid, setGrid] = useState<number[][]>([])
@@ -508,9 +508,13 @@ export default function Simulate() {
     // Start a new simulation
     const startSimulation = async (values: SimulationParams) => {
         try {
+            // Set loading state immediately
+            setStatus('loading')
+
             // Validate grid size
             if (Number(values.grid_size) > 400) {
                 showNotification('Grid size cannot exceed 400x400');
+                setStatus('setup')
                 return;
             }
 
@@ -520,17 +524,17 @@ export default function Simulate() {
 
             if (totalEntities > totalCells) {
                 showNotification(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+                setStatus('setup')
                 return;
             }
 
-            // For large grids, show a non-blocking notification instead of confirmation
+            // For large grids, show a non-blocking notification
             if (Number(values.grid_size) >= 200) {
                 showNotification(
                     `Large grid (${values.grid_size}×${values.grid_size}). Use fullscreen mode for better performance.`
                 );
             }
 
-            setStatus('loading')
             console.log('Starting simulation with raw form values:', values)
 
             // Calculate dynamic timeout based on grid size
@@ -585,7 +589,7 @@ export default function Simulate() {
                     throw new Error('Invalid response from server - missing simulation ID')
                 }
 
-                const { simulation_id, status, current_step, total_steps, grid, statistics, db_save_success, adjustments } = response.data
+                const { simulation_id, status, current_step, total_steps, grid, statistics, adjustments } = response.data
 
                 // Ensure all required data is present
                 if (!simulation_id || !grid || !statistics) {
@@ -595,7 +599,7 @@ export default function Simulate() {
 
                 // Set all the state values
                 setSimulationId(simulation_id)
-                setStatus(status)
+                setStatus('ready')  // Set to ready instead of using status from response
                 setCurrentStep(current_step)
                 setTotalSteps(total_steps)
                 setGrid(grid)
@@ -664,7 +668,7 @@ export default function Simulate() {
 
                 // Handle timeout errors specifically
                 if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ECONNRESET') {
-                    setStatus('error')
+                    setStatus('setup')
                     showNotification('Connection timeout. Try reducing the grid size or check your connection.')
                     return
                 }
@@ -686,12 +690,12 @@ export default function Simulate() {
                     // For other error types
                     showNotification('Error starting simulation. Please try again.')
                 }
-                setStatus('error')
+                setStatus('setup')
             }
 
         } catch (error: any) {
             console.error('General error during simulation start:', error)
-            setStatus('error')
+            setStatus('setup')
             showNotification('An unexpected error occurred. Please try again.')
         }
     }
@@ -942,7 +946,7 @@ export default function Simulate() {
 
                     // Batch state updates
                     const updates = () => {
-                        setStatus(status)
+                        setStatus(status as SimulationStatus)
                         setCurrentStep(current_step)
                         setGrid(grid)
                         setStatistics(statistics)
@@ -973,7 +977,7 @@ export default function Simulate() {
                         }, retryDelay);
 
                         // Show a non-blocking message to the user about the retry
-                        setStatus(`retrying-${retryCount}`);
+                        setStatus(retryCount === 1 ? 'retrying-1' : retryCount === 2 ? 'retrying-2' : 'retrying-3');
 
                         // Don't show full error dialog during retries
                         return;
@@ -1013,7 +1017,7 @@ export default function Simulate() {
 
     // Auto-run the simulation with improved error handling
     const autoRunSimulation = () => {
-        if (!simulationId || status === 'completed' || status === 'stopped') {
+        if (!simulationId || status === 'completed' || status === 'stopped' || status === 'error') {
             console.log('Cannot auto-run: simulation not in running state')
             return () => { }
         }
@@ -1060,7 +1064,7 @@ export default function Simulate() {
                     // Check current state to decide whether to continue
                     if (currentStep >= totalSteps) {
                         console.log('Auto-run complete: reached total steps')
-                        setStatus('completed')
+                        setStatus('completed' as SimulationStatus)
                         return
                     }
 
@@ -1401,360 +1405,33 @@ export default function Simulate() {
         showNotification(message);
     };
 
+    // Render either setup or simulation based on status
     return (
-        <>
-            <Head>
-                <title>modCA - Ecosystem Simulation Setup</title>
-                <meta name="description" content="Configure and run your cellular automata ecosystem simulation" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-            </Head>
-
-            <style jsx global>{`
-                .btn-primary {
-                    background-color: #6B7280;
-                    color: white;
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
-                    transition: background-color 0.2s;
-                }
-                .btn-primary:hover {
-                    background-color: #4B5563;
-                }
-                .btn-secondary {
-                    background-color: #9CA3AF;
-                    color: white;
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
-                    transition: background-color 0.2s;
-                }
-                .btn-secondary:hover {
-                    background-color: #6B7280;
-                }
-                .btn-success {
-                    background-color: #6B7280;
-                    color: white;
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
-                    transition: background-color 0.2s;
-                }
-                .btn-success:hover {
-                    background-color: #4B5563;
-                }
-                .btn-warning {
-                    background-color: #9CA3AF;
-                    color: white;
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
-                    transition: background-color 0.2s;
-                }
-                .btn-warning:hover {
-                    background-color: #6B7280;
-                }
-            `}</style>
-
-            {isGridFullscreen && (
-                <div className="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center p-2">
-                    <div className="relative w-full h-full">
-                        <button
-                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
-                            onClick={toggleGridFullscreen}
-                        >
-                            Exit Fullscreen
-                        </button>
-
-                        {/* Zoom controls */}
-                        {grid.length > LARGE_GRID_THRESHOLD && (
-                            <div className="absolute top-2 left-2 z-10 flex space-x-2">
-                                <button
-                                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
-                                    onClick={() => setZoomLevel(prev => Math.min(prev + 0.5, 20))}
-                                >
-                                    Zoom In
-                                </button>
-                                <button
-                                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
-                                    onClick={() => setZoomLevel(prev => Math.max(prev - 0.5, 0.5))}
-                                >
-                                    Zoom Out
-                                </button>
-                                <button
-                                    className="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700"
-                                    onClick={() => {
-                                        setZoomLevel(1);
-                                        setViewportOffset({ x: 0, y: 0 });
-                                    }}
-                                >
-                                    Reset View
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="w-full h-full flex flex-col items-center justify-center">
-                            <h2 className="text-xl text-white mb-2">Grid Visualization (Step {currentStep})</h2>
-                            <div className="w-full h-[calc(100%-40px)] flex items-center justify-center">
-                                <canvas
-                                    ref={canvasRef}
-                                    className="max-w-full max-h-full bg-gray-800"
-                                ></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isChartFullscreen && (
-                <div className="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center p-2">
-                    <div className="relative w-full h-full">
-                        <button
-                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
-                            onClick={toggleChartFullscreen}
-                        >
-                            Exit Fullscreen
-                        </button>
-
-                        {/* Control buttons for simulation in fullscreen mode */}
-                        <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
-                            <button
-                                className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
-                                onClick={autoRunSimulation}
-                                disabled={status === 'completed' || !simulationId}
-                            >
-                                Run Simulation
-                            </button>
-                            <button
-                                className="bg-yellow-600 text-white px-3 py-1 rounded-md hover:bg-yellow-700"
-                                onClick={() => router.push("/")}
-                            >
-                                Home
-                            </button>
-                        </div>
-
-                        <div className="w-full h-full flex flex-col items-center justify-center">
-                            {/* Combined step counter and population counters in one line with larger text */}
-                            <div className="flex items-center justify-center space-x-6 mb-6 text-2xl">
-                                <div className="text-white font-bold">Step: {currentStep}</div>
-                                <div className="flex items-center">
-                                    <span className="text-red-500 font-bold">{statistics.predator_count || 0}</span>
-                                    {currentStep > 1 && (
-                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[0].data) === 'increasing'
-                                            ? 'text-green-400'
-                                            : calculateTrend(chartData.datasets[0].data) === 'decreasing'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
-                                            }`}>
-                                            {calculateTrend(chartData.datasets[0].data) === 'increasing'
-                                                ? '↑'
-                                                : calculateTrend(chartData.datasets[0].data) === 'decreasing'
-                                                    ? '↓'
-                                                    : '→'
-                                            }
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="text-yellow-500 font-bold">{statistics.prey_count || 0}</span>
-                                    {currentStep > 1 && (
-                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[1].data) === 'increasing'
-                                            ? 'text-green-400'
-                                            : calculateTrend(chartData.datasets[1].data) === 'decreasing'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
-                                            }`}>
-                                            {calculateTrend(chartData.datasets[1].data) === 'increasing'
-                                                ? '↑'
-                                                : calculateTrend(chartData.datasets[1].data) === 'decreasing'
-                                                    ? '↓'
-                                                    : '→'
-                                            }
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="text-green-500 font-bold">{statistics.substrate_count || 0}</span>
-                                    {currentStep > 1 && (
-                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[2].data) === 'increasing'
-                                            ? 'text-green-400'
-                                            : calculateTrend(chartData.datasets[2].data) === 'decreasing'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
-                                            }`}>
-                                            {calculateTrend(chartData.datasets[2].data) === 'increasing'
-                                                ? '↑'
-                                                : calculateTrend(chartData.datasets[2].data) === 'decreasing'
-                                                    ? '↓'
-                                                    : '→'
-                                            }
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center border-l pl-4 border-gray-600">
-                                    <span className="text-gray-300 font-bold">
-                                        {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
-                                    </span>
-                                    {currentStep > 1 && (
-                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[3].data) === 'increasing'
-                                            ? 'text-green-400'
-                                            : calculateTrend(chartData.datasets[3].data) === 'decreasing'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
-                                            }`}>
-                                            {calculateTrend(chartData.datasets[3].data) === 'increasing'
-                                                ? '↑'
-                                                : calculateTrend(chartData.datasets[3].data) === 'decreasing'
-                                                    ? '↓'
-                                                    : '→'
-                                            }
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="w-full h-[calc(100%-80px)] flex items-center justify-center bg-white dark:bg-dark-card p-4 rounded-md">
-                                <Line
-                                    data={chartData}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: {
-                                                display: false, // Hide the legend
-                                            },
-                                            title: {
-                                                display: true,
-                                                text: 'Population Over Time',
-                                                color: '#E0E0E0',
-                                                font: {
-                                                    size: 24 // Larger title
-                                                }
-                                            },
-                                        },
-                                        scales: {
-                                            y: {
-                                                beginAtZero: true,
-                                                ticks: {
-                                                    color: '#E0E0E0',
-                                                    font: {
-                                                        size: 16
-                                                    }
-                                                },
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
-                                                },
-                                                display: true
-                                            },
-                                            x: {
-                                                ticks: {
-                                                    color: '#E0E0E0',
-                                                    font: {
-                                                        size: 16
-                                                    },
-                                                    callback: function (value, index, values) {
-                                                        // If there are no data points yet, show 0-10 range
-                                                        if (chartData.labels.length === 0) {
-                                                            return index; // Return index to show 0-10
-                                                        }
-                                                        return this.getLabelForValue(Number(value));
-                                                    }
-                                                },
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
-                                                },
-                                                display: true,
-                                                // Show default 0-10 range if no data
-                                                min: chartData.labels.length > 0 ? undefined : 0,
-                                                max: chartData.labels.length > 0 ? undefined : 10,
-                                            }
-                                        },
-                                        elements: {
-                                            line: {
-                                                tension: 0.1,
-                                                borderWidth: 3
-                                            },
-                                            point: {
-                                                radius: 2,
-                                                hoverRadius: 5
-                                            }
-                                        },
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
-                {/* Fixed top navigation bar - only shows simulation info */}
-                {simulationId && (
-                    <div className="sticky top-0 z-40 bg-white dark:bg-dark-card shadow-md p-3 mb-4">
-                        <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text">
-                                    Simulation #{simulationId}
-                                </h2>
-                                <div className="flex items-center">
-                                    <span className="text-gray-600 dark:text-gray-300 mr-2">
-                                        Step {currentStep} of {totalSteps}
-                                    </span>
-                                    <div className={`h-3 w-3 rounded-full ${status === 'running' ? 'bg-green-500' :
-                                        status === 'completed' ? 'bg-blue-500' :
-                                            status === 'stopped' ? 'bg-red-500' :
-                                                status.startsWith('retrying') ? 'bg-purple-500 animate-pulse' :
-                                                    'bg-yellow-500'
-                                        }`}></div>
-                                    <span className="ml-2 text-sm capitalize dark:text-gray-300">
-                                        {status.startsWith('retrying') ? 'Retrying connection...' : status}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
+            <div className="container mx-auto px-4 py-8">
+                {status === 'setup' ? (
+                    <SimulationSetup onStartSimulation={startSimulation} />
+                ) : (
+                    <RunningSimulation
+                        simulationId={simulationId || ''}
+                        grid={grid}
+                        currentStep={currentStep}
+                        totalSteps={totalSteps}
+                        statistics={statistics}
+                        status={status}
+                        chartData={chartData}
+                        isGridFullscreen={isGridFullscreen}
+                        isChartFullscreen={isChartFullscreen}
+                        setIsGridFullscreen={setIsGridFullscreen}
+                        setIsChartFullscreen={setIsChartFullscreen}
+                        viewportOffset={viewportOffset}
+                        setViewportOffset={setViewportOffset}
+                        zoomLevel={zoomLevel}
+                        setZoomLevel={setZoomLevel}
+                        autoRunSimulation={autoRunSimulation}
+                    />
                 )}
-
-                {/* Display adjustment warning if values were adjusted */}
-                {simulationId && valueAdjustments && valueAdjustments.values_adjusted && (
-                    <div className="container mx-auto max-w-7xl mb-4">
-                        <AdjustmentWarning adjustments={valueAdjustments} />
-                    </div>
-                )}
-
-                <div className="container mx-auto px-4 py-6 max-w-7xl">
-                    {!simulationId ? (
-                        <>
-                            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Ecosystem Simulation Setup</h1>
-                            <div className="card p-6 mb-8">
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-4">Configure Simulation</h2>
-                                <SimulationSetup onStartSimulation={startSimulation} />
-                            </div>
-                        </>
-                    ) : (
-                        <RunningSimulation
-                            simulationId={simulationId}
-                            grid={grid}
-                            currentStep={currentStep}
-                            totalSteps={totalSteps}
-                            statistics={statistics}
-                            status={status}
-                            chartData={chartData}
-                            isGridFullscreen={isGridFullscreen}
-                            isChartFullscreen={isChartFullscreen}
-                            setIsGridFullscreen={setIsGridFullscreen}
-                            setIsChartFullscreen={setIsChartFullscreen}
-                            viewportOffset={viewportOffset}
-                            setViewportOffset={setViewportOffset}
-                            zoomLevel={zoomLevel}
-                            setZoomLevel={setZoomLevel}
-                            autoRunSimulation={autoRunSimulation}
-                        />
-                    )}
-                </div>
-            </main>
-
-
-        </>
+            </div>
+        </div>
     )
 } 
