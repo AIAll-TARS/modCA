@@ -251,27 +251,28 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
 
     return (
         <div className="space-y-6">
-            <div className="card p-6 bg-gray-900">
-                {/* Navigation buttons */}
-                <div className="flex justify-end mb-4 space-x-2">
-                    <button
-                        type="button"
-                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                        onClick={() => router.push("/")}
-                    >
-                        Home
-                    </button>
-                    <button
-                        type="button"
-                        className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                        onClick={autoRunSimulation}
-                        disabled={status === 'completed' || !simulationId}
-                    >
-                        Run Simulation
-                    </button>
-                </div>
+            {/* Navigation buttons - never blurred */}
+            <div className="flex justify-end mb-4 space-x-2">
+                <button
+                    type="button"
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                    onClick={() => router.push("/")}
+                >
+                    Home
+                </button>
+                <button
+                    type="button"
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                    onClick={autoRunSimulation}
+                    disabled={status === 'completed' || !simulationId}
+                >
+                    Run Simulation
+                </button>
+            </div>
 
-                <div className={`${status !== 'running' ? 'blur-sm' : ''}`}>
+            {/* Main content - blurred until simulation starts */}
+            <div className={`${status === 'idle' ? 'blur-sm' : ''}`}>
+                <div className="card p-6 bg-gray-900">
                     <div className="flex flex-wrap -mx-2">
                         <div className="w-full lg:w-1/2 px-2 mb-4">
                             <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
