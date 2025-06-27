@@ -9,6 +9,7 @@ import {
     LARGE_GRID_THRESHOLD
 } from '../constants';
 import { ChartData } from '../types';
+import { useRouter } from 'next/router';
 
 interface RunningSimulationProps {
     simulationId: string;
@@ -26,6 +27,7 @@ interface RunningSimulationProps {
     setViewportOffset: (value: SetStateAction<{ x: number; y: number }>) => void;
     zoomLevel: number;
     setZoomLevel: (value: SetStateAction<number>) => void;
+    autoRunSimulation: () => void;
 }
 
 export const RunningSimulation: React.FC<RunningSimulationProps> = ({
@@ -44,10 +46,12 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
     setViewportOffset,
     zoomLevel,
     setZoomLevel,
+    autoRunSimulation,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDragging, setIsDragging] = React.useState(false);
     const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+    const router = useRouter();
 
     // Draw grid effect
     useEffect(() => {
@@ -247,132 +251,164 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
 
     return (
         <div className="space-y-6">
-            <div className="card p-6 bg-gray-900">
-                <div className="flex flex-wrap -mx-2">
-                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                        <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-lg font-medium text-gray-300">Grid Visualization</h3>
-                                <button
-                                    className="btn-secondary text-sm px-2 py-1"
-                                    onClick={() => setIsGridFullscreen(!isGridFullscreen)}
-                                >
-                                    Fullscreen
-                                </button>
-                            </div>
-                            <div className="aspect-square bg-gray-900 border rounded-md overflow-hidden">
-                                <canvas
-                                    ref={canvasRef}
-                                    width={400}
-                                    height={400}
-                                    className="w-full h-full bg-gray-900"
-                                ></canvas>
-                            </div>
-                            {grid.length > 100 && (
-                                <div className="mt-2 text-xs text-gray-400">
-                                    Large grid ({grid.length}x{grid.length}). Use fullscreen for better visibility.
-                                </div>
-                            )}
-                        </div>
+            {/* Top navigation bar - NO BLUR */}
+            <div className="sticky top-0 z-40 bg-gray-900 shadow-md p-3 mb-4">
+                <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                        <h2 className="text-xl font-semibold text-gray-300">
+                            Simulation #{simulationId}
+                        </h2>
                     </div>
 
-                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                        <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-lg font-medium text-gray-300">Population Trends</h3>
-                                <button
-                                    className="btn-secondary text-sm px-2 py-1"
-                                    onClick={() => setIsChartFullscreen(!isChartFullscreen)}
-                                >
-                                    Fullscreen
-                                </button>
+                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
+                        <button
+                            type="button"
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                            onClick={() => router.push("/")}
+                        >
+                            Home
+                        </button>
+                        <button
+                            type="button"
+                            className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                            onClick={autoRunSimulation}
+                            disabled={status === 'completed' || !simulationId}
+                        >
+                            Run Simulation
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main content - BLURRED */}
+            <div className="blur-sm">
+                <div className="card p-6 bg-gray-900">
+                    <div className="flex flex-wrap -mx-2">
+                        <div className="w-full lg:w-1/2 px-2 mb-4">
+                            <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="text-lg font-medium text-gray-300">Grid Visualization</h3>
+                                    <button
+                                        className="btn-secondary text-sm px-2 py-1"
+                                        onClick={() => setIsGridFullscreen(!isGridFullscreen)}
+                                    >
+                                        Fullscreen
+                                    </button>
+                                </div>
+                                <div className="aspect-square bg-gray-900 border rounded-md overflow-hidden">
+                                    <canvas
+                                        ref={canvasRef}
+                                        width={400}
+                                        height={400}
+                                        className="w-full h-full bg-gray-900"
+                                    ></canvas>
+                                </div>
+                                {grid.length > 100 && (
+                                    <div className="mt-2 text-xs text-gray-400">
+                                        Large grid ({grid.length}x{grid.length}). Use fullscreen for better visibility.
+                                    </div>
+                                )}
                             </div>
-                            <div className="aspect-square bg-gray-900">
-                                <Line
-                                    data={chartData}
-                                    options={{
-                                        responsive: true,
-                                        plugins: {
-                                            legend: {
-                                                position: 'top',
-                                                labels: {
+                        </div>
+
+                        <div className="w-full lg:w-1/2 px-2 mb-4">
+                            <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="text-lg font-medium text-gray-300">Population Trends</h3>
+                                    <button
+                                        className="btn-secondary text-sm px-2 py-1"
+                                        onClick={() => setIsChartFullscreen(!isChartFullscreen)}
+                                    >
+                                        Fullscreen
+                                    </button>
+                                </div>
+                                <div className="aspect-square bg-gray-900">
+                                    <Line
+                                        data={chartData}
+                                        options={{
+                                            responsive: true,
+                                            plugins: {
+                                                legend: {
+                                                    position: 'top',
+                                                    labels: {
+                                                        color: '#E0E0E0'
+                                                    }
+                                                },
+                                                title: {
+                                                    display: true,
+                                                    text: 'Population Over Time',
                                                     color: '#E0E0E0'
+                                                },
+                                            },
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true,
+                                                    ticks: {
+                                                        color: '#E0E0E0'
+                                                    },
+                                                    grid: {
+                                                        color: 'rgba(255, 255, 255, 0.1)'
+                                                    },
+                                                    display: chartData.labels.length > 0
+                                                },
+                                                x: {
+                                                    ticks: {
+                                                        color: '#E0E0E0'
+                                                    },
+                                                    grid: {
+                                                        color: 'rgba(255, 255, 255, 0.1)'
+                                                    },
+                                                    display: chartData.labels.length > 0
                                                 }
                                             },
-                                            title: {
-                                                display: true,
-                                                text: 'Population Over Time',
-                                                color: '#E0E0E0'
+                                            elements: {
+                                                line: {
+                                                    tension: 0.1
+                                                },
+                                                point: {
+                                                    radius: 0
+                                                }
                                             },
-                                        },
-                                        scales: {
-                                            y: {
-                                                beginAtZero: true,
-                                                ticks: {
-                                                    color: '#E0E0E0'
-                                                },
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
-                                                },
-                                                display: chartData.labels.length > 0
-                                            },
-                                            x: {
-                                                ticks: {
-                                                    color: '#E0E0E0'
-                                                },
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
-                                                },
-                                                display: chartData.labels.length > 0
+                                            animation: {
+                                                duration: 0
                                             }
-                                        },
-                                        elements: {
-                                            line: {
-                                                tension: 0.1
-                                            },
-                                            point: {
-                                                radius: 0
-                                            }
-                                        },
-                                        animation: {
-                                            duration: 0
-                                        }
-                                    }}
-                                />
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="mt-4">
-                    <h3 className="text-lg font-medium text-gray-300 mb-2">Current Statistics</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                        <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
-                            <div className="text-red-400 text-sm font-medium">Predators</div>
-                            <div className="text-red-300 text-2xl font-bold">{statistics.predator_count || 0}</div>
+                    <div className="mt-4">
+                        <h3 className="text-lg font-medium text-gray-300 mb-2">Current Statistics</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                            <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                <div className="text-red-400 text-sm font-medium">Predators</div>
+                                <div className="text-red-300 text-2xl font-bold">{statistics.predator_count || 0}</div>
+                            </div>
+                            <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                <div className="text-yellow-400 text-sm font-medium">Prey</div>
+                                <div className="text-yellow-300 text-2xl font-bold">{statistics.prey_count || 0}</div>
+                            </div>
+                            <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                <div className="text-green-400 text-sm font-medium">Substrate</div>
+                                <div className="text-green-300 text-2xl font-bold">{statistics.substrate_count || 0}</div>
+                            </div>
                         </div>
                         <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
-                            <div className="text-yellow-400 text-sm font-medium">Prey</div>
-                            <div className="text-yellow-300 text-2xl font-bold">{statistics.prey_count || 0}</div>
-                        </div>
-                        <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
-                            <div className="text-green-400 text-sm font-medium">Substrate</div>
-                            <div className="text-green-300 text-2xl font-bold">{statistics.substrate_count || 0}</div>
+                            <div className="text-gray-400 text-sm font-medium">Total Population</div>
+                            <div className="text-gray-300 text-2xl font-bold">
+                                {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
+                            </div>
                         </div>
                     </div>
-                    <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
-                        <div className="text-gray-400 text-sm font-medium">Total Population</div>
-                        <div className="text-gray-300 text-2xl font-bold">
-                            {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
-                        </div>
-                    </div>
-                </div>
 
-                {status === 'error' && (
-                    <div className="mt-4 p-4 bg-red-900/30 text-red-300 rounded">
-                        An error occurred. Please check the console for details or try again.
-                    </div>
-                )}
+                    {status === 'error' && (
+                        <div className="mt-4 p-4 bg-red-900/30 text-red-300 rounded">
+                            An error occurred. Please check the console for details or try again.
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
