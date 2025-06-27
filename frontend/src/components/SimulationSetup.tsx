@@ -347,7 +347,7 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
+                                    className="min-w-[140px] bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
                                 >
                                     {isSubmitting ? 'Starting...' : 'Start Simulation'}
                                 </button>
