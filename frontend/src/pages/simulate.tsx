@@ -140,7 +140,7 @@ const SimulationSchema = Yup.object().shape({
 export default function Simulate() {
     const router = useRouter()
     const [simulationId, setSimulationId] = useState<string | null>(null)
-    const [status, setStatus] = useState<string>('idle')
+    const [status, setStatus] = useState<string>('idle')  // Start with idle status for initial blur
     const [currentStep, setCurrentStep] = useState<number>(0)
     const [totalSteps, setTotalSteps] = useState<number>(0)
     const [grid, setGrid] = useState<number[][]>([])
