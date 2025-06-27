@@ -1045,7 +1045,8 @@ export default function Simulate() {
             if (timestamp - lastStepTime >= stepInterval) {
                 // Check if we're in a retry or error state
                 const isRetrying = status === 'retrying-1' || status === 'retrying-2' || status === 'retrying-3';
-                if (isRetrying || status === 'error') {
+                const isErrorState = status === ('error' as SimulationStatus);
+                if (isRetrying || isErrorState) {
                     consecutiveFailures++;
                     console.log(`Auto-run detected error/retry state (${consecutiveFailures}/${maxConsecutiveFailures})`)
 
@@ -1065,12 +1066,12 @@ export default function Simulate() {
                     // Check current state to decide whether to continue
                     if (currentStep >= totalSteps) {
                         console.log('Auto-run complete: reached total steps')
-                        setStatus('completed')
+                        setStatus('completed' as SimulationStatus)
                         return
                     }
 
                     // Also check if we're already in a loading state
-                    if (status === 'loading') {
+                    if (status === ('loading' as SimulationStatus)) {
                         console.log('Skipping auto-run step: simulation is still processing previous step')
                     } else {
                         // Use standard stepping method with just 1 step at a time for better reliability
@@ -1082,7 +1083,7 @@ export default function Simulate() {
             }
 
             // Schedule next frame unless we're done
-            if (currentStep < totalSteps && status !== 'completed') {
+            if (currentStep < totalSteps && status !== ('completed' as SimulationStatus)) {
                 animationFrameId = requestAnimationFrame(runStep);
             }
         };
