@@ -347,15 +347,15 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                 <div className="mt-4">
                     <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Current Statistics</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+                        <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-md p-3">
                             <div className="text-sm text-red-600 dark:text-red-400 font-medium">Predators</div>
                             <div className="text-2xl font-bold text-red-800 dark:text-red-300">{statistics.predator_count || 0}</div>
                         </div>
-                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
+                        <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-md p-3">
                             <div className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Prey</div>
                             <div className="text-2xl font-bold text-yellow-800 dark:text-yellow-300">{statistics.prey_count || 0}</div>
                         </div>
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
+                        <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-md p-3">
                             <div className="text-sm text-green-600 dark:text-green-400 font-medium">Substrate</div>
                             <div className="text-2xl font-bold text-green-800 dark:text-green-300">{statistics.substrate_count || 0}</div>
                         </div>
