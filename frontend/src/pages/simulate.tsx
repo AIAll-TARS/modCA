@@ -523,36 +523,11 @@ export default function Simulate() {
                 return;
             }
 
-            // Add warning for very large grids
+            // For large grids, show a non-blocking notification instead of confirmation
             if (Number(values.grid_size) >= 200) {
-                const confirmLargeGrid = window.confirm(
-                    `You're creating a large grid (${values.grid_size}×${values.grid_size}) with ${values.grid_size * values.grid_size} cells.\n\n` +
-                    `Large grids can be slow to render and may use significant memory.\n\n` +
-                    `For best performance:\n` +
-                    `- Use fullscreen mode\n` +
-                    `- Use zoom and pan controls\n\n` +
-                    `Continue with this large grid?`
+                showNotification(
+                    `Large grid (${values.grid_size}×${values.grid_size}). Use fullscreen mode for better performance.`
                 );
-
-                if (!confirmLargeGrid) {
-                    return;
-                }
-            }
-
-            // Additional warning for extremely large grids that may timeout
-            if (Number(values.grid_size) >= 800) {
-                const confirmExtremeGrid = window.confirm(
-                    `WARNING: Extremely large grid (${values.grid_size}×${values.grid_size}).\n\n` +
-                    `Grids larger than 800×800 may cause server timeouts or memory issues.\n\n` +
-                    `- The server may take a long time to respond\n` +
-                    `- The simulation might fail to initialize\n\n` +
-                    `Try reducing the grid size for better reliability.\n\n` +
-                    `Proceed anyway with this extreme grid size?`
-                );
-
-                if (!confirmExtremeGrid) {
-                    return;
-                }
             }
 
             setStatus('loading')
@@ -588,18 +563,6 @@ export default function Simulate() {
                 record_simulation: Boolean(values.record_simulation)
             };
 
-            // DEBUG: Log all conversions to see if they're working correctly
-            console.log('Conversion results:')
-            console.log('grid_size:', values.grid_size, '->', validatedValues.grid_size)
-            console.log('steps:', values.steps, '->', validatedValues.steps)
-            console.log('initial_prey:', values.initial_prey, '->', validatedValues.initial_prey)
-            console.log('initial_predators:', values.initial_predators, '->', validatedValues.initial_predators)
-            console.log('predator_death_probability:', values.predator_death_probability, '->', validatedValues.predator_death_probability)
-
-            // Note: Removed value limitations to allow any user input
-
-            console.log('Validated values being sent to backend:', validatedValues)
-
             // Save the settings to localStorage for future use
             saveSettingsToLocalStorage(validatedValues);
 
@@ -609,7 +572,7 @@ export default function Simulate() {
                 console.log('API URL:', getApiUrl() || 'Using relative URL');
 
                 const response = await axios.post(`${getApiUrl()}/simulate`, validatedValues, {
-                    timeout: dynamicTimeout, // Dynamic timeout based on grid size
+                    timeout: dynamicTimeout,
                     headers: {
                         'Content-Type': 'application/json'
                     }
@@ -630,12 +593,6 @@ export default function Simulate() {
                     throw new Error('Incomplete simulation data received from server')
                 }
 
-                // Validate that received data matches expectations
-                console.log('Checking received data:')
-                console.log('Grid dimensions:', grid.length > 0 ? `${grid.length}x${grid[0].length}` : 'Empty grid')
-                console.log('Statistics received:', JSON.stringify(statistics))
-                console.log('Current step:', current_step, 'of', total_steps)
-
                 // Set all the state values
                 setSimulationId(simulation_id)
                 setStatus(status)
@@ -648,13 +605,8 @@ export default function Simulate() {
                 if (adjustments && adjustments.values_adjusted) {
                     console.log("Values were adjusted during initialization:", adjustments);
                     setValueAdjustments(adjustments);
-                } else if (statistics && statistics.values_adjusted) {
-                    // Some statistics objects might contain the adjustment info directly
-                    console.log("Values were adjusted (from statistics):", statistics);
-                    setValueAdjustments(statistics);
-                } else {
-                    console.log("No value adjustments were made");
-                    setValueAdjustments(null);
+                    // Show a non-blocking notification about adjustments
+                    showNotification('Some simulation values were adjusted to fit the grid size.');
                 }
 
                 // Check if recording is enabled and reset recording status
@@ -662,12 +614,6 @@ export default function Simulate() {
                 setRecordingSaved(false);
 
                 console.log(`Simulation ${simulation_id} started at step ${current_step} of ${total_steps}`)
-
-                // Show database warning if save failed
-                if (db_save_success === false) {
-                    console.warn('Database save failed - settings will not be persisted')
-                    // You could show a toast notification here if you want to inform the user
-                }
 
                 // Reset chart data
                 setChartData({
@@ -705,26 +651,21 @@ export default function Simulate() {
                     ],
                 })
 
-                // Add a slight delay before connecting to WebSocket to ensure backend is ready
+                // Connect to WebSocket and start simulation immediately
+                connectWebSocket(simulation_id)
                 setTimeout(() => {
-                    console.log(`Connecting to WebSocket for simulation ${simulation_id}`)
-                    connectWebSocket(simulation_id)
-
-                    // Try to immediately step the simulation to verify it's working
-                    setTimeout(() => {
-                        if (status !== 'completed') {
-                            console.log('Testing simulation stepping functionality')
-                            stepSimulation(1)
-                        }
-                    }, 1000)
+                    if (status !== 'completed') {
+                        autoRunSimulation()
+                    }
                 }, 500)
+
             } catch (axiosError: any) {
                 console.error('Axios error starting simulation:', axiosError)
 
                 // Handle timeout errors specifically
                 if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ECONNRESET') {
                     setStatus('error')
-                    handleTimeoutError(Number(values.grid_size))
+                    showNotification('Connection timeout. Try reducing the grid size or check your connection.')
                     return
                 }
 
@@ -732,28 +673,26 @@ export default function Simulate() {
                 if (axiosError.response?.status === 500) {
                     // Check for specific error messages
                     const errorDetail = axiosError.response.data?.detail || '';
+                    let errorMessage = 'Server error occurred. ';
 
                     if (errorDetail.includes('grid initialization failed')) {
-                        handleAxiosError(axiosError, 'Error initializing grid. Try reducing grid size or entity counts.')
+                        errorMessage += 'Try reducing grid size or entity counts.'
                     } else if (errorDetail.includes('simulation initialization failed')) {
-                        handleAxiosError(axiosError, 'Error creating simulation. Try with different parameters.')
-                    } else if (errorDetail.includes('database')) {
-                        // Database errors shouldn't prevent simulation
-                        handleAxiosError(axiosError, 'Warning: Database error occurred but simulation will still run.')
-                    } else {
-                        // Generic server error
-                        handleAxiosError(axiosError, 'Server error')
+                        errorMessage += 'Try with different parameters.'
                     }
+
+                    showNotification(errorMessage)
                 } else {
                     // For other error types
-                    handleAxiosError(axiosError, 'Error starting simulation')
+                    showNotification('Error starting simulation. Please try again.')
                 }
+                setStatus('error')
             }
 
         } catch (error: any) {
             console.error('General error during simulation start:', error)
             setStatus('error')
-            handleSimulationError(error)
+            showNotification('An unexpected error occurred. Please try again.')
         }
     }
 
@@ -812,7 +751,9 @@ export default function Simulate() {
                     console.error('WebSocket connection timeout')
                     ws.close()
                     setStatus('error')
-                    showNotification('Failed to connect to simulation server. Please try again.')
+                    showNotification('Connection issue. Retrying...')
+                    // Try to reconnect
+                    setTimeout(() => connectWebSocket(simId), 2000)
                 }
             }, 10000) // 10 second timeout
 
@@ -831,7 +772,10 @@ export default function Simulate() {
                     if (data.error) {
                         console.error('WebSocket error:', data.error)
                         setStatus('error')
-                        showNotification(`Simulation error: ${data.error}`)
+                        // Only show notification for non-connection errors
+                        if (!data.error.includes('connection')) {
+                            showNotification(`Simulation error: ${data.error}`)
+                        }
                         return
                     }
 
@@ -881,7 +825,7 @@ export default function Simulate() {
                     }
                 } catch (error) {
                     console.error('Error parsing WebSocket message:', error)
-                    showNotification('Error processing simulation data')
+                    // Don't show notification for parsing errors, just log them
                 }
             }
 
@@ -892,9 +836,12 @@ export default function Simulate() {
 
                 // Try to reconnect if connection was lost unexpectedly
                 if (event.code !== 1000 && event.code !== 1001) {
-                    console.log('Attempting to reconnect WebSocket in 5 seconds...')
-                    showNotification('Lost connection to simulation server. Attempting to reconnect...')
-                    setTimeout(() => connectWebSocket(simId), 5000)
+                    console.log('Attempting to reconnect WebSocket in 2 seconds...')
+                    // Only show notification if we're not already in error state
+                    if (status !== 'error') {
+                        showNotification('Connection lost. Reconnecting...')
+                    }
+                    setTimeout(() => connectWebSocket(simId), 2000)
                 }
             }
 
@@ -903,7 +850,7 @@ export default function Simulate() {
                 clearTimeout(connectionTimeout)
                 setWsConnected(false)
                 setStatus('error')
-                showNotification('Connection error. Please try refreshing the page.')
+                // Don't show notification for WebSocket errors, they're usually followed by onclose
             }
 
             // Send a ping to ensure connection is working
@@ -916,7 +863,8 @@ export default function Simulate() {
         } catch (error) {
             console.error('Error creating WebSocket connection:', error)
             setStatus('error')
-            showNotification('Failed to connect to simulation server')
+            // Don't show notification, let the reconnection handle it
+            setTimeout(() => connectWebSocket(simId), 2000)
         }
     }
 
