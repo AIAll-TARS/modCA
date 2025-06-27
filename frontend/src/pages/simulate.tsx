@@ -766,6 +766,13 @@ export default function Simulate() {
                 clearTimeout(connectionTimeout)
                 setWsConnected(true)
                 setStatus('ready')
+
+                // Send a ping to ensure connection is working
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        sendWsCommand('ping')
+                    }
+                }, 500)
             }
 
             ws.onmessage = (event) => {
@@ -785,7 +792,7 @@ export default function Simulate() {
 
                     // Handle simulation updates
                     if (data.grid && data.statistics) {
-                        setStatus(data.status)
+                        setStatus(data.status as SimulationStatus)
                         setCurrentStep(data.current_step)
                         setTotalSteps(data.total_steps)
 
@@ -854,20 +861,13 @@ export default function Simulate() {
                 clearTimeout(connectionTimeout)
                 setWsConnected(false)
                 setStatus('error')
-                // Don't show notification for WebSocket errors, they're usually followed by onclose
+                showNotification('Connection error. Please try refreshing the page.')
             }
-
-            // Send a ping to ensure connection is working
-            setTimeout(() => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    sendWsCommand('ping')
-                }
-            }, 1000)
 
         } catch (error) {
             console.error('Error creating WebSocket connection:', error)
             setStatus('error')
-            // Don't show notification, let the reconnection handle it
+            showNotification('Failed to connect to simulation server')
             setTimeout(() => connectWebSocket(simId), 2000)
         }
     }
@@ -876,17 +876,26 @@ export default function Simulate() {
     const sendWsCommand = (action: string, params: any = {}) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.error('WebSocket not connected, cannot send command')
+            setStatus('error')
+            showNotification('Connection error. Please try refreshing the page.')
             return false
         }
 
-        const message = JSON.stringify({
-            action,
-            ...params,
-        })
+        try {
+            const message = JSON.stringify({
+                action,
+                ...params,
+            })
 
-        console.log(`Sending WebSocket command: ${message}`)
-        wsRef.current.send(message)
-        return true
+            console.log(`Sending WebSocket command: ${message}`)
+            wsRef.current.send(message)
+            return true
+        } catch (error) {
+            console.error('Error sending WebSocket command:', error)
+            setStatus('error')
+            showNotification('Error sending command. Please try again.')
+            return false
+        }
     }
 
     // Run one or more simulation steps
@@ -1019,6 +1028,14 @@ export default function Simulate() {
     const autoRunSimulation = () => {
         if (!simulationId || status === 'completed' || status === 'stopped' || status === 'error') {
             console.log('Cannot auto-run: simulation not in running state')
+            return () => { }
+        }
+
+        // Ensure WebSocket is connected
+        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+            console.log('WebSocket not connected, attempting to reconnect...')
+            connectWebSocket(simulationId)
+            setTimeout(autoRunSimulation, 1000)
             return () => { }
         }
 
