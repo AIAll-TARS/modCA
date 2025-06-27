@@ -1510,24 +1510,10 @@ export default function Simulate() {
                         <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
                             <button
                                 className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
-                                onClick={() => stepSimulation(1)}
-                                disabled={status === 'completed' || !simulationId}
-                            >
-                                Step
-                            </button>
-                            <button
-                                className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
                                 onClick={autoRunSimulation}
                                 disabled={status === 'completed' || !simulationId}
                             >
                                 Auto Run
-                            </button>
-                            <button
-                                className="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700"
-                                onClick={resetSimulation}
-                                disabled={!simulationId}
-                            >
-                                Reset
                             </button>
                             <button
                                 className="bg-yellow-600 text-white px-3 py-1 rounded-md hover:bg-yellow-700"
@@ -1727,45 +1713,12 @@ export default function Simulate() {
                                 </button>
                                 <button
                                     type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => stepSimulation(1)}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Step (1)
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => stepSimulation(5)}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Step (5)
-                                </button>
-                                <button
-                                    type="button"
                                     className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
                                     onClick={autoRunSimulation}
                                     disabled={status === 'completed' || !simulationId}
                                 >
                                     Auto Run
                                 </button>
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={resetSimulation}
-                                    disabled={!simulationId}
-                                >
-                                    Reset
-                                </button>
-                                {simulationId && recordingAvailable && !recordingSaved && (
-                                    <button
-                                        type="button"
-                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                        onClick={() => saveRecording()}
-                                    >
-                                        Save Recording
-                                    </button>
-                                )}
                             </div>
                         </div>
                     </div>
