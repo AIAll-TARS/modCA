@@ -806,9 +806,21 @@ export default function Simulate() {
             const ws = new WebSocket(wsUrl)
             wsRef.current = ws
 
+            // Add connection timeout
+            const connectionTimeout = setTimeout(() => {
+                if (ws.readyState !== WebSocket.OPEN) {
+                    console.error('WebSocket connection timeout')
+                    ws.close()
+                    setStatus('error')
+                    showNotification('Failed to connect to simulation server. Please try again.')
+                }
+            }, 10000) // 10 second timeout
+
             ws.onopen = () => {
                 console.log('WebSocket connection established')
+                clearTimeout(connectionTimeout)
                 setWsConnected(true)
+                setStatus('ready')
             }
 
             ws.onmessage = (event) => {
@@ -819,6 +831,7 @@ export default function Simulate() {
                     if (data.error) {
                         console.error('WebSocket error:', data.error)
                         setStatus('error')
+                        showNotification(`Simulation error: ${data.error}`)
                         return
                     }
 
@@ -827,57 +840,70 @@ export default function Simulate() {
                         setStatus(data.status)
                         setCurrentStep(data.current_step)
                         setTotalSteps(data.total_steps)
-                        setGrid(data.grid)
-                        setStatistics(data.statistics)
 
-                        // Update chart with new data
-                        setChartData((prevData: ChartData) => {
-                            // Skip adding data for step 0
-                            if (data.current_step === 0) return prevData;
+                        // Batch state updates using a single setState call
+                        const newState = {
+                            grid: data.grid,
+                            statistics: data.statistics,
+                            chartData: (prevData: ChartData) => {
+                                // Skip adding data for step 0
+                                if (data.current_step === 0) return prevData;
 
-                            const newLabels = [...prevData.labels, data.current_step]
-                            return {
-                                labels: newLabels,
-                                datasets: [
-                                    {
-                                        ...prevData.datasets[0],
-                                        data: [...prevData.datasets[0].data, data.statistics.predator_count],
-                                    },
-                                    {
-                                        ...prevData.datasets[1],
-                                        data: [...prevData.datasets[1].data, data.statistics.prey_count],
-                                    },
-                                    {
-                                        ...prevData.datasets[2],
-                                        data: [...prevData.datasets[2].data, data.statistics.substrate_count],
-                                    },
-                                    {
-                                        ...prevData.datasets[3],
-                                        data: [...prevData.datasets[3].data, data.statistics.predator_count + data.statistics.prey_count + data.statistics.substrate_count],
-                                    },
-                                ],
+                                const newLabels = [...prevData.labels, data.current_step]
+                                return {
+                                    labels: newLabels,
+                                    datasets: [
+                                        {
+                                            ...prevData.datasets[0],
+                                            data: [...prevData.datasets[0].data, data.statistics.predator_count],
+                                        },
+                                        {
+                                            ...prevData.datasets[1],
+                                            data: [...prevData.datasets[1].data, data.statistics.prey_count],
+                                        },
+                                        {
+                                            ...prevData.datasets[2],
+                                            data: [...prevData.datasets[2].data, data.statistics.substrate_count],
+                                        },
+                                        {
+                                            ...prevData.datasets[3],
+                                            data: [...prevData.datasets[3].data, data.statistics.predator_count + data.statistics.prey_count + data.statistics.substrate_count],
+                                        },
+                                    ],
+                                }
                             }
-                        })
+                        }
+
+                        // Update state in a single batch
+                        setGrid(newState.grid)
+                        setStatistics(newState.statistics)
+                        setChartData(newState.chartData)
                     }
                 } catch (error) {
                     console.error('Error parsing WebSocket message:', error)
+                    showNotification('Error processing simulation data')
                 }
             }
 
             ws.onclose = (event) => {
                 console.log(`WebSocket closed with code ${event.code}`)
+                clearTimeout(connectionTimeout)
                 setWsConnected(false)
 
                 // Try to reconnect if connection was lost unexpectedly
                 if (event.code !== 1000 && event.code !== 1001) {
                     console.log('Attempting to reconnect WebSocket in 5 seconds...')
+                    showNotification('Lost connection to simulation server. Attempting to reconnect...')
                     setTimeout(() => connectWebSocket(simId), 5000)
                 }
             }
 
             ws.onerror = (event) => {
                 console.error('WebSocket error:', event)
+                clearTimeout(connectionTimeout)
                 setWsConnected(false)
+                setStatus('error')
+                showNotification('Connection error. Please try refreshing the page.')
             }
 
             // Send a ping to ensure connection is working
@@ -889,6 +915,8 @@ export default function Simulate() {
 
         } catch (error) {
             console.error('Error creating WebSocket connection:', error)
+            setStatus('error')
+            showNotification('Failed to connect to simulation server')
         }
     }
 
@@ -950,39 +978,53 @@ export default function Simulate() {
 
         // Create a function to attempt the step with retry capability
         const attemptStep = () => {
+            // Create an AbortController for the request
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+
             // Step the simulation via REST API
             axios.post(`${getApiUrl()}/simulate/${simulationId}/step?steps=${steps}`, {}, {
-                timeout: timeout // Set timeout based on grid size
+                timeout: timeout,
+                signal: controller.signal
             })
                 .then(response => {
+                    clearTimeout(timeoutId);
                     console.log('Step complete, response:', response.data)
                     const { status, current_step, grid, statistics } = response.data
 
-                    setStatus(status)
-                    setCurrentStep(current_step)
-                    setGrid(grid)
-                    setStatistics(statistics)
+                    // Batch state updates
+                    const updates = () => {
+                        setStatus(status)
+                        setCurrentStep(current_step)
+                        setGrid(grid)
+                        setStatistics(statistics)
+                    }
+
+                    // Use requestAnimationFrame to avoid blocking the UI
+                    requestAnimationFrame(updates)
                 })
                 .catch(error => {
+                    clearTimeout(timeoutId);
                     console.error('Error stepping simulation:', error)
 
                     // Check if we should retry
                     if (retryCount < maxRetries &&
                         (error.code === 'ECONNABORTED' ||
                             error.code === 'ECONNRESET' ||
-                            !error.response)) {
+                            !error.response ||
+                            error.name === 'AbortError')) {
 
                         retryCount++;
                         console.log(`Connection issue detected. Retry attempt ${retryCount}/${maxRetries}...`);
 
                         // Wait a bit longer between each retry
                         const retryDelay = 3000 * retryCount;
+                        showNotification(`Connection issue. Retrying in ${retryDelay / 1000} seconds...`)
                         setTimeout(() => {
                             attemptStep();
                         }, retryDelay);
 
                         // Show a non-blocking message to the user about the retry
-                        const retryMsg = `Server connection issue. Retrying (${retryCount}/${maxRetries})...`;
                         setStatus(`retrying-${retryCount}`);
 
                         // Don't show full error dialog during retries
@@ -992,10 +1034,12 @@ export default function Simulate() {
                     // If we've exhausted retries or it's another type of error, handle normally
                     handleAxiosError(error, 'Failed to step simulation');
 
-                    if (error.code === 'ECONNABORTED' || error.code === 'ECONNRESET') {
+                    if (error.code === 'ECONNABORTED' || error.code === 'ECONNRESET' || error.name === 'AbortError') {
                         // For timeout/connection errors with large grids, provide more helpful message
                         if (isLargeGrid) {
                             handleLargeGridWarning(gridSize)
+                        } else {
+                            showNotification('Step timed out. Try reducing the grid size or number of steps.')
                         }
                     }
 
@@ -1040,49 +1084,65 @@ export default function Simulate() {
 
         console.log(`Auto-run using ${stepInterval}ms interval (large grid: ${isLargeGrid})`)
 
-        const interval = setInterval(() => {
-            // Check if we're in a retry or error state
-            if (status.startsWith('retrying') || status === 'error') {
-                consecutiveFailures++;
-                console.log(`Auto-run detected error/retry state (${consecutiveFailures}/${maxConsecutiveFailures})`)
+        // Use requestAnimationFrame for smoother updates
+        let animationFrameId: number;
+        let lastStepTime = 0;
 
-                // If we've had too many consecutive failures, stop auto-run
-                if (consecutiveFailures >= maxConsecutiveFailures) {
-                    console.log('Too many consecutive failures, stopping auto-run')
-                    clearInterval(interval)
-                    handleConnectionIssues()
-                    return
+        const runStep = (timestamp: number) => {
+            // Check if enough time has passed since the last step
+            if (timestamp - lastStepTime >= stepInterval) {
+                // Check if we're in a retry or error state
+                if (status.startsWith('retrying') || status === 'error') {
+                    consecutiveFailures++;
+                    console.log(`Auto-run detected error/retry state (${consecutiveFailures}/${maxConsecutiveFailures})`)
+
+                    // If we've had too many consecutive failures, stop auto-run
+                    if (consecutiveFailures >= maxConsecutiveFailures) {
+                        console.log('Too many consecutive failures, stopping auto-run')
+                        handleConnectionIssues()
+                        return
+                    }
+
+                    // Skip this step and continue
+                    lastStepTime = timestamp;
+                } else {
+                    // We had a successful step, reset the failure counter
+                    consecutiveFailures = 0
+
+                    // Check current state to decide whether to continue
+                    if (currentStep >= totalSteps) {
+                        console.log('Auto-run complete: reached total steps')
+                        setStatus('completed')
+                        return
+                    }
+
+                    // Also check if we're already in a loading state
+                    if (status === 'loading') {
+                        console.log('Skipping auto-run step: simulation is still processing previous step')
+                    } else {
+                        // Use standard stepping method with just 1 step at a time for better reliability
+                        stepSimulation(1)
+                    }
+
+                    lastStepTime = timestamp;
                 }
-
-                // Skip this step and continue
-                return
             }
 
-            // We had a successful step, reset the failure counter
-            consecutiveFailures = 0
-
-            // Check current state to decide whether to continue
-            if (currentStep >= totalSteps) {
-                console.log('Auto-run complete: reached total steps')
-                clearInterval(interval)
-                setStatus('completed')
-                return
+            // Schedule next frame unless we're done
+            if (currentStep < totalSteps && status !== 'completed') {
+                animationFrameId = requestAnimationFrame(runStep);
             }
+        };
 
-            // Also check if we're already in a loading state
-            if (status === 'loading') {
-                console.log('Skipping auto-run step: simulation is still processing previous step')
-                return
-            }
-
-            // Use standard stepping method with just 1 step at a time for better reliability
-            stepSimulation(1)
-        }, stepInterval)
+        // Start the animation loop
+        animationFrameId = requestAnimationFrame(runStep);
 
         // Return cleanup function
         return () => {
-            console.log('Cleaning up auto-run interval')
-            clearInterval(interval)
+            console.log('Cleaning up auto-run animation frame')
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId)
+            }
         }
     }
 
