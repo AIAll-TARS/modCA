@@ -247,10 +247,10 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
 
     return (
         <div className="space-y-6">
-            <div className="card p-6">
+            <div className="card p-6 bg-[#111111]">
                 <div className="flex flex-wrap -mx-2">
                     <div className="w-full lg:w-1/2 px-2 mb-4">
-                        <div className="border dark:border-dark-border rounded-md p-2">
+                        <div className="border dark:border-dark-border rounded-md p-2 bg-[#111111]">
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Grid Visualization</h3>
                                 <button
@@ -260,12 +260,12 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                     Fullscreen
                                 </button>
                             </div>
-                            <div className="aspect-square bg-gray-100 dark:bg-gray-800 border rounded-md overflow-hidden">
+                            <div className="aspect-square bg-[#111111] dark:bg-[#111111] border rounded-md overflow-hidden">
                                 <canvas
                                     ref={canvasRef}
                                     width={400}
                                     height={400}
-                                    className="w-full h-full bg-gray-100 dark:bg-gray-800"
+                                    className="w-full h-full bg-[#111111] dark:bg-[#111111]"
                                 ></canvas>
                             </div>
                             {grid.length > 100 && (
@@ -277,7 +277,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                     </div>
 
                     <div className="w-full lg:w-1/2 px-2 mb-4">
-                        <div className="border dark:border-dark-border rounded-md p-2">
+                        <div className="border dark:border-dark-border rounded-md p-2 bg-[#111111]">
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Population Trends</h3>
                                 <button
@@ -287,7 +287,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                     Fullscreen
                                 </button>
                             </div>
-                            <div className="aspect-square bg-white dark:bg-dark-card">
+                            <div className="aspect-square bg-[#111111] dark:bg-[#111111]">
                                 <Line
                                     data={chartData}
                                     options={{
@@ -296,32 +296,32 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                             legend: {
                                                 position: 'top',
                                                 labels: {
-                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
+                                                    color: '#E0E0E0'
                                                 }
                                             },
                                             title: {
                                                 display: true,
                                                 text: 'Population Over Time',
-                                                color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
+                                                color: '#E0E0E0'
                                             },
                                         },
                                         scales: {
                                             y: {
                                                 beginAtZero: true,
                                                 ticks: {
-                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
+                                                    color: '#E0E0E0'
                                                 },
                                                 grid: {
-                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
+                                                    color: 'rgba(255, 255, 255, 0.1)'
                                                 },
                                                 display: chartData.labels.length > 0
                                             },
                                             x: {
                                                 ticks: {
-                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
+                                                    color: '#E0E0E0'
                                                 },
                                                 grid: {
-                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
+                                                    color: 'rgba(255, 255, 255, 0.1)'
                                                 },
                                                 display: chartData.labels.length > 0
                                             }
