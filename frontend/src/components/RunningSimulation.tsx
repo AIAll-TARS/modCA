@@ -347,29 +347,29 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                 <div className="mt-4">
                     <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Current Statistics</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                        <div className="bg-[#1f2937] border border-[#374151] rounded-md p-3">
-                            <div className="text-red-400 text-sm font-medium">Predators</div>
-                            <div className="text-red-300 text-2xl font-bold">{statistics.predator_count || 0}</div>
+                        <div className="bg-[#1a1a1a] dark:bg-[#1a1a1a] border border-[#333333] rounded-md p-3">
+                            <div className="text-sm text-red-600 dark:text-red-400 font-medium">Predators</div>
+                            <div className="text-2xl font-bold text-red-800 dark:text-red-300">{statistics.predator_count || 0}</div>
                         </div>
-                        <div className="bg-[#1f2937] border border-[#374151] rounded-md p-3">
-                            <div className="text-yellow-400 text-sm font-medium">Prey</div>
-                            <div className="text-yellow-300 text-2xl font-bold">{statistics.prey_count || 0}</div>
+                        <div className="bg-[#1a1a1a] dark:bg-[#1a1a1a] border border-[#333333] rounded-md p-3">
+                            <div className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Prey</div>
+                            <div className="text-2xl font-bold text-yellow-800 dark:text-yellow-300">{statistics.prey_count || 0}</div>
                         </div>
-                        <div className="bg-[#1f2937] border border-[#374151] rounded-md p-3">
-                            <div className="text-green-400 text-sm font-medium">Substrate</div>
-                            <div className="text-green-300 text-2xl font-bold">{statistics.substrate_count || 0}</div>
+                        <div className="bg-[#1a1a1a] dark:bg-[#1a1a1a] border border-[#333333] rounded-md p-3">
+                            <div className="text-sm text-green-600 dark:text-green-400 font-medium">Substrate</div>
+                            <div className="text-2xl font-bold text-green-800 dark:text-green-300">{statistics.substrate_count || 0}</div>
                         </div>
                     </div>
-                    <div className="bg-[#1f2937] border border-[#374151] rounded-md p-3">
-                        <div className="text-gray-400 text-sm font-medium">Total Population</div>
-                        <div className="text-gray-300 text-2xl font-bold">
+                    <div className="bg-[#1a1a1a] dark:bg-[#1a1a1a] border border-[#333333] rounded-md p-3">
+                        <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Population</div>
+                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-300">
                             {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
                         </div>
                     </div>
                 </div>
 
                 {status === 'error' && (
-                    <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded">
+                    <div className="mt-4 p-4 bg-red-900/30 text-red-300 rounded">
                         An error occurred. Please check the console for details or try again.
                     </div>
                 )}
