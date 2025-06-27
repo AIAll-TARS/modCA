@@ -11,13 +11,16 @@ import {
 import { ChartData } from '../types';
 import { useRouter } from 'next/router';
 
+// Define simulation status type
+type SimulationStatus = 'setup' | 'loading' | 'ready' | 'running' | 'completed' | 'error' | 'saving' | 'stopped' | 'retrying-1' | 'retrying-2' | 'retrying-3';
+
 interface RunningSimulationProps {
     simulationId: string;
     grid: number[][];
     currentStep: number;
     totalSteps: number;
     statistics: any;
-    status: string;
+    status: SimulationStatus;
     chartData: ChartData;
     isGridFullscreen: boolean;
     isChartFullscreen: boolean;

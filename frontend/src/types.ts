@@ -38,4 +38,6 @@ export interface SimulationParams {
     initial_substrate_probability: number;
     substrate_random_death: number;
     substrate_consumption_prob: number;
-} 
+}
+
+export type SimulationStatus = 'setup' | 'loading' | 'ready' | 'running' | 'completed' | 'error' | 'saving' | 'stopped' | 'retrying-1' | 'retrying-2' | 'retrying-3'; 
