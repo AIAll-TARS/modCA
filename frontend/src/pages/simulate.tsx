@@ -1515,7 +1515,7 @@ export default function Simulate() {
                                 onClick={autoRunSimulation}
                                 disabled={status === 'completed' || !simulationId}
                             >
-                                Auto Run
+                                Run Simulation
                             </button>
                             <button
                                 className="bg-yellow-600 text-white px-3 py-1 rounded-md hover:bg-yellow-700"
@@ -1719,7 +1719,7 @@ export default function Simulate() {
                                     onClick={autoRunSimulation}
                                     disabled={status === 'completed' || !simulationId}
                                 >
-                                    Auto Run
+                                    Run Simulation
                                 </button>
                             </div>
                         </div>
@@ -1760,6 +1760,7 @@ export default function Simulate() {
                                 setViewportOffset={setViewportOffset}
                                 zoomLevel={zoomLevel}
                                 setZoomLevel={setZoomLevel}
+                                autoRunSimulation={autoRunSimulation}
                             />
                         </div>
                     )}
