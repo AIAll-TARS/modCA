@@ -40,4 +40,16 @@ export interface SimulationParams {
     substrate_consumption_prob: number;
 }
 
-export type SimulationStatus = 'setup' | 'loading' | 'ready' | 'running' | 'completed' | 'error' | 'saving' | 'stopped' | 'retrying-1' | 'retrying-2' | 'retrying-3' | 'error' | 'completed'; 
+// All possible simulation states
+export type SimulationStatus =
+    | 'setup'      // Initial setup state
+    | 'loading'    // Loading/initializing
+    | 'ready'      // Ready to run
+    | 'running'    // Simulation is running
+    | 'completed'  // Simulation finished
+    | 'error'      // Error state
+    | 'saving'     // Saving state
+    | 'stopped'    // Manually stopped
+    | 'retrying-1' // First retry attempt
+    | 'retrying-2' // Second retry attempt
+    | 'retrying-3'; // Third retry attempt 
