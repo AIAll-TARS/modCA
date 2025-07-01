@@ -23,9 +23,7 @@ interface RunningSimulationProps {
     status: SimulationStatus;
     chartData: ChartData;
     isGridFullscreen: boolean;
-    isChartFullscreen: boolean;
     setIsGridFullscreen: (value: SetStateAction<boolean>) => void;
-    setIsChartFullscreen: (value: SetStateAction<boolean>) => void;
     viewportOffset: { x: number; y: number };
     setViewportOffset: (value: SetStateAction<{ x: number; y: number }>) => void;
     zoomLevel: number;
@@ -42,9 +40,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
     status,
     chartData,
     isGridFullscreen,
-    isChartFullscreen,
     setIsGridFullscreen,
-    setIsChartFullscreen,
     viewportOffset,
     setViewportOffset,
     zoomLevel,
@@ -332,18 +328,18 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
             {/* Main content */}
             <div className={`card p-6 bg-gray-900 ${status === 'loading' ? 'opacity-50' : ''}`}>
                 <div className="flex flex-wrap -mx-2">
-                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                        <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
+                    <div className={isGridFullscreen ? "fixed inset-0 z-50 bg-gray-900 p-4" : "w-full lg:w-1/2 px-2 mb-4"}>
+                        <div className={`border border-gray-700 rounded-md p-2 bg-gray-900 ${isGridFullscreen ? 'h-full' : ''}`}>
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="text-lg font-medium text-gray-300">Grid Visualization</h3>
                                 <button
                                     className="btn-secondary text-sm px-2 py-1"
                                     onClick={() => setIsGridFullscreen(!isGridFullscreen)}
                                 >
-                                    Fullscreen
+                                    {isGridFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                                 </button>
                             </div>
-                            <div className="aspect-square bg-gray-900 border rounded-md overflow-hidden">
+                            <div className={`bg-gray-900 border rounded-md overflow-hidden ${isGridFullscreen ? 'h-[calc(100%-3rem)]' : 'aspect-square'}`}>
                                 <canvas
                                     ref={canvasRef}
                                     width={400}
@@ -351,7 +347,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                     className="w-full h-full bg-gray-900"
                                 ></canvas>
                             </div>
-                            {grid.length > 100 && (
+                            {grid.length > 100 && !isGridFullscreen && (
                                 <div className="mt-2 text-xs text-gray-400">
                                     Large grid ({grid.length}x{grid.length}). Use fullscreen for better visibility.
                                 </div>
@@ -359,96 +355,94 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                         </div>
                     </div>
 
-                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                        <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-lg font-medium text-gray-300">Population Trends</h3>
-                                <button
-                                    className="btn-secondary text-sm px-2 py-1"
-                                    onClick={() => setIsChartFullscreen(!isChartFullscreen)}
-                                >
-                                    Fullscreen
-                                </button>
-                            </div>
-                            <div className="aspect-square bg-gray-900">
-                                <Line
-                                    data={chartData}
-                                    options={{
-                                        responsive: true,
-                                        plugins: {
-                                            legend: {
-                                                position: 'top',
-                                                labels: {
-                                                    color: '#E0E0E0'
+                    {!isGridFullscreen && (
+                        <>
+                            <div className="w-full lg:w-1/2 px-2 mb-4">
+                                <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h3 className="text-lg font-medium text-gray-300">Population Trends</h3>
+                                    </div>
+                                    <div className="aspect-square bg-gray-900">
+                                        <Line
+                                            data={chartData}
+                                            options={{
+                                                responsive: true,
+                                                plugins: {
+                                                    legend: {
+                                                        position: 'top',
+                                                        labels: {
+                                                            color: '#E0E0E0'
+                                                        }
+                                                    },
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Population Over Time',
+                                                        color: '#E0E0E0'
+                                                    },
+                                                },
+                                                scales: {
+                                                    y: {
+                                                        beginAtZero: true,
+                                                        ticks: {
+                                                            color: '#E0E0E0'
+                                                        },
+                                                        grid: {
+                                                            color: 'rgba(255, 255, 255, 0.1)'
+                                                        },
+                                                        display: chartData.labels.length > 0
+                                                    },
+                                                    x: {
+                                                        ticks: {
+                                                            color: '#E0E0E0'
+                                                        },
+                                                        grid: {
+                                                            color: 'rgba(255, 255, 255, 0.1)'
+                                                        },
+                                                        display: chartData.labels.length > 0
+                                                    }
+                                                },
+                                                elements: {
+                                                    line: {
+                                                        tension: 0.1
+                                                    },
+                                                    point: {
+                                                        radius: 0
+                                                    }
+                                                },
+                                                animation: {
+                                                    duration: 0
                                                 }
-                                            },
-                                            title: {
-                                                display: true,
-                                                text: 'Population Over Time',
-                                                color: '#E0E0E0'
-                                            },
-                                        },
-                                        scales: {
-                                            y: {
-                                                beginAtZero: true,
-                                                ticks: {
-                                                    color: '#E0E0E0'
-                                                },
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
-                                                },
-                                                display: chartData.labels.length > 0
-                                            },
-                                            x: {
-                                                ticks: {
-                                                    color: '#E0E0E0'
-                                                },
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
-                                                },
-                                                display: chartData.labels.length > 0
-                                            }
-                                        },
-                                        elements: {
-                                            line: {
-                                                tension: 0.1
-                                            },
-                                            point: {
-                                                radius: 0
-                                            }
-                                        },
-                                        animation: {
-                                            duration: 0
-                                        }
-                                    }}
-                                />
+                                            }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div className="mt-4">
-                    <h3 className="text-lg font-medium text-gray-300 mb-2">Current Statistics</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                        <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
-                            <div className="text-red-400 text-sm font-medium">Predators</div>
-                            <div className="text-red-300 text-2xl font-bold">{statistics.predator_count || 0}</div>
-                        </div>
-                        <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
-                            <div className="text-yellow-400 text-sm font-medium">Prey</div>
-                            <div className="text-yellow-300 text-2xl font-bold">{statistics.prey_count || 0}</div>
-                        </div>
-                        <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
-                            <div className="text-green-400 text-sm font-medium">Substrate</div>
-                            <div className="text-green-300 text-2xl font-bold">{statistics.substrate_count || 0}</div>
-                        </div>
-                    </div>
-                    <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
-                        <div className="text-gray-400 text-sm font-medium">Total Population</div>
-                        <div className="text-gray-300 text-2xl font-bold">
-                            {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
-                        </div>
-                    </div>
+                            <div className="w-full">
+                                <h3 className="text-lg font-medium text-gray-300 mb-2">Current Statistics</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                                    <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                        <div className="text-red-400 text-sm font-medium">Predators</div>
+                                        <div className="text-red-300 text-2xl font-bold">{statistics.predator_count || 0}</div>
+                                    </div>
+                                    <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                        <div className="text-yellow-400 text-sm font-medium">Prey</div>
+                                        <div className="text-yellow-300 text-2xl font-bold">{statistics.prey_count || 0}</div>
+                                    </div>
+                                    <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                        <div className="text-green-400 text-sm font-medium">Substrate</div>
+                                        <div className="text-green-300 text-2xl font-bold">{statistics.substrate_count || 0}</div>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                    <div className="text-gray-400 text-sm font-medium">Total Population</div>
+                                    <div className="text-gray-300 text-2xl font-bold">
+                                        {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
