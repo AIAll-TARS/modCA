@@ -68,10 +68,10 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
 
         // Adjust canvas dimensions when in fullscreen mode
         if (isGridFullscreen) {
-            const containerWidth = window.innerWidth * 0.98;
-            const containerHeight = window.innerHeight * 0.95;
-            canvas.width = containerWidth;
-            canvas.height = containerHeight;
+            // Use the smaller of window width or height to maintain square aspect ratio
+            const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9);
+            canvas.width = size;
+            canvas.height = size;
         } else {
             canvas.width = 400;
             canvas.height = 400;
@@ -269,10 +269,10 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                 btn.disabled = true;
                                 btn.textContent = 'Loading...';
                             }
-                            
+
                             // Small delay to ensure cleanup
                             await new Promise(resolve => setTimeout(resolve, 100));
-                            
+
                             // Navigate home
                             await router.push("/");
                         } catch (error) {
@@ -362,7 +362,11 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                 </button>
                             </div>
                             <div className={`bg-gray-900 border border-gray-700 rounded-md overflow-hidden flex items-center justify-center ${isGridFullscreen ? 'h-[calc(100%-3rem)]' : 'aspect-square'}`}>
-                                <div className="relative" style={{ width: isGridFullscreen ? '95vh' : '100%', height: isGridFullscreen ? '95vh' : '100%', aspectRatio: '1/1' }}>
+                                <div className="relative" style={{
+                                    width: isGridFullscreen ? 'min(90vh, 90vw)' : '100%',
+                                    height: isGridFullscreen ? 'min(90vh, 90vw)' : '100%',
+                                    aspectRatio: '1/1'
+                                }}>
                                     <canvas
                                         ref={canvasRef}
                                         width={400}
