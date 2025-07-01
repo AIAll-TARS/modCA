@@ -1111,14 +1111,58 @@ export default function Simulate() {
         }
     }
 
-    // Clean up WebSocket on component unmount
+    // Add cleanup effect for navigation
     useEffect(() => {
         return () => {
+            // Cleanup function that runs when component unmounts
             if (wsRef.current) {
-                wsRef.current.close()
+                console.log('Cleaning up WebSocket connection');
+                wsRef.current.close(1000, 'Navigation cleanup');
             }
-        }
-    }, [])
+            // Reset all stateful values
+            setSimulationId(null);
+            setStatus('setup');
+            setCurrentStep(0);
+            setTotalSteps(0);
+            setGrid([]);
+            setStatistics(null);
+            setChartData({
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Predators',
+                        data: [],
+                        borderColor: CHART_COLORS[PREDATOR].border,
+                        backgroundColor: CHART_COLORS[PREDATOR].background,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Prey',
+                        data: [],
+                        borderColor: CHART_COLORS[PREY].border,
+                        backgroundColor: CHART_COLORS[PREY].background,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Substrate',
+                        data: [],
+                        borderColor: CHART_COLORS[SUBSTRATE].border,
+                        backgroundColor: CHART_COLORS[SUBSTRATE].background,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Total',
+                        data: [],
+                        borderColor: 'rgba(150, 150, 150, 1)',
+                        backgroundColor: 'rgba(150, 150, 150, 0.5)',
+                        tension: 0.1,
+                        borderWidth: 3
+                    }
+                ]
+            });
+            setWsConnected(false);
+        };
+    }, []);
 
     // Save the current simulation recording
     const saveRecording = async () => {

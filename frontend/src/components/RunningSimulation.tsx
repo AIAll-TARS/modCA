@@ -260,8 +260,30 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
             <div className="flex justify-end mb-4 space-x-2">
                 <button
                     type="button"
-                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                    onClick={() => router.push("/")}
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
+                    onClick={async () => {
+                        try {
+                            // Set loading state
+                            const btn = document.activeElement as HTMLButtonElement;
+                            if (btn) {
+                                btn.disabled = true;
+                                btn.textContent = 'Loading...';
+                            }
+                            
+                            // Small delay to ensure cleanup
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                            
+                            // Navigate home
+                            await router.push("/");
+                        } catch (error) {
+                            console.error('Navigation error:', error);
+                            const btn = document.activeElement as HTMLButtonElement;
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.textContent = 'Home';
+                            }
+                        }
+                    }}
                 >
                     Home
                 </button>
