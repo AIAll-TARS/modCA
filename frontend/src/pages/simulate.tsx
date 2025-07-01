@@ -146,7 +146,8 @@ export default function Simulate() {
     const [grid, setGrid] = useState<number[][]>([])
     const [statistics, setStatistics] = useState<any>({})
     const [isGridFullscreen, setIsGridFullscreen] = useState<boolean>(false)
-    const [isChartFullscreen, setIsChartFullscreen] = useState<boolean>(false)
+    const [viewportOffset, setViewportOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+    const [zoomLevel, setZoomLevel] = useState<number>(1);
     const [chartData, setChartData] = useState<any>({
         labels: [],
         datasets: [
@@ -215,8 +216,6 @@ export default function Simulate() {
     };
 
     // Add viewport state for large grids
-    const [viewportOffset, setViewportOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
-    const [zoomLevel, setZoomLevel] = useState<number>(1);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [dragStart, setDragStart] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
     const LARGE_GRID_THRESHOLD = 200; // Grids larger than this will use viewport rendering
@@ -464,11 +463,6 @@ export default function Simulate() {
     // Toggle fullscreen mode for the grid
     const toggleGridFullscreen = () => {
         setIsGridFullscreen(!isGridFullscreen);
-    };
-
-    // Toggle fullscreen mode for the chart
-    const toggleChartFullscreen = () => {
-        setIsChartFullscreen(!isChartFullscreen);
     };
 
     // Update chart with new statistics
@@ -1440,9 +1434,7 @@ export default function Simulate() {
                         status={status}
                         chartData={chartData}
                         isGridFullscreen={isGridFullscreen}
-                        isChartFullscreen={isChartFullscreen}
                         setIsGridFullscreen={setIsGridFullscreen}
-                        setIsChartFullscreen={setIsChartFullscreen}
                         viewportOffset={viewportOffset}
                         setViewportOffset={setViewportOffset}
                         zoomLevel={zoomLevel}
