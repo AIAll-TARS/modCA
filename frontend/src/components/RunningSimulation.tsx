@@ -339,13 +339,15 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                     {isGridFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                                 </button>
                             </div>
-                            <div className={`bg-gray-900 border rounded-md overflow-hidden ${isGridFullscreen ? 'h-[calc(100%-3rem)]' : 'aspect-square'}`}>
-                                <canvas
-                                    ref={canvasRef}
-                                    width={400}
-                                    height={400}
-                                    className="w-full h-full bg-gray-900"
-                                ></canvas>
+                            <div className={`bg-gray-900 border border-gray-700 rounded-md overflow-hidden flex items-center justify-center ${isGridFullscreen ? 'h-[calc(100%-3rem)]' : 'aspect-square'}`}>
+                                <div className="relative" style={{ width: isGridFullscreen ? '95vh' : '100%', height: isGridFullscreen ? '95vh' : '100%', aspectRatio: '1/1' }}>
+                                    <canvas
+                                        ref={canvasRef}
+                                        width={400}
+                                        height={400}
+                                        className="absolute inset-0 w-full h-full bg-gray-900"
+                                    ></canvas>
+                                </div>
                             </div>
                             {grid.length > 100 && !isGridFullscreen && (
                                 <div className="mt-2 text-xs text-gray-400">
@@ -359,32 +361,46 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                         <>
                             <div className="w-full lg:w-1/2 px-2 mb-4">
                                 <div className="border border-gray-700 rounded-md p-2 bg-gray-900">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h3 className="text-lg font-medium text-gray-300">Population Trends</h3>
-                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-300 mb-2">Population Trends</h3>
                                     <div className="aspect-square bg-gray-900">
                                         <Line
                                             data={chartData}
                                             options={{
                                                 responsive: true,
+                                                maintainAspectRatio: true,
                                                 plugins: {
                                                     legend: {
                                                         position: 'top',
                                                         labels: {
-                                                            color: '#E0E0E0'
+                                                            color: '#E0E0E0',
+                                                            padding: 20,
+                                                            font: {
+                                                                size: 12
+                                                            }
                                                         }
                                                     },
                                                     title: {
                                                         display: true,
                                                         text: 'Population Over Time',
-                                                        color: '#E0E0E0'
+                                                        color: '#E0E0E0',
+                                                        font: {
+                                                            size: 14,
+                                                            weight: 'normal'
+                                                        },
+                                                        padding: {
+                                                            top: 10,
+                                                            bottom: 20
+                                                        }
                                                     },
                                                 },
                                                 scales: {
                                                     y: {
                                                         beginAtZero: true,
                                                         ticks: {
-                                                            color: '#E0E0E0'
+                                                            color: '#E0E0E0',
+                                                            font: {
+                                                                size: 11
+                                                            }
                                                         },
                                                         grid: {
                                                             color: 'rgba(255, 255, 255, 0.1)'
@@ -393,7 +409,10 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                                     },
                                                     x: {
                                                         ticks: {
-                                                            color: '#E0E0E0'
+                                                            color: '#E0E0E0',
+                                                            font: {
+                                                                size: 11
+                                                            }
                                                         },
                                                         grid: {
                                                             color: 'rgba(255, 255, 255, 0.1)'
@@ -403,7 +422,8 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                                 },
                                                 elements: {
                                                     line: {
-                                                        tension: 0.1
+                                                        tension: 0.1,
+                                                        borderWidth: 2
                                                     },
                                                     point: {
                                                         radius: 0
@@ -421,20 +441,20 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                             <div className="w-full">
                                 <h3 className="text-lg font-medium text-gray-300 mb-2">Current Statistics</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                                    <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                    <div className="bg-gray-800 border border-gray-700 rounded-md p-3">
                                         <div className="text-red-400 text-sm font-medium">Predators</div>
                                         <div className="text-red-300 text-2xl font-bold">{statistics.predator_count || 0}</div>
                                     </div>
-                                    <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                    <div className="bg-gray-800 border border-gray-700 rounded-md p-3">
                                         <div className="text-yellow-400 text-sm font-medium">Prey</div>
                                         <div className="text-yellow-300 text-2xl font-bold">{statistics.prey_count || 0}</div>
                                     </div>
-                                    <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                    <div className="bg-gray-800 border border-gray-700 rounded-md p-3">
                                         <div className="text-green-400 text-sm font-medium">Substrate</div>
                                         <div className="text-green-300 text-2xl font-bold">{statistics.substrate_count || 0}</div>
                                     </div>
                                 </div>
-                                <div className="bg-gray-900 border border-gray-700 rounded-md p-3">
+                                <div className="bg-gray-800 border border-gray-700 rounded-md p-3">
                                     <div className="text-gray-400 text-sm font-medium">Total Population</div>
                                     <div className="text-gray-300 text-2xl font-bold">
                                         {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
