@@ -115,7 +115,7 @@ export default function About() {
                                 Start Simulation
                             </Link>
                             <a
-                                href="https://www.buymeacoffee.com/aiall"
+                                href="https://coff.ee/aiall"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="transform hover:scale-105 transition-transform"
