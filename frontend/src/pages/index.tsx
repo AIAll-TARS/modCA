@@ -7,7 +7,25 @@ import { getApiUrl } from '../utils/env'
 const styles = {
     main: {
         fontFamily,
-    }
+        backgroundImage: 'url("/wallpaper.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+    } as const,
+    overlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 1,
+    } as const,
+    content: {
+        position: 'relative',
+        zIndex: 2,
+    } as const,
 }
 
 export default function Home() {
@@ -35,25 +53,26 @@ export default function Home() {
                 }
             `}</style>
 
-            <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
-                <div className="container mx-auto px-4 py-16 max-w-7xl">
+            <main className="min-h-screen" style={styles.main}>
+                <div style={styles.overlay}></div>
+                <div className="container mx-auto px-4 py-16 max-w-7xl" style={styles.content}>
                     <header className="mb-16 text-center">
-                        <h1 className="text-5xl font-bold text-gray-800 dark:text-dark-text mb-4">modCA</h1>
-                        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                        <h1 className="text-5xl font-bold text-white mb-4">modCA</h1>
+                        <p className="text-xl text-gray-200 max-w-2xl mx-auto">
                             An ecosystem simulation based on cellular automata where predators, prey, and substrate interact based on probabilistic rules.
                         </p>
                     </header>
 
                     <div className="max-w-4xl mx-auto">
-                        <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-8 mb-16">
+                        <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-md p-8 mb-16">
                             <div className="flex flex-col items-center">
-                                <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-4">Start New Simulation</h2>
-                                <p className="text-gray-600 dark:text-gray-300 mb-6 text-center">
+                                <h2 className="text-2xl font-semibold text-white mb-4">Start New Simulation</h2>
+                                <p className="text-gray-200 mb-6 text-center">
                                     Configure and run a new simulation with custom parameters.
                                 </p>
                                 <button
                                     onClick={() => router.push('/simulate')}
-                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-md transition-colors text-lg w-48"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-md transition-colors text-lg w-48"
                                 >
                                     Start Now
                                 </button>
@@ -61,21 +80,21 @@ export default function Home() {
                         </div>
                     </div>
 
-                    <div className="mt-16 bg-white dark:bg-dark-card rounded-lg shadow-md p-8 max-w-4xl mx-auto">
-                        <h2 className="text-3xl font-semibold text-gray-800 dark:text-dark-text mb-6">About the Simulation</h2>
-                        <div className="prose max-w-none text-gray-700 dark:text-gray-300">
+                    <div className="mt-16 bg-white/10 backdrop-blur-md rounded-lg shadow-md p-8 max-w-4xl mx-auto">
+                        <h2 className="text-3xl font-semibold text-white mb-6">About the Simulation</h2>
+                        <div className="prose max-w-none text-gray-200">
                             <p className="mb-4">
                                 modCA is a cellular automata-based ecosystem simulation where different entities interact based on probabilistic rules:
                             </p>
                             <ul className="list-disc pl-6 mb-4">
-                                <li className="mb-2"><span className="font-semibold text-red-600 dark:text-red-400">Predators</span> hunt prey and reproduce when successful.</li>
-                                <li className="mb-2"><span className="font-semibold text-yellow-500 dark:text-yellow-400">Prey</span> consume substrate and reproduce, while avoiding predators.</li>
-                                <li className="mb-2"><span className="font-semibold text-green-600 dark:text-green-400">Substrate</span> forms randomly and serves as a food source for prey.</li>
+                                <li className="mb-2"><span className="font-semibold text-red-300">Predators</span> hunt prey and reproduce when successful.</li>
+                                <li className="mb-2"><span className="font-semibold text-yellow-300">Prey</span> consume substrate and reproduce, while avoiding predators.</li>
+                                <li className="mb-2"><span className="font-semibold text-green-300">Substrate</span> forms randomly and serves as a food source for prey.</li>
                             </ul>
                             <p className="mb-4">
                                 This web version allows you to configure, run, and analyze simulations directly in your browser. Watch the ecosystem evolve in real-time and observe complex emergent behaviors.
                             </p>
-                            <Link href="/about" className="text-blue-600 dark:text-blue-400 hover:underline">
+                            <Link href="/about" className="text-blue-300 hover:text-blue-200 hover:underline">
                                 Read more →
                             </Link>
                         </div>
