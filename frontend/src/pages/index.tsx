@@ -7,7 +7,7 @@ import { getApiUrl } from '../utils/env'
 const styles = {
     main: {
         fontFamily,
-        backgroundImage: 'url("/wallpaper.jpg")',
+        backgroundImage: 'url(/wallpaper.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
