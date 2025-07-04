@@ -330,8 +330,27 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                             <div className="flex justify-end space-x-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => router.push('/')}
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                    onClick={async () => {
+                                        try {
+                                            // Set loading state
+                                            const btn = document.activeElement as HTMLButtonElement;
+                                            if (btn) {
+                                                btn.disabled = true;
+                                                btn.textContent = 'Loading...';
+                                            }
+                                            
+                                            // Navigate home
+                                            await router.push('/');
+                                        } catch (error) {
+                                            console.error('Navigation error:', error);
+                                            const btn = document.activeElement as HTMLButtonElement;
+                                            if (btn) {
+                                                btn.disabled = false;
+                                                btn.textContent = 'Home';
+                                            }
+                                        }
+                                    }}
+                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
                                 >
                                     Home
                                 </button>
