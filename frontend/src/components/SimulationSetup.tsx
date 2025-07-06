@@ -84,6 +84,47 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
 
     return (
         <>
+            <style jsx global>{`
+                input[type="range"] {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    height: 8px;
+                    border-radius: 4px;
+                }
+                
+                input[type="range"]::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #22c55e;
+                    cursor: pointer;
+                    border: none;
+                }
+                
+                input[type="range"]::-moz-range-thumb {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #22c55e;
+                    cursor: pointer;
+                    border: none;
+                }
+                
+                input[type="range"]:focus {
+                    outline: none;
+                }
+                
+                input[type="range"]:hover::-webkit-slider-thumb {
+                    background: #16a34a;
+                }
+                
+                input[type="range"]:hover::-moz-range-thumb {
+                    background: #16a34a;
+                }
+            `}</style>
+
             <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Ecosystem Simulation Setup</h1>
             <div className="card p-6 mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-4">Configure Simulation</h2>
@@ -93,18 +134,27 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                     validationSchema={SimulationSchema}
                     onSubmit={onStartSimulation}
                 >
-                    {({ isSubmitting }) => (
+                    {({ values, isSubmitting }) => (
                         <Form className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
-                                    <label htmlFor="grid_size" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Grid Size</label>
-                                    <Field
-                                        type="number"
-                                        name="grid_size"
-                                        min={VALIDATION_LIMITS.GRID_SIZE.min}
-                                        max={VALIDATION_LIMITS.GRID_SIZE.max}
-                                        className="input"
-                                    />
+                                    <label htmlFor="grid_size" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Grid Size: <span className="text-gray-500">{values.grid_size}×{values.grid_size}</span>
+                                    </label>
+                                    <div className="flex items-center space-x-2 mt-2">
+                                        <Field
+                                            type="range"
+                                            name="grid_size"
+                                            min={VALIDATION_LIMITS.GRID_SIZE.min}
+                                            max={VALIDATION_LIMITS.GRID_SIZE.max}
+                                            step="1"
+                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>{VALIDATION_LIMITS.GRID_SIZE.min}×{VALIDATION_LIMITS.GRID_SIZE.min}</span>
+                                        <span>{VALIDATION_LIMITS.GRID_SIZE.max}×{VALIDATION_LIMITS.GRID_SIZE.max}</span>
+                                    </div>
                                     <ErrorMessage name="grid_size" component="div" className="text-red-500 text-sm mt-1" />
                                 </div>
 
@@ -338,7 +388,7 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                                 btn.disabled = true;
                                                 btn.textContent = 'Loading...';
                                             }
-                                            
+
                                             // Navigate home
                                             await router.push('/');
                                         } catch (error) {
