@@ -4,29 +4,45 @@
  */
 
 // Grid configuration
-export const GRID_SIZE = 75;  // Size of the square grid (NxN)
+export const DEFAULT_GRID_SIZE = 75;  // Reference grid size for population scaling
+export const GRID_SIZE = DEFAULT_GRID_SIZE;  // Size of the square grid (NxN)
 export const STEPS = 9999;  // Number of simulation iterations
 export const NEIGHBORHOOD_TYPE = "moore";  // Can be "von_neumann" or "moore"
 export const GRID_TYPE = "torus";  // Grid type, typically "torus"
 
+// Default populations
+export const DEFAULT_INITIAL_PREDATORS = 20;  // Default starting number of predators
+export const DEFAULT_INITIAL_PREY = 1000;  // Default starting number of prey
+export const DEFAULT_SUBSTRATE_COVERAGE = 0.3;  // Default substrate coverage (30%)
+
 // Predator parameters
 export const PREDATOR_DEATH_PROBABILITY = 0.1;  // Probability of predator dying
 export const PREDATOR_BIRTH_PROBABILITY = 0.43;  // Chance of predator reproduction
-export const INITIAL_PREDATORS = 20;  // Starting number of predators
+export const INITIAL_PREDATORS = DEFAULT_INITIAL_PREDATORS;  // Starting number of predators
 export const PREDATOR_STARVATION_STEPS = 66;  // Steps until predator dies from starvation
 
 // Prey parameters
 export const PREY_HUNTED_PROBABILITY = 0.3;  // Probability that a prey is hunted
 export const PREY_RANDOM_DEATH = 0.1;  // Probability of prey dying randomly
-export const INITIAL_PREY = 1000;  // Starting number of prey
+export const INITIAL_PREY = DEFAULT_INITIAL_PREY;  // Starting number of prey
 export const PREY_BIRTH_PROBABILITY = 0.64;  // Probability of prey reproduction
 export const PREY_STARVATION_STEPS = 3;  // Steps until prey dies from starvation
 export const PREY_THREAT_RESPONSE = 0.5;  // Probability of prey staying still when threatened
 
 // Substrate parameters
-export const INITIAL_SUBSTRATE_PROBABILITY = 0.3;  // Probability of substrate formation
+export const INITIAL_SUBSTRATE_PROBABILITY = DEFAULT_SUBSTRATE_COVERAGE;  // Probability of substrate formation
 export const SUBSTRATE_RANDOM_DEATH = 0.1;  // Probability of substrate disappearing
 export const SUBSTRATE_CONSUMPTION_PROB = 0.3;  // Probability of substrate being consumed by prey
+
+// Population scaling functions
+export const calculateScaledPopulation = (defaultPopulation: number, currentGridSize: number): number => {
+    const scaleFactor = (currentGridSize * currentGridSize) / (DEFAULT_GRID_SIZE * DEFAULT_GRID_SIZE);
+    return Math.max(1, Math.floor(defaultPopulation * scaleFactor));
+};
+
+export const calculateMaxPopulation = (gridSize: number): number => {
+    return gridSize * gridSize;
+};
 
 // Entity representation in grid
 export const EMPTY = 0;
@@ -63,7 +79,7 @@ export const LARGE_GRID_THRESHOLD = 200;  // Grids larger than this will use vie
 
 // Form validation limits
 export const VALIDATION_LIMITS = {
-    GRID_SIZE: { min: 10, max: 1000 },
+    GRID_SIZE: { min: 10, max: 100 },  // Updated to match backend limits
     STEPS: { min: 1, max: 10000 },
     INITIAL_PREDATORS: { min: 0, max: 10000 },
     INITIAL_PREY: { min: 0, max: 10000 },
@@ -80,24 +96,30 @@ export const VALIDATION_LIMITS = {
     SUBSTRATE_CONSUMPTION_PROB: { min: 0, max: 1 }
 };
 
-// Default simulation settings
-export const DEFAULT_SIMULATION_SETTINGS = {
-    grid_size: GRID_SIZE,
-    steps: STEPS,
-    initial_prey: INITIAL_PREY,
-    initial_predators: INITIAL_PREDATORS,
-    predator_death_probability: PREDATOR_DEATH_PROBABILITY,
-    predator_birth_probability: PREDATOR_BIRTH_PROBABILITY,
-    predator_starvation_steps: PREDATOR_STARVATION_STEPS,
-    prey_hunted_probability: PREY_HUNTED_PROBABILITY,
-    prey_random_death: PREY_RANDOM_DEATH,
-    prey_birth_probability: PREY_BIRTH_PROBABILITY,
-    prey_starvation_steps: PREY_STARVATION_STEPS,
-    prey_threat_response: PREY_THREAT_RESPONSE,
-    initial_substrate_probability: INITIAL_SUBSTRATE_PROBABILITY,
-    substrate_random_death: SUBSTRATE_RANDOM_DEATH,
-    substrate_consumption_prob: SUBSTRATE_CONSUMPTION_PROB,
-    neighborhood_type: NEIGHBORHOOD_TYPE,
-    grid_type: GRID_TYPE,
-    record_simulation: false
-}; 
+// Default simulation settings with dynamic population scaling
+export const getDefaultSettings = (gridSize: number = DEFAULT_GRID_SIZE) => {
+    const maxPop = calculateMaxPopulation(gridSize);
+    return {
+        grid_size: gridSize,
+        steps: STEPS,
+        initial_prey: Math.min(calculateScaledPopulation(DEFAULT_INITIAL_PREY, gridSize), maxPop * 0.5),
+        initial_predators: Math.min(calculateScaledPopulation(DEFAULT_INITIAL_PREDATORS, gridSize), maxPop * 0.1),
+        predator_death_probability: PREDATOR_DEATH_PROBABILITY,
+        predator_birth_probability: PREDATOR_BIRTH_PROBABILITY,
+        predator_starvation_steps: PREDATOR_STARVATION_STEPS,
+        prey_hunted_probability: PREY_HUNTED_PROBABILITY,
+        prey_random_death: PREY_RANDOM_DEATH,
+        prey_birth_probability: PREY_BIRTH_PROBABILITY,
+        prey_starvation_steps: PREY_STARVATION_STEPS,
+        prey_threat_response: PREY_THREAT_RESPONSE,
+        initial_substrate_probability: INITIAL_SUBSTRATE_PROBABILITY,
+        substrate_random_death: SUBSTRATE_RANDOM_DEATH,
+        substrate_consumption_prob: SUBSTRATE_CONSUMPTION_PROB,
+        neighborhood_type: NEIGHBORHOOD_TYPE,
+        grid_type: GRID_TYPE,
+        record_simulation: false
+    };
+};
+
+// Replace static DEFAULT_SIMULATION_SETTINGS with dynamic version
+export const DEFAULT_SIMULATION_SETTINGS = getDefaultSettings(); 
