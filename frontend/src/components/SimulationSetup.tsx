@@ -8,7 +8,11 @@ import {
     getDefaultSettings,
     calculateScaledPopulation,
     calculateMaxPopulation,
-    DEFAULT_GRID_SIZE
+    DEFAULT_GRID_SIZE,
+    stepsToSliderValue,
+    sliderValueToSteps,
+    MIN_STEPS,
+    MAX_STEPS
 } from '../constants';
 import { SimulationParams } from '../types';
 
@@ -86,6 +90,13 @@ const SimulationSchema = Yup.object().shape({
 export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulation }) => {
     const router = useRouter();
 
+    // Helper function to format large numbers
+    const formatNumber = (num: number): string => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+        return num.toString();
+    };
+
     return (
         <>
             <style jsx global>{`
@@ -127,6 +138,27 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                 input[type="range"]:hover::-moz-range-thumb {
                     background: #16a34a;
                 }
+
+                /* Add styles for steps slider */
+                .steps-slider {
+                    background: linear-gradient(to right, #1f2937 0%, #4b5563 50%, #6b7280 100%);
+                }
+                
+                .steps-slider::-webkit-slider-thumb {
+                    background: #4f46e5 !important;
+                }
+                
+                .steps-slider::-moz-range-thumb {
+                    background: #4f46e5 !important;
+                }
+                
+                .steps-slider:hover::-webkit-slider-thumb {
+                    background: #4338ca !important;
+                }
+                
+                .steps-slider:hover::-moz-range-thumb {
+                    background: #4338ca !important;
+                }
             `}</style>
 
             <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Ecosystem Simulation Setup</h1>
@@ -150,6 +182,13 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                             // Update populations
                             setFieldValue('initial_predators', newSettings.initial_predators);
                             setFieldValue('initial_prey', newSettings.initial_prey);
+                        };
+
+                        // Handle steps slider change
+                        const handleStepsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = parseFloat(e.target.value);
+                            const newSteps = sliderValueToSteps(value);
+                            setFieldValue('steps', newSteps);
                         };
 
                         return (
@@ -181,14 +220,28 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                     </div>
 
                                     <div>
-                                        <label htmlFor="steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Steps</label>
-                                        <Field
-                                            type="number"
-                                            name="steps"
-                                            min={VALIDATION_LIMITS.STEPS.min}
-                                            max={VALIDATION_LIMITS.STEPS.max}
-                                            className="input"
-                                        />
+                                        <label htmlFor="steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Steps: <span className="text-gray-500">{formatNumber(values.steps)}</span>
+                                        </label>
+                                        <div className="flex items-center space-x-2 mt-2">
+                                            <Field
+                                                type="range"
+                                                name="steps"
+                                                min={1}  // 10^1
+                                                max={6}  // 10^6
+                                                step="0.1"
+                                                value={stepsToSliderValue(values.steps)}
+                                                onChange={handleStepsChange}
+                                                className="steps-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                            />
+                                        </div>
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>{formatNumber(MIN_STEPS)}</span>
+                                            <span>{formatNumber(MAX_STEPS)}</span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Logarithmic scale (10¹ - 10⁶)
+                                        </div>
                                         <ErrorMessage name="steps" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 

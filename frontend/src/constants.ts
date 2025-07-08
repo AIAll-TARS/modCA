@@ -10,6 +10,20 @@ export const STEPS = 9999;  // Number of simulation iterations
 export const NEIGHBORHOOD_TYPE = "moore";  // Can be "von_neumann" or "moore"
 export const GRID_TYPE = "torus";  // Grid type, typically "torus"
 
+// Steps configuration
+export const MIN_STEPS = 10;  // 10^1
+export const MAX_STEPS = 1000000;  // 10^6
+export const DEFAULT_STEPS = 9999;
+
+// Helper functions for logarithmic steps scaling
+export const stepsToSliderValue = (steps: number): number => {
+    return Math.log10(steps);
+};
+
+export const sliderValueToSteps = (value: number): number => {
+    return Math.floor(Math.pow(10, value));
+};
+
 // Default populations
 export const DEFAULT_INITIAL_PREDATORS = 20;  // Default starting number of predators
 export const DEFAULT_INITIAL_PREY = 1000;  // Default starting number of prey
@@ -80,7 +94,7 @@ export const LARGE_GRID_THRESHOLD = 200;  // Grids larger than this will use vie
 // Form validation limits
 export const VALIDATION_LIMITS = {
     GRID_SIZE: { min: 10, max: 100 },  // Updated to match backend limits
-    STEPS: { min: 1, max: 10000 },
+    STEPS: { min: MIN_STEPS, max: MAX_STEPS },
     INITIAL_PREDATORS: { min: 0, max: 10000 },
     INITIAL_PREY: { min: 0, max: 10000 },
     PREDATOR_DEATH_PROBABILITY: { min: 0, max: 1 },
@@ -101,7 +115,7 @@ export const getDefaultSettings = (gridSize: number = DEFAULT_GRID_SIZE) => {
     const maxPop = calculateMaxPopulation(gridSize);
     return {
         grid_size: gridSize,
-        steps: STEPS,
+        steps: DEFAULT_STEPS,
         initial_prey: Math.min(calculateScaledPopulation(DEFAULT_INITIAL_PREY, gridSize), maxPop * 0.5),
         initial_predators: Math.min(calculateScaledPopulation(DEFAULT_INITIAL_PREDATORS, gridSize), maxPop * 0.1),
         predator_death_probability: PREDATOR_DEATH_PROBABILITY,
