@@ -159,6 +159,52 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                 .steps-slider:hover::-moz-range-thumb {
                     background: #4338ca !important;
                 }
+
+                /* Radio toggle styles */
+                .radio-toggle {
+                    display: inline-flex;
+                    position: relative;
+                    padding: 4px;
+                    background: #1f2937;
+                    border-radius: 8px;
+                    gap: 4px;
+                }
+
+                .radio-toggle label {
+                    position: relative;
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    border-radius: 6px;
+                    font-size: 0.875rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    color: #9ca3af;
+                    transition: all 0.2s;
+                }
+
+                .radio-toggle input[type="radio"] {
+                    position: absolute;
+                    opacity: 0;
+                    width: 0;
+                    height: 0;
+                }
+
+                .radio-toggle input[type="radio"]:checked + label {
+                    background: #374151;
+                    color: white;
+                }
+
+                .radio-toggle .dot {
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background: currentColor;
+                }
+
+                .radio-toggle label:hover {
+                    color: #d1d5db;
+                }
             `}</style>
 
             <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Ecosystem Simulation Setup</h1>
@@ -246,15 +292,23 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                     </div>
 
                                     <div>
-                                        <label htmlFor="neighborhood_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Neighborhood Type</label>
-                                        <Field
-                                            as="select"
-                                            name="neighborhood_type"
-                                            className="input"
-                                        >
-                                            <option value="von_neumann">Von Neumann (4 cells)</option>
-                                            <option value="moore">Moore (8 cells)</option>
-                                        </Field>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Neighborhood Type</label>
+                                        <div className="radio-toggle">
+                                            <Field type="radio" name="neighborhood_type" value="von_neumann" id="von_neumann" />
+                                            <label htmlFor="von_neumann">
+                                                <span className="dot"></span>
+                                                Von Neumann (4)
+                                            </label>
+
+                                            <Field type="radio" name="neighborhood_type" value="moore" id="moore" />
+                                            <label htmlFor="moore">
+                                                <span className="dot"></span>
+                                                Moore (8)
+                                            </label>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Select the number of neighboring cells to consider
+                                        </div>
                                         <ErrorMessage name="neighborhood_type" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
