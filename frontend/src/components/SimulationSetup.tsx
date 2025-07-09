@@ -218,6 +218,42 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                 .radio-toggle label:hover {
                     color: #d1d5db;
                 }
+
+                /* Probability slider styles */
+                input[type="range"].probability-slider {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    height: 8px;
+                    border-radius: 4px;
+                }
+                
+                input[type="range"].probability-slider::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #22c55e !important;
+                    cursor: pointer;
+                    border: none;
+                }
+                
+                input[type="range"].probability-slider::-moz-range-thumb {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #22c55e !important;
+                    cursor: pointer;
+                    border: none;
+                }
+                
+                input[type="range"].probability-slider:hover::-webkit-slider-thumb {
+                    background: #16a34a !important;
+                }
+                
+                input[type="range"].probability-slider:hover::-moz-range-thumb {
+                    background: #16a34a !important;
+                }
             `}</style>
 
             <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Ecosystem Simulation Setup</h1>
@@ -360,8 +396,11 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                         <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Predator Parameters</h3>
                                     </div>
 
+                                    {/* Predator Counts Row */}
                                     <div>
-                                        <label htmlFor="initial_predators" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Predators</label>
+                                        <label htmlFor="initial_predators" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Initial Predators: <span className="text-gray-500">{values.initial_predators}</span>
+                                        </label>
                                         <Field
                                             type="number"
                                             name="initial_predators"
@@ -373,33 +412,9 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                     </div>
 
                                     <div>
-                                        <label htmlFor="predator_death_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Death Probability</label>
-                                        <Field
-                                            type="number"
-                                            name="predator_death_probability"
-                                            step="0.01"
-                                            min={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}
-                                            max={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max}
-                                            className="input"
-                                        />
-                                        <ErrorMessage name="predator_death_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="predator_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
-                                        <Field
-                                            type="number"
-                                            name="predator_birth_probability"
-                                            step="0.01"
-                                            min={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min}
-                                            max={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max}
-                                            className="input"
-                                        />
-                                        <ErrorMessage name="predator_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="predator_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
+                                        <label htmlFor="predator_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Starvation Steps: <span className="text-gray-500">{values.predator_starvation_steps}</span>
+                                        </label>
                                         <Field
                                             type="number"
                                             name="predator_starvation_steps"
@@ -407,9 +422,54 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                             max={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.max}
                                             className="input"
                                         />
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a predator can survive without food</div>
+                                        <div className="text-xs text-gray-500 mt-1">Steps a predator can survive without food</div>
                                         <ErrorMessage name="predator_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
+
+                                    {/* Empty div to maintain grid layout */}
+                                    <div></div>
+
+                                    {/* Predator Probabilities Row */}
+                                    <div>
+                                        <label htmlFor="predator_death_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Death Probability: <span className="text-gray-500">{values.predator_death_probability.toFixed(2)}</span>
+                                        </label>
+                                        <Field
+                                            type="range"
+                                            name="predator_death_probability"
+                                            min={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}
+                                            max={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max}
+                                            step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <ErrorMessage name="predator_death_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="predator_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Birth Probability: <span className="text-gray-500">{values.predator_birth_probability.toFixed(2)}</span>
+                                        </label>
+                                        <Field
+                                            type="range"
+                                            name="predator_birth_probability"
+                                            min={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min}
+                                            max={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max}
+                                            step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <ErrorMessage name="predator_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                    </div>
+
+                                    {/* Empty div to maintain grid layout */}
+                                    <div></div>
 
                                     <div className="col-span-3 border-t pt-4 mt-2">
                                         <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Prey Parameters</h3>
