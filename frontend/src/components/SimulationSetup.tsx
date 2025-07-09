@@ -144,20 +144,33 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                     background: linear-gradient(to right, #1f2937 0%, #4b5563 50%, #6b7280 100%);
                 }
                 
+                /* Update steps slider thumb color to match grid size */
                 .steps-slider::-webkit-slider-thumb {
-                    background: #4f46e5 !important;
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #22c55e !important;
+                    cursor: pointer;
+                    border: none;
                 }
                 
                 .steps-slider::-moz-range-thumb {
-                    background: #4f46e5 !important;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #22c55e !important;
+                    cursor: pointer;
+                    border: none;
                 }
                 
                 .steps-slider:hover::-webkit-slider-thumb {
-                    background: #4338ca !important;
+                    background: #16a34a !important;
                 }
                 
                 .steps-slider:hover::-moz-range-thumb {
-                    background: #4338ca !important;
+                    background: #16a34a !important;
                 }
 
                 /* Radio toggle styles */
@@ -240,6 +253,7 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                         return (
                             <Form className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {/* Grid Size */}
                                     <div>
                                         <label htmlFor="grid_size" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Grid Size: <span className="text-gray-500">{values.grid_size}×{values.grid_size}</span>
@@ -265,6 +279,7 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                         <ErrorMessage name="grid_size" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
+                                    {/* Steps */}
                                     <div>
                                         <label htmlFor="steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Steps: <span className="text-gray-500">{formatNumber(values.steps)}</span>
@@ -291,6 +306,32 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                         <ErrorMessage name="steps" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
+                                    {/* Empty div to push grid settings to next row */}
+                                    <div></div>
+
+                                    {/* Grid Type */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Grid Type</label>
+                                        <div className="radio-toggle">
+                                            <Field type="radio" name="grid_type" value="finite" id="finite" />
+                                            <label htmlFor="finite">
+                                                <span className="dot"></span>
+                                                Finite
+                                            </label>
+
+                                            <Field type="radio" name="grid_type" value="torus" id="torus" />
+                                            <label htmlFor="torus">
+                                                <span className="dot"></span>
+                                                Torus
+                                            </label>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Finite has borders, Torus wraps around edges
+                                        </div>
+                                        <ErrorMessage name="grid_type" component="div" className="text-red-500 text-sm mt-1" />
+                                    </div>
+
+                                    {/* Neighborhood Type */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Neighborhood Type</label>
                                         <div className="radio-toggle">
@@ -312,26 +353,8 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                         <ErrorMessage name="neighborhood_type" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Grid Type</label>
-                                        <div className="radio-toggle">
-                                            <Field type="radio" name="grid_type" value="finite" id="finite" />
-                                            <label htmlFor="finite">
-                                                <span className="dot"></span>
-                                                Finite
-                                            </label>
-
-                                            <Field type="radio" name="grid_type" value="torus" id="torus" />
-                                            <label htmlFor="torus">
-                                                <span className="dot"></span>
-                                                Torus
-                                            </label>
-                                        </div>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            Finite has borders, Torus wraps around edges
-                                        </div>
-                                        <ErrorMessage name="grid_type" component="div" className="text-red-500 text-sm mt-1" />
-                                    </div>
+                                    {/* Empty div to maintain grid layout */}
+                                    <div></div>
 
                                     <div className="col-span-3 border-t pt-4 mt-2">
                                         <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Predator Parameters</h3>
