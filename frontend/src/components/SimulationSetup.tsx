@@ -475,8 +475,11 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                         <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Prey Parameters</h3>
                                     </div>
 
+                                    {/* Prey Counts Row */}
                                     <div>
-                                        <label htmlFor="initial_prey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Prey</label>
+                                        <label htmlFor="initial_prey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Initial Prey: <span className="text-gray-500">{values.initial_prey}</span>
+                                        </label>
                                         <Field
                                             type="number"
                                             name="initial_prey"
@@ -488,46 +491,9 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                     </div>
 
                                     <div>
-                                        <label htmlFor="prey_hunted_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hunted Probability</label>
-                                        <Field
-                                            type="number"
-                                            name="prey_hunted_probability"
-                                            step="0.01"
-                                            min={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min}
-                                            max={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max}
-                                            className="input"
-                                        />
-                                        <ErrorMessage name="prey_hunted_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="prey_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
-                                        <Field
-                                            type="number"
-                                            name="prey_random_death"
-                                            step="0.01"
-                                            min={VALIDATION_LIMITS.PREY_RANDOM_DEATH.min}
-                                            max={VALIDATION_LIMITS.PREY_RANDOM_DEATH.max}
-                                            className="input"
-                                        />
-                                        <ErrorMessage name="prey_random_death" component="div" className="text-red-500 text-sm mt-1" />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="prey_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
-                                        <Field
-                                            type="number"
-                                            name="prey_birth_probability"
-                                            step="0.01"
-                                            min={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min}
-                                            max={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max}
-                                            className="input"
-                                        />
-                                        <ErrorMessage name="prey_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="prey_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
+                                        <label htmlFor="prey_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Starvation Steps: <span className="text-gray-500">{values.prey_starvation_steps}</span>
+                                        </label>
                                         <Field
                                             type="number"
                                             name="prey_starvation_steps"
@@ -535,23 +501,97 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                             max={VALIDATION_LIMITS.PREY_STARVATION_STEPS.max}
                                             className="input"
                                         />
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a prey can survive without substrate</div>
+                                        <div className="text-xs text-gray-500 mt-1">Steps a prey can survive without substrate</div>
                                         <ErrorMessage name="prey_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
+                                    {/* Empty div to maintain grid layout */}
+                                    <div></div>
+
+                                    {/* Prey Death/Birth Probabilities Row */}
                                     <div>
-                                        <label htmlFor="prey_threat_response" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Threat Response</label>
+                                        <label htmlFor="prey_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Random Death: <span className="text-gray-500">{values.prey_random_death.toFixed(2)}</span>
+                                        </label>
                                         <Field
-                                            type="number"
-                                            name="prey_threat_response"
+                                            type="range"
+                                            name="prey_random_death"
+                                            min={VALIDATION_LIMITS.PREY_RANDOM_DEATH.min}
+                                            max={VALIDATION_LIMITS.PREY_RANDOM_DEATH.max}
                                             step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <ErrorMessage name="prey_random_death" component="div" className="text-red-500 text-sm mt-1" />
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="prey_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Birth Probability: <span className="text-gray-500">{values.prey_birth_probability.toFixed(2)}</span>
+                                        </label>
+                                        <Field
+                                            type="range"
+                                            name="prey_birth_probability"
+                                            min={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min}
+                                            max={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max}
+                                            step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <ErrorMessage name="prey_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                    </div>
+
+                                    {/* Empty div to maintain grid layout */}
+                                    <div></div>
+
+                                    {/* Prey Behavior Probabilities Row */}
+                                    <div>
+                                        <label htmlFor="prey_threat_response" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Threat Response: <span className="text-gray-500">{values.prey_threat_response.toFixed(2)}</span>
+                                        </label>
+                                        <Field
+                                            type="range"
+                                            name="prey_threat_response"
                                             min={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.min}
                                             max={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.max}
-                                            className="input"
+                                            step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                                         />
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Probability of staying still when threatened</div>
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">Probability of staying still when threatened</div>
                                         <ErrorMessage name="prey_threat_response" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
+
+                                    <div>
+                                        <label htmlFor="prey_hunted_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Hunted Probability: <span className="text-gray-500">{values.prey_hunted_probability.toFixed(2)}</span>
+                                        </label>
+                                        <Field
+                                            type="range"
+                                            name="prey_hunted_probability"
+                                            min={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min}
+                                            max={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max}
+                                            step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <ErrorMessage name="prey_hunted_probability" component="div" className="text-red-500 text-sm mt-1" />
+                                    </div>
+
+                                    {/* Empty div to maintain grid layout */}
+                                    <div></div>
 
                                     <div className="col-span-3 border-t pt-4 mt-2">
                                         <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Substrate Parameters</h3>
