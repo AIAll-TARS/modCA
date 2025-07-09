@@ -598,41 +598,62 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                     </div>
 
                                     <div>
-                                        <label htmlFor="initial_substrate_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Probability</label>
+                                        <label htmlFor="initial_substrate_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Initial Coverage: <span className="text-gray-500">{values.initial_substrate_probability.toFixed(2)}</span>
+                                        </label>
                                         <Field
-                                            type="number"
+                                            type="range"
                                             name="initial_substrate_probability"
-                                            step="0.01"
                                             min={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min}
                                             max={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max}
-                                            className="input"
+                                            step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                                         />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">Initial substrate coverage probability</div>
                                         <ErrorMessage name="initial_substrate_probability" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
                                     <div>
-                                        <label htmlFor="substrate_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
+                                        <label htmlFor="substrate_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Random Death: <span className="text-gray-500">{values.substrate_random_death.toFixed(2)}</span>
+                                        </label>
                                         <Field
-                                            type="number"
+                                            type="range"
                                             name="substrate_random_death"
-                                            step="0.01"
                                             min={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min}
                                             max={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max}
-                                            className="input"
+                                            step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                                         />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">Probability of substrate disappearing</div>
                                         <ErrorMessage name="substrate_random_death" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
                                     <div>
-                                        <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Consumption Probability</label>
+                                        <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Consumption: <span className="text-gray-500">{values.substrate_consumption_prob.toFixed(2)}</span>
+                                        </label>
                                         <Field
-                                            type="number"
+                                            type="range"
                                             name="substrate_consumption_prob"
-                                            step="0.01"
                                             min={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}
                                             max={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}
-                                            className="input"
+                                            step="0.01"
+                                            className="probability-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                                         />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>0</span>
+                                            <span>1</span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">Probability of being consumed by prey</div>
                                         <ErrorMessage name="substrate_consumption_prob" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
                                 </div>
