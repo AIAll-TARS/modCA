@@ -313,15 +313,23 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                     </div>
 
                                     <div>
-                                        <label htmlFor="grid_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Grid Type</label>
-                                        <Field
-                                            as="select"
-                                            name="grid_type"
-                                            className="input"
-                                        >
-                                            <option value="finite">Finite</option>
-                                            <option value="torus">Torus</option>
-                                        </Field>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Grid Type</label>
+                                        <div className="radio-toggle">
+                                            <Field type="radio" name="grid_type" value="finite" id="finite" />
+                                            <label htmlFor="finite">
+                                                <span className="dot"></span>
+                                                Finite
+                                            </label>
+
+                                            <Field type="radio" name="grid_type" value="torus" id="torus" />
+                                            <label htmlFor="torus">
+                                                <span className="dot"></span>
+                                                Torus
+                                            </label>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Finite has borders, Torus wraps around edges
+                                        </div>
                                         <ErrorMessage name="grid_type" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
