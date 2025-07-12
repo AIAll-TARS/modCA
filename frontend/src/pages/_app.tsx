@@ -4,6 +4,8 @@ import Head from 'next/head';
 import { fetchConstants } from '../api/constants';
 import { updateConstants } from '../constants';
 import '../styles/globals.css';
+import { ToastProvider } from '../components/Toast';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 export default function App({ Component, pageProps }: AppProps) {
     const [darkMode, setDarkMode] = useState(true); // Default to dark mode
@@ -38,33 +40,15 @@ export default function App({ Component, pageProps }: AppProps) {
     };
 
     return (
-        <>
-            <Head>
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-                <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-                <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-                <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-                <meta name="theme-color" content="#ffffff" />
-            </Head>
-            <div className="fixed top-4 right-4 z-50">
-                <button
-                    onClick={toggleDarkMode}
-                    className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                    aria-label="Toggle dark mode"
-                >
-                    {darkMode ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                    )}
-                </button>
-            </div>
-            <Component {...pageProps} />
-        </>
+        <ErrorBoundary>
+            <ToastProvider>
+                <Head>
+                    <title>ModCA Web</title>
+                    <meta name="description" content="ModCA Web - Ecosystem Simulation" />
+                    <link rel="icon" href="/favicon.ico" />
+                </Head>
+                <Component {...pageProps} />
+            </ToastProvider>
+        </ErrorBoundary>
     );
 } 

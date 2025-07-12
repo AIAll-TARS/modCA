@@ -25,6 +25,86 @@
 - **SSL/HTTPS**: ✅ Working via Cloudflare + Let's Encrypt
 - **Container Health**: ✅ All containers running and healthy
 
+## 0. Development and Deployment Workflow
+
+### 0.1 Quick Reference Guide
+
+1. **Local Development**
+   ```bash
+   # Make changes locally
+   # Test frontend-only changes
+   git checkout dev
+   git add .
+   git commit -m "your message"
+   git push origin dev
+   ```
+
+2. **VPS Backend Testing**
+   ```bash
+   # SSH into VPS
+   ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66
+   
+   # Update and restart
+   cd ~/modca_7web
+   git checkout dev
+   git pull origin dev
+   docker-compose down
+   docker-compose up -d --build
+   
+   # Test endpoints
+   curl https://ws.janis7ewski.org/api/your-endpoint
+   ```
+
+3. **Frontend Testing Against VPS**
+   ```bash
+   cd frontend
+   NEXT_PUBLIC_API_URL=https://ws.janis7ewski.org/api NEXT_PUBLIC_WS_URL=wss://ws.janis7ewski.org/ws npm run dev
+   ```
+
+4. **Production Deployment**
+   ```bash
+   git checkout prod
+   git merge dev
+   git push origin prod  # This triggers Vercel frontend deployment
+   ```
+
+### 0.2 Key Architecture Points
+
+- **Backend**: 
+  - Runs on VPS (135.181.111.66)
+  - Docker containers managed via docker-compose
+  - All configuration and constants should be defined here
+  - Serves both API and WebSocket endpoints
+
+- **Frontend**:
+  - Deployed via Vercel from prod branch
+  - Can be tested locally against VPS backend
+  - Gets configuration from backend constants endpoint
+
+### 0.3 Best Practices
+
+1. **Branch Usage**:
+   - `dev`: Development and testing
+   - `prod`: Production deployment
+   - Always test on dev before merging to prod
+
+2. **Configuration Management**:
+   - Keep all constants in backend
+   - Frontend should fetch constants from backend
+   - Use environment variables for deployment-specific settings
+
+3. **Testing Process**:
+   - Test frontend changes locally first
+   - Test backend changes on VPS using dev branch
+   - Verify all endpoints and WebSocket connections
+   - Only merge to prod after successful testing
+
+4. **Deployment Safety**:
+   - Always backup VPS data before major changes
+   - Keep track of working configurations
+   - Monitor logs after deployment
+   - Have rollback plan ready
+
 ## 0. Git Repository Structure and Workflow
 
 ## 0.1 Branching Model

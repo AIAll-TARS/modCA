@@ -4,17 +4,19 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import {
     VALIDATION_LIMITS,
-    DEFAULT_SIMULATION_SETTINGS,
     getDefaultSettings,
     calculateScaledPopulation,
     calculateMaxPopulation,
-    DEFAULT_GRID_SIZE,
     stepsToSliderValue,
     sliderValueToSteps,
     MIN_STEPS,
     MAX_STEPS
 } from '../constants';
 import { SimulationParams } from '../types';
+import { useConstants } from '../hooks/useConstants';
+import { LoadingSpinner } from './LoadingSpinner';
+import { useToast } from './Toast';
+import { ErrorBoundary } from './ErrorBoundary';
 
 interface SimulationSetupProps {
     onStartSimulation: (values: SimulationParams) => void;
@@ -89,6 +91,9 @@ const SimulationSchema = Yup.object().shape({
 
 export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulation }) => {
     const router = useRouter();
+    const { constants, loading, error, resetConstants } = useConstants();
+    const { showToast } = useToast();
+    const formikRef = React.useRef<any>(null);
 
     // Helper function to format large numbers
     const formatNumber = (num: number): string => {
@@ -97,9 +102,93 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
         return num.toString();
     };
 
+    // Load saved settings from localStorage on component mount
+    React.useEffect(() => {
+        const savedSettings = localStorage.getItem('simulationSettings');
+        if (savedSettings && formikRef.current) {
+            try {
+                const parsedSettings = JSON.parse(savedSettings);
+                formikRef.current.setValues(parsedSettings);
+            } catch (error) {
+                console.error('Error loading saved settings:', error);
+                showToast('Failed to load saved settings', 'error');
+            }
+        }
+    }, [showToast]);
+
+    // Handle reset to defaults
+    const handleReset = async () => {
+        try {
+            // Fetch fresh constants from backend
+            await resetConstants();
+            // Reset form to default values if constants are available
+            if (formikRef.current && constants) {
+                const defaultSettings = getDefaultSettings(constants);
+                formikRef.current.setValues(defaultSettings);
+                // Clear localStorage
+                localStorage.removeItem('simulationSettings');
+                showToast('Settings reset to defaults', 'success');
+            }
+        } catch (error) {
+            console.error('Error resetting to defaults:', error);
+            showToast('Failed to reset settings', 'error');
+        }
+    };
+
+    // Show loading state
+    if (loading) {
+        return <LoadingSpinner message="Loading simulation settings..." />;
+    }
+
+    // Show error state
+    if (error || !constants) {
+        return (
+            <div className="flex items-center justify-center min-h-[200px]">
+                <div className="text-center">
+                    <p className="text-red-500 mb-4">Failed to load simulation settings</p>
+                    <button
+                        onClick={() => {
+                            resetConstants();
+                            showToast('Retrying to load settings...', 'info');
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <>
-            <style jsx global>{`
+        <ErrorBoundary>
+            <div className="space-y-6">
+                <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">
+                    Ecosystem Simulation Setup
+                </h1>
+                <div className="card p-6 mb-8">
+                    <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-4">
+                        Configure Simulation
+                    </h2>
+
+                    <Formik
+                        innerRef={formikRef}
+                        initialValues={getDefaultSettings(constants)}
+                        validationSchema={SimulationSchema}
+                        onSubmit={(values, { setSubmitting }) => {
+                            try {
+                                onStartSimulation(values);
+                            } catch (error) {
+                                console.error('Error starting simulation:', error);
+                                showToast('Failed to start simulation', 'error');
+                            } finally {
+                                setSubmitting(false);
+                            }
+                        }}
+                    >
+                        {({ values, setFieldValue, isSubmitting }) => (
+                            <Form className="space-y-6">
+                                <style jsx global>{`
                 input[type="range"] {
                     -webkit-appearance: none;
                     appearance: none;
@@ -256,38 +345,6 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                 }
             `}</style>
 
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Ecosystem Simulation Setup</h1>
-            <div className="card p-6 mb-8">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-4">Configure Simulation</h2>
-
-                <Formik
-                    initialValues={DEFAULT_SIMULATION_SETTINGS}
-                    validationSchema={SimulationSchema}
-                    onSubmit={onStartSimulation}
-                >
-                    {({ values, setFieldValue, isSubmitting }) => {
-                        // Handle grid size changes
-                        const handleGridSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                            const newSize = parseInt(e.target.value);
-                            const newSettings = getDefaultSettings(newSize);
-
-                            // Update grid size
-                            setFieldValue('grid_size', newSize);
-
-                            // Update populations
-                            setFieldValue('initial_predators', newSettings.initial_predators);
-                            setFieldValue('initial_prey', newSettings.initial_prey);
-                        };
-
-                        // Handle steps slider change
-                        const handleStepsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                            const value = parseFloat(e.target.value);
-                            const newSteps = sliderValueToSteps(value);
-                            setFieldValue('steps', newSteps);
-                        };
-
-                        return (
-                            <Form className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {/* Grid Size */}
                                     <div>
@@ -302,7 +359,13 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                                 max={VALIDATION_LIMITS.GRID_SIZE.max}
                                                 step="1"
                                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                                                onChange={handleGridSizeChange}
+                                                onChange={(e) => {
+                                                    const newSize = parseInt(e.target.value);
+                                                    const newSettings = getDefaultSettings(newSize);
+                                                    setFieldValue('grid_size', newSize);
+                                                    setFieldValue('initial_predators', newSettings.initial_predators);
+                                                    setFieldValue('initial_prey', newSettings.initial_prey);
+                                                }}
                                             />
                                         </div>
                                         <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -328,7 +391,11 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                                 max={6}  // 10^6
                                                 step="0.1"
                                                 value={stepsToSliderValue(values.steps)}
-                                                onChange={handleStepsChange}
+                                                onChange={(e) => {
+                                                    const value = parseFloat(e.target.value);
+                                                    const newSteps = sliderValueToSteps(value);
+                                                    setFieldValue('steps', newSteps);
+                                                }}
                                                 className="steps-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                                             />
                                         </div>
@@ -663,22 +730,10 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                         type="button"
                                         onClick={async () => {
                                             try {
-                                                // Set loading state
-                                                const btn = document.activeElement as HTMLButtonElement;
-                                                if (btn) {
-                                                    btn.disabled = true;
-                                                    btn.textContent = 'Loading...';
-                                                }
-
-                                                // Navigate home
                                                 await router.push('/');
                                             } catch (error) {
                                                 console.error('Navigation error:', error);
-                                                const btn = document.activeElement as HTMLButtonElement;
-                                                if (btn) {
-                                                    btn.disabled = false;
-                                                    btn.textContent = 'Home';
-                                                }
+                                                showToast('Failed to navigate home', 'error');
                                             }
                                         }}
                                         className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
@@ -687,9 +742,7 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            window.location.reload();
-                                        }}
+                                        onClick={handleReset}
                                         className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
                                     >
                                         Reset to Defaults
@@ -703,10 +756,10 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                     </button>
                                 </div>
                             </Form>
-                        );
-                    }}
-                </Formik>
+                        )}
+                    </Formik>
+                </div>
             </div>
-        </>
+        </ErrorBoundary>
     );
 }; 

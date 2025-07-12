@@ -18,6 +18,7 @@ from .constants import (
     PREY_STARVATION_STEPS, PREY_THREAT_RESPONSE,
     INITIAL_SUBSTRATE_PROBABILITY, SUBSTRATE_RANDOM_DEATH, SUBSTRATE_CONSUMPTION_PROB
 )
+from .db_handler import DatabaseHandler
 from typing import Optional, Dict, Any
 
 # Set up logging
