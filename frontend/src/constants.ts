@@ -11,12 +11,32 @@ export const VALIDATION_LIMITS = {
     PREDATOR_STARVATION_STEPS: { min: 1, max: 100 },
     PREY_HUNTED_PROBABILITY: { min: 0, max: 1 },
     PREY_RANDOM_DEATH: { min: 0, max: 1 },
+    PREY_BIRTH_PROBABILITY: { min: 0, max: 1 },
     PREY_STARVATION_STEPS: { min: 1, max: 100 },
     PREY_THREAT_RESPONSE: { min: 0, max: 1 },
     INITIAL_SUBSTRATE_PROBABILITY: { min: 0, max: 1 },
     SUBSTRATE_RANDOM_DEATH: { min: 0, max: 1 },
     SUBSTRATE_CONSUMPTION_PROB: { min: 0, max: 1 }
 };
+
+// Default values (used by components before constants are loaded)
+export const GRID_SIZE = 75;
+export const STEPS = 9999;
+export const NEIGHBORHOOD_TYPE = "moore";
+export const GRID_TYPE = "finite";
+export const PREDATOR_DEATH_PROBABILITY = 0.1;
+export const PREDATOR_BIRTH_PROBABILITY = 0.43;
+export const INITIAL_PREDATORS = 20;
+export const PREDATOR_STARVATION_STEPS = 66;
+export const PREY_HUNTED_PROBABILITY = 0.3;
+export const PREY_RANDOM_DEATH = 0.1;
+export const INITIAL_PREY = 1000;
+export const PREY_BIRTH_PROBABILITY = 0.64;
+export const PREY_STARVATION_STEPS = 3;
+export const PREY_THREAT_RESPONSE = 0.5;
+export const INITIAL_SUBSTRATE_PROBABILITY = 0.3;
+export const SUBSTRATE_RANDOM_DEATH = 0.1;
+export const SUBSTRATE_CONSUMPTION_PROB = 0.3;
 
 // Steps slider configuration
 export const MIN_STEPS = VALIDATION_LIMITS.STEPS.min;
@@ -105,23 +125,23 @@ export const CHART_COLORS = {
 // Simulation UI configuration
 export const LARGE_GRID_THRESHOLD = 200;  // Grids larger than this will use viewport rendering
 
-// Replace static DEFAULT_SIMULATION_SETTINGS with dynamic version
+// Default simulation settings (used before constants are loaded)
 export const DEFAULT_SIMULATION_SETTINGS = getDefaultSettings({
-    GRID_SIZE: 75,
-    STEPS: 9999,
-    NEIGHBORHOOD_TYPE: "moore",
-    GRID_TYPE: "finite",
-    PREDATOR_DEATH_PROBABILITY: 0.1,
-    PREDATOR_BIRTH_PROBABILITY: 0.43,
-    INITIAL_PREDATORS: 20,
-    PREDATOR_STARVATION_STEPS: 66,
-    PREY_HUNTED_PROBABILITY: 0.3,
-    PREY_RANDOM_DEATH: 0.1,
-    INITIAL_PREY: 1000,
-    PREY_BIRTH_PROBABILITY: 0.64,
-    PREY_STARVATION_STEPS: 3,
-    PREY_THREAT_RESPONSE: 0.5,
-    INITIAL_SUBSTRATE_PROBABILITY: 0.3,
-    SUBSTRATE_RANDOM_DEATH: 0.1,
-    SUBSTRATE_CONSUMPTION_PROB: 0.3
+    GRID_SIZE,
+    STEPS,
+    NEIGHBORHOOD_TYPE,
+    GRID_TYPE,
+    PREDATOR_DEATH_PROBABILITY,
+    PREDATOR_BIRTH_PROBABILITY,
+    INITIAL_PREDATORS,
+    PREDATOR_STARVATION_STEPS,
+    PREY_HUNTED_PROBABILITY,
+    PREY_RANDOM_DEATH,
+    INITIAL_PREY,
+    PREY_BIRTH_PROBABILITY,
+    PREY_STARVATION_STEPS,
+    PREY_THREAT_RESPONSE,
+    INITIAL_SUBSTRATE_PROBABILITY,
+    SUBSTRATE_RANDOM_DEATH,
+    SUBSTRATE_CONSUMPTION_PROB
 }); 

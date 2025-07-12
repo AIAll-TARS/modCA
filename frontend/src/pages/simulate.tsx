@@ -48,7 +48,7 @@ import { fontFamily } from '@/styles/fonts'
 import { getApiUrl, getWsUrl } from '../utils/env'
 import React from 'react';
 import Link from 'next/link';
-import { showNotification } from '../utils/notification';
+import { useToast } from '../components/Toast';
 import { SimulationSetup } from '../components/SimulationSetup';
 import { RunningSimulation } from '../components/RunningSimulation';
 
@@ -138,7 +138,8 @@ const SimulationSchema = Yup.object().shape({
 })
 
 export default function Simulate() {
-    const router = useRouter()
+    const router = useRouter();
+    const { showToast } = useToast();
     const [simulationId, setSimulationId] = useState<string | null>(null)
     const [status, setStatus] = useState<SimulationStatus>('setup')  // Start with setup status
     const [currentStep, setCurrentStep] = useState<number>(0)
@@ -507,7 +508,7 @@ export default function Simulate() {
 
             // Validate grid size
             if (Number(values.grid_size) > 400) {
-                showNotification('Grid size cannot exceed 400x400');
+                showToast('Grid size cannot exceed 400x400', 'error');
                 setStatus('setup')
                 return;
             }
@@ -517,15 +518,16 @@ export default function Simulate() {
             const totalEntities = Number(values.initial_predators) + Number(values.initial_prey);
 
             if (totalEntities > totalCells) {
-                showNotification(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+                showToast(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`, 'error');
                 setStatus('setup')
                 return;
             }
 
             // For large grids, show a non-blocking notification
             if (Number(values.grid_size) >= 200) {
-                showNotification(
-                    `Large grid (${values.grid_size}×${values.grid_size}). Use fullscreen mode for better performance.`
+                showToast(
+                    `Large grid (${values.grid_size}×${values.grid_size}). Use fullscreen mode for better performance.`,
+                    'info'
                 );
             }
 
@@ -754,7 +756,7 @@ export default function Simulate() {
                     console.error('WebSocket connection timeout')
                     ws.close()
                     setStatus('error')
-                    showNotification('Connection issue. Retrying...')
+                    showToast('Connection issue. Retrying...', 'warning')
                     // Try to reconnect
                     setTimeout(() => connectWebSocket(simId), 2000)
                 }
@@ -849,7 +851,7 @@ export default function Simulate() {
                     console.log('Attempting to reconnect WebSocket in 2 seconds...')
                     // Only show notification if we're not already in error state
                     if (status !== 'error') {
-                        showNotification('Connection lost. Reconnecting...')
+                        showToast('Connection lost. Reconnecting...', 'warning')
                     }
                     setTimeout(() => connectWebSocket(simId), 2000)
                 }
@@ -860,13 +862,13 @@ export default function Simulate() {
                 clearTimeout(connectionTimeout)
                 setWsConnected(false)
                 setStatus('error')
-                showNotification('Connection error. Please try refreshing the page.')
+                showToast('Connection error. Please try refreshing the page.', 'error')
             }
 
         } catch (error) {
             console.error('Error creating WebSocket connection:', error)
             setStatus('error')
-            showNotification('Failed to connect to simulation server')
+            showToast('Failed to connect to simulation server', 'error')
             setTimeout(() => connectWebSocket(simId), 2000)
         }
     }
@@ -876,7 +878,7 @@ export default function Simulate() {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.error('WebSocket not connected, cannot send command')
             setStatus('error')
-            showNotification('Connection error. Please try refreshing the page.')
+            showToast('Connection error. Please try refreshing the page.', 'error')
             return false
         }
 
@@ -892,7 +894,7 @@ export default function Simulate() {
         } catch (error) {
             console.error('Error sending WebSocket command:', error)
             setStatus('error')
-            showNotification('Error sending command. Please try again.')
+            showToast('Error sending command. Please try again.', 'error')
             return false
         }
     }
@@ -979,7 +981,7 @@ export default function Simulate() {
 
                         // Wait a bit longer between each retry
                         const retryDelay = 3000 * retryCount;
-                        showNotification(`Connection issue. Retrying in ${retryDelay / 1000} seconds...`)
+                        showToast(`Connection issue. Retrying in ${retryDelay / 1000} seconds...`, 'warning')
                         setTimeout(() => {
                             attemptStep();
                         }, retryDelay);
@@ -1426,14 +1428,14 @@ export default function Simulate() {
     };
 
     const handleSimulationError = (error: any) => {
-        showNotification(`Error: ${error.message || 'Unknown error occurred'}`);
+        showToast(`Error: ${error.message || 'Unknown error occurred'}`, 'error');
     };
 
     const handleWebSocketError = (message: string, error?: any) => {
         if (!error) {
-            showNotification(`${message}: No response from server. Please check if the backend is running.`);
+            showToast(`${message}: No response from server. Please check if the backend is running.`, 'error');
         } else {
-            showNotification(`${message}: ${error.message}`);
+            showToast(`${message}: ${error.message}`, 'error');
         }
     };
 
@@ -1448,23 +1450,23 @@ export default function Simulate() {
     };
 
     const handleConnectionIssues = () => {
-        showNotification('Auto-run stopped due to persistent connection issues. Please try manual stepping or restart the simulation.');
+        showToast('Auto-run stopped due to persistent connection issues. Please try manual stepping or restart the simulation.', 'warning');
     };
 
     const handleRecordingSaved = (recordingId: string) => {
-        showNotification(`Recording saved successfully with ID: ${recordingId}`);
+        showToast(`Recording saved successfully with ID: ${recordingId}`, 'success');
     };
 
     const handleRecordingError = (error: any) => {
         if (error.response?.data?.message) {
-            showNotification(`Error saving recording: ${error.response.data.message}`);
+            showToast(`Error saving recording: ${error.response.data.message}`, 'error');
         } else {
-            showNotification('Failed to save recording. See console for details.');
+            showToast('Failed to save recording. See console for details.', 'error');
         }
     };
 
     const handleSettingsError = (message: string) => {
-        showNotification(message);
+        showToast(message, 'error');
     };
 
     // Render either setup or simulation based on status
