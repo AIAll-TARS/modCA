@@ -11,8 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from .models import SimulationSettings, SimulationResponse
 from .grid import initialize_grid
 from .simulation import Simulation
-from .constants import GRID_SIZE, STEPS, INITIAL_PREY, INITIAL_PREDATORS
-from .db_handler import DatabaseHandler
+from .constants import (
+    GRID_SIZE, STEPS, NEIGHBORHOOD_TYPE, GRID_TYPE,
+    PREDATOR_DEATH_PROBABILITY, PREDATOR_BIRTH_PROBABILITY, INITIAL_PREDATORS, PREDATOR_STARVATION_STEPS,
+    PREY_HUNTED_PROBABILITY, PREY_RANDOM_DEATH, INITIAL_PREY, PREY_BIRTH_PROBABILITY,
+    PREY_STARVATION_STEPS, PREY_THREAT_RESPONSE,
+    INITIAL_SUBSTRATE_PROBABILITY, SUBSTRATE_RANDOM_DEATH, SUBSTRATE_CONSUMPTION_PROB
+)
 from typing import Optional, Dict, Any
 
 # Set up logging
@@ -446,6 +451,29 @@ async def get_latest_settings(user_id: Optional[str] = None, db: DatabaseHandler
     except Exception as e:
         logger.error(f"Error fetching latest settings: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch settings")
+
+@app.get("/api/constants")
+async def get_constants():
+    """Get default simulation constants."""
+    return {
+        "GRID_SIZE": GRID_SIZE,
+        "STEPS": STEPS,
+        "NEIGHBORHOOD_TYPE": NEIGHBORHOOD_TYPE,
+        "GRID_TYPE": GRID_TYPE,
+        "PREDATOR_DEATH_PROBABILITY": PREDATOR_DEATH_PROBABILITY,
+        "PREDATOR_BIRTH_PROBABILITY": PREDATOR_BIRTH_PROBABILITY,
+        "INITIAL_PREDATORS": INITIAL_PREDATORS,
+        "PREDATOR_STARVATION_STEPS": PREDATOR_STARVATION_STEPS,
+        "PREY_HUNTED_PROBABILITY": PREY_HUNTED_PROBABILITY,
+        "PREY_RANDOM_DEATH": PREY_RANDOM_DEATH,
+        "INITIAL_PREY": INITIAL_PREY,
+        "PREY_BIRTH_PROBABILITY": PREY_BIRTH_PROBABILITY,
+        "PREY_STARVATION_STEPS": PREY_STARVATION_STEPS,
+        "PREY_THREAT_RESPONSE": PREY_THREAT_RESPONSE,
+        "INITIAL_SUBSTRATE_PROBABILITY": INITIAL_SUBSTRATE_PROBABILITY,
+        "SUBSTRATE_RANDOM_DEATH": SUBSTRATE_RANDOM_DEATH,
+        "SUBSTRATE_CONSUMPTION_PROB": SUBSTRATE_CONSUMPTION_PROB
+    }
 
 @app.get("/api/health")
 async def health_check():
