@@ -1,19 +1,49 @@
-/**
- * Frontend constants for the modca_o7 web application.
- * This file should maintain consistency with backend/app/constants.py
- */
+import { SimulationConstants } from './api/constants';
 
-// Grid configuration
-export const DEFAULT_GRID_SIZE = 75;  // Reference grid size for population scaling
-export const GRID_SIZE = DEFAULT_GRID_SIZE;  // Size of the square grid (NxN)
-export const STEPS = 9999;  // Number of simulation iterations
-export const NEIGHBORHOOD_TYPE = "moore";  // Can be "von_neumann" or "moore"
-export const GRID_TYPE = "torus";  // Grid type, typically "torus"
+// These will be updated when constants are fetched from backend
+export let GRID_SIZE = 75;
+export let STEPS = 9999;
+export let NEIGHBORHOOD_TYPE = "moore";
+export let GRID_TYPE = "finite";
+export let PREDATOR_DEATH_PROBABILITY = 0.1;
+export let PREDATOR_BIRTH_PROBABILITY = 0.43;
+export let INITIAL_PREDATORS = 20;
+export let PREDATOR_STARVATION_STEPS = 66;
+export let PREY_HUNTED_PROBABILITY = 0.3;
+export let PREY_RANDOM_DEATH = 0.1;
+export let INITIAL_PREY = 1000;
+export let PREY_BIRTH_PROBABILITY = 0.64;
+export let PREY_STARVATION_STEPS = 3;
+export let PREY_THREAT_RESPONSE = 0.5;
+export let INITIAL_SUBSTRATE_PROBABILITY = 0.3;
+export let SUBSTRATE_RANDOM_DEATH = 0.1;
+export let SUBSTRATE_CONSUMPTION_PROB = 0.3;
+
+// Function to update constants from backend
+export function updateConstants(constants: SimulationConstants) {
+    GRID_SIZE = constants.GRID_SIZE;
+    STEPS = constants.STEPS;
+    NEIGHBORHOOD_TYPE = constants.NEIGHBORHOOD_TYPE;
+    GRID_TYPE = constants.GRID_TYPE;
+    PREDATOR_DEATH_PROBABILITY = constants.PREDATOR_DEATH_PROBABILITY;
+    PREDATOR_BIRTH_PROBABILITY = constants.PREDATOR_BIRTH_PROBABILITY;
+    INITIAL_PREDATORS = constants.INITIAL_PREDATORS;
+    PREDATOR_STARVATION_STEPS = constants.PREDATOR_STARVATION_STEPS;
+    PREY_HUNTED_PROBABILITY = constants.PREY_HUNTED_PROBABILITY;
+    PREY_RANDOM_DEATH = constants.PREY_RANDOM_DEATH;
+    INITIAL_PREY = constants.INITIAL_PREY;
+    PREY_BIRTH_PROBABILITY = constants.PREY_BIRTH_PROBABILITY;
+    PREY_STARVATION_STEPS = constants.PREY_STARVATION_STEPS;
+    PREY_THREAT_RESPONSE = constants.PREY_THREAT_RESPONSE;
+    INITIAL_SUBSTRATE_PROBABILITY = constants.INITIAL_SUBSTRATE_PROBABILITY;
+    SUBSTRATE_RANDOM_DEATH = constants.SUBSTRATE_RANDOM_DEATH;
+    SUBSTRATE_CONSUMPTION_PROB = constants.SUBSTRATE_CONSUMPTION_PROB;
+}
 
 // Steps configuration
 export const MIN_STEPS = 10;  // 10^1
 export const MAX_STEPS = 1000000;  // 10^6
-export const DEFAULT_STEPS = 9999;
+export const DEFAULT_STEPS = STEPS;
 
 // Helper functions for logarithmic steps scaling
 export const stepsToSliderValue = (steps: number): number => {
@@ -24,33 +54,9 @@ export const sliderValueToSteps = (value: number): number => {
     return Math.floor(Math.pow(10, value));
 };
 
-// Default populations
-export const DEFAULT_INITIAL_PREDATORS = 20;  // Default starting number of predators
-export const DEFAULT_INITIAL_PREY = 1000;  // Default starting number of prey
-export const DEFAULT_SUBSTRATE_COVERAGE = 0.3;  // Default substrate coverage (30%)
-
-// Predator parameters
-export const PREDATOR_DEATH_PROBABILITY = 0.1;  // Probability of predator dying
-export const PREDATOR_BIRTH_PROBABILITY = 0.43;  // Chance of predator reproduction
-export const INITIAL_PREDATORS = DEFAULT_INITIAL_PREDATORS;  // Starting number of predators
-export const PREDATOR_STARVATION_STEPS = 66;  // Steps until predator dies from starvation
-
-// Prey parameters
-export const PREY_HUNTED_PROBABILITY = 0.3;  // Probability that a prey is hunted
-export const PREY_RANDOM_DEATH = 0.1;  // Probability of prey dying randomly
-export const INITIAL_PREY = DEFAULT_INITIAL_PREY;  // Starting number of prey
-export const PREY_BIRTH_PROBABILITY = 0.64;  // Probability of prey reproduction
-export const PREY_STARVATION_STEPS = 3;  // Steps until prey dies from starvation
-export const PREY_THREAT_RESPONSE = 0.5;  // Probability of prey staying still when threatened
-
-// Substrate parameters
-export const INITIAL_SUBSTRATE_PROBABILITY = DEFAULT_SUBSTRATE_COVERAGE;  // Probability of substrate formation
-export const SUBSTRATE_RANDOM_DEATH = 0.1;  // Probability of substrate disappearing
-export const SUBSTRATE_CONSUMPTION_PROB = 0.3;  // Probability of substrate being consumed by prey
-
 // Population scaling functions
 export const calculateScaledPopulation = (defaultPopulation: number, currentGridSize: number): number => {
-    const scaleFactor = (currentGridSize * currentGridSize) / (DEFAULT_GRID_SIZE * DEFAULT_GRID_SIZE);
+    const scaleFactor = (currentGridSize * currentGridSize) / (GRID_SIZE * GRID_SIZE);
     return Math.max(1, Math.floor(defaultPopulation * scaleFactor));
 };
 
@@ -93,7 +99,7 @@ export const LARGE_GRID_THRESHOLD = 200;  // Grids larger than this will use vie
 
 // Form validation limits
 export const VALIDATION_LIMITS = {
-    GRID_SIZE: { min: 10, max: 100 },  // Updated to match backend limits
+    GRID_SIZE: { min: 10, max: 100 },
     STEPS: { min: MIN_STEPS, max: MAX_STEPS },
     INITIAL_PREDATORS: { min: 0, max: 10000 },
     INITIAL_PREY: { min: 0, max: 10000 },
@@ -111,13 +117,13 @@ export const VALIDATION_LIMITS = {
 };
 
 // Default simulation settings with dynamic population scaling
-export const getDefaultSettings = (gridSize: number = DEFAULT_GRID_SIZE) => {
+export const getDefaultSettings = (gridSize: number = GRID_SIZE) => {
     const maxPop = calculateMaxPopulation(gridSize);
     return {
         grid_size: gridSize,
-        steps: DEFAULT_STEPS,
-        initial_prey: Math.min(calculateScaledPopulation(DEFAULT_INITIAL_PREY, gridSize), maxPop * 0.5),
-        initial_predators: Math.min(calculateScaledPopulation(DEFAULT_INITIAL_PREDATORS, gridSize), maxPop * 0.1),
+        steps: STEPS,
+        initial_prey: Math.min(calculateScaledPopulation(INITIAL_PREY, gridSize), maxPop * 0.5),
+        initial_predators: Math.min(calculateScaledPopulation(INITIAL_PREDATORS, gridSize), maxPop * 0.1),
         predator_death_probability: PREDATOR_DEATH_PROBABILITY,
         predator_birth_probability: PREDATOR_BIRTH_PROBABILITY,
         predator_starvation_steps: PREDATOR_STARVATION_STEPS,
