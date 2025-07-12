@@ -18,6 +18,7 @@ module.exports = {
                 dark: {
                     bg: '#121212',
                     card: '#1E1E1E',
+                    stats: '#1a1a1a',
                     border: '#333333',
                     text: '#E0E0E0',
                 },

@@ -6,18 +6,24 @@ Defines the Pydantic models for API requests and responses.
 from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Optional, Any, Union
 from datetime import datetime
+from .constants import (
+    GRID_SIZE, STEPS, NEIGHBORHOOD_TYPE, GRID_TYPE,
+    PREDATOR_DEATH_PROBABILITY, PREDATOR_BIRTH_PROBABILITY, INITIAL_PREDATORS, PREDATOR_STARVATION_STEPS,
+    PREY_HUNTED_PROBABILITY, PREY_RANDOM_DEATH, INITIAL_PREY, PREY_BIRTH_PROBABILITY, PREY_STARVATION_STEPS, PREY_THREAT_RESPONSE,
+    INITIAL_SUBSTRATE_PROBABILITY, SUBSTRATE_RANDOM_DEATH, SUBSTRATE_CONSUMPTION_PROB
+)
 
 
 class SimulationSettings(BaseModel):
     """Settings for a simulation."""
     grid_size: int = Field(
-        default=100, ge=1, le=400, description="Size of the square grid (NxN), max 400")
+        default=GRID_SIZE, ge=1, le=100, description="Size of the square grid (NxN), max 100")
     steps: int = Field(
-        default=100, description="Number of simulation iterations")
+        default=STEPS, description="Number of simulation iterations")
     neighborhood_type: str = Field(
-        default="von_neumann", description="Neighborhood type ('von_neumann' or 'moore')")
+        default=NEIGHBORHOOD_TYPE, description="Neighborhood type ('von_neumann' or 'moore')")
     grid_type: str = Field(
-        default="torus", description="Grid boundary behavior ('finite' or 'torus')")
+        default=GRID_TYPE, description="Grid boundary behavior ('finite' or 'torus')")
 
     # Add recording flag
     record_simulation: bool = Field(
@@ -25,35 +31,35 @@ class SimulationSettings(BaseModel):
 
     # Predator parameters
     predator_death_probability: float = Field(
-        default=0.1, description="Probability of predator dying")
+        default=PREDATOR_DEATH_PROBABILITY, description="Probability of predator dying")
     predator_birth_probability: float = Field(
-        default=0.3, description="Chance of predator reproduction")
+        default=PREDATOR_BIRTH_PROBABILITY, description="Chance of predator reproduction")
     initial_predators: int = Field(
-        default=50, description="Starting number of predators")
+        default=INITIAL_PREDATORS, description="Starting number of predators")
     predator_starvation_steps: int = Field(
-        default=10, description="Steps a predator can survive without food")
+        default=PREDATOR_STARVATION_STEPS, description="Steps a predator can survive without food")
 
     # Prey parameters
     prey_hunted_probability: float = Field(
-        default=0.2, description="Probability that a prey is hunted")
+        default=PREY_HUNTED_PROBABILITY, description="Probability that a prey is hunted")
     prey_random_death: float = Field(
-        default=0.05, description="Probability of prey dying randomly")
+        default=PREY_RANDOM_DEATH, description="Probability of prey dying randomly")
     initial_prey: int = Field(
-        default=200, description="Starting number of prey")
+        default=INITIAL_PREY, description="Starting number of prey")
     prey_birth_probability: float = Field(
-        default=0.2, description="Probability of prey reproduction")
+        default=PREY_BIRTH_PROBABILITY, description="Probability of prey reproduction")
     prey_starvation_steps: int = Field(
-        default=3, description="Steps a prey can survive without substrate")
+        default=PREY_STARVATION_STEPS, description="Steps until prey dies from starvation")
     prey_threat_response: float = Field(
-        default=0.7, description="Probability of prey staying still when threatened")
+        default=PREY_THREAT_RESPONSE, description="Probability of prey staying still when threatened")
 
     # Substrate parameters
     initial_substrate_probability: float = Field(
-        default=0.3, description="Probability of substrate formation")
+        default=INITIAL_SUBSTRATE_PROBABILITY, description="Probability of substrate formation")
     substrate_random_death: float = Field(
-        default=0.05, description="Probability of substrate disappearing")
+        default=SUBSTRATE_RANDOM_DEATH, description="Probability of substrate disappearing")
     substrate_consumption_prob: float = Field(
-        default=0.2, description="Probability of substrate being consumed by prey")
+        default=SUBSTRATE_CONSUMPTION_PROB, description="Probability of substrate being consumed by prey")
 
     @validator('neighborhood_type')
     @classmethod

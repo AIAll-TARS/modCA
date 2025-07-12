@@ -1,52 +1,43 @@
 """
-Main module for the modca_o7 web application backend.
-Provides FastAPI server for simulation execution and API endpoints.
+Main FastAPI application module for the modca_o7 web application.
+Handles API endpoints and WebSocket connections.
 """
 
-from .constants import EMPTY, PREY, PREDATOR, SUBSTRATE, GRID_SIZE, STEPS, INITIAL_PREY, INITIAL_PREDATORS, PREDATOR_DEATH_PROBABILITY, PREDATOR_BIRTH_PROBABILITY, PREDATOR_STARVATION_STEPS, PREY_HUNTED_PROBABILITY, PREY_RANDOM_DEATH, PREY_BIRTH_PROBABILITY, PREY_STARVATION_STEPS, INITIAL_SUBSTRATE_PROBABILITY, SUBSTRATE_RANDOM_DEATH, SUBSTRATE_CONSUMPTION_PROB, NEIGHBORHOOD_TYPE, GRID_TYPE, PREY_THREAT_RESPONSE
-from .models import SimulationSettings, SimulationResponse, UserSettings
-from .db_handler import DatabaseHandler
+import asyncio
+import logging
+from datetime import datetime
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from .models import SimulationSettings, SimulationResponse
 from .grid import initialize_grid
 from .simulation import Simulation
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-import asyncio
-import json
-import numpy as np
-import uvicorn
-from datetime import datetime
-from typing import List, Dict, Any, Optional
-import os
-import logging
+from .constants import GRID_SIZE, STEPS, INITIAL_PREY, INITIAL_PREDATORS
+from .db_handler import DatabaseHandler
+from typing import Optional, Dict, Any
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Import simulation components (these will be moved to the backend)
-# We'll create copies of these files in the backend directory
+# Create FastAPI app
+app = FastAPI(title="modCA_7 Web API")
 
-# Create FastAPI application
-app = FastAPI(
-    title="modCA_7 Web API",
-    description="Web API for the modCA_7 cellular automata simulation",
-    version="1.0.0",
-)
-
-# Add CORS middleware to allow cross-origin requests from the frontend
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins in development
+    allow_origins=["*"],  # In production, replace with specific origins
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# Store active simulations
+active_simulations: Dict[str, Dict[str, Any]] = {}
+
+# Initialize DatabaseHandler
+db_handler = DatabaseHandler()
+
 # Helper functions for async operations
-
-
-async def initialize_grid_with_timeout(size, initial_prey, initial_predators, initial_substrate_prob):
+async def initialize_grid_with_timeout(size: int, initial_prey: int, initial_predators: int, initial_substrate_prob: float):
     """
     Async wrapper for initialize_grid to allow timeout handling.
 
@@ -61,32 +52,27 @@ async def initialize_grid_with_timeout(size, initial_prey, initial_predators, in
         size, initial_prey, initial_predators, initial_substrate_prob
     )
 
-# Store active simulations
-active_simulations = {}
-# Store active WebSocket connections
-active_connections: List[WebSocket] = []
-
+# Dependency for database operations
+async def get_db():
+    try:
+        return db_handler
+    except Exception as e:
+        logger.error(f"Database connection error: {str(e)}")
+        raise HTTPException(status_code=503, detail="Database service unavailable")
 
 @app.get("/")
 async def root():
     """Root endpoint to check if API is running."""
     return {"message": "modCA_7 Web API is running"}
 
-
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint for container health monitoring."""
-    return {"status": "healthy"}
-
-
 @app.post("/api/simulate", response_model=SimulationResponse)
-async def start_simulation(settings: SimulationSettings):
+async def start_simulation(settings: SimulationSettings, db: DatabaseHandler = Depends(get_db)):
     """Start a new simulation with the provided settings."""
     try:
         logger.info(f"Starting new simulation with settings: {settings}")
 
         # Apply fallbacks for any missing or invalid values
-        if settings.grid_size <= 0:
+        if settings.grid_size <= 0 or settings.grid_size > 100:
             logger.warning(
                 f"Invalid grid_size: {settings.grid_size}, using default {GRID_SIZE}")
             settings.grid_size = GRID_SIZE
@@ -103,69 +89,6 @@ async def start_simulation(settings: SimulationSettings):
                 f"Invalid initial_predators: {settings.initial_predators}, using default {INITIAL_PREDATORS}")
             settings.initial_predators = INITIAL_PREDATORS
 
-        # Validate probability values (must be between 0 and 1)
-        for prob_name, prob_value, default in [
-            ("predator_death_probability",
-             settings.predator_death_probability, PREDATOR_DEATH_PROBABILITY),
-            ("predator_birth_probability",
-             settings.predator_birth_probability, PREDATOR_BIRTH_PROBABILITY),
-            ("prey_hunted_probability",
-             settings.prey_hunted_probability, PREY_HUNTED_PROBABILITY),
-            ("prey_random_death", settings.prey_random_death, PREY_RANDOM_DEATH),
-            ("prey_birth_probability",
-             settings.prey_birth_probability, PREY_BIRTH_PROBABILITY),
-            ("prey_threat_response",
-             settings.prey_threat_response, PREY_THREAT_RESPONSE),
-            ("initial_substrate_probability",
-             settings.initial_substrate_probability, INITIAL_SUBSTRATE_PROBABILITY),
-            ("substrate_random_death",
-             settings.substrate_random_death, SUBSTRATE_RANDOM_DEATH),
-            ("substrate_consumption_prob",
-             settings.substrate_consumption_prob, SUBSTRATE_CONSUMPTION_PROB)
-        ]:
-            if prob_value < 0 or prob_value > 1:
-                logger.warning(
-                    f"Invalid {prob_name}: {prob_value}, using default {default}")
-                setattr(settings, prob_name, default)
-
-        # Validate starvation steps
-        if settings.predator_starvation_steps <= 0:
-            logger.warning(
-                f"Invalid predator_starvation_steps: {settings.predator_starvation_steps}, using default {PREDATOR_STARVATION_STEPS}")
-            settings.predator_starvation_steps = PREDATOR_STARVATION_STEPS
-        if settings.prey_starvation_steps <= 0:
-            logger.warning(
-                f"Invalid prey_starvation_steps: {settings.prey_starvation_steps}, using default {PREY_STARVATION_STEPS}")
-            settings.prey_starvation_steps = PREY_STARVATION_STEPS
-
-        # Check if grid size is extremely large and might cause memory issues
-        if settings.grid_size > 800:
-            logger.warning(
-                f"Very large grid size requested: {settings.grid_size}×{settings.grid_size}. Using memory-efficient mode.")
-
-            # For extremely large grids, automatically adjust entity counts to avoid memory issues
-            total_cells = settings.grid_size * settings.grid_size
-
-            # For very large grids, enforce a lower density to avoid memory issues
-            max_density = 0.4  # Lower max density for huge grids
-            total_entities = settings.initial_prey + settings.initial_predators
-
-            if total_entities > total_cells * max_density:
-                ratio = settings.initial_prey / \
-                    (total_entities) if total_entities > 0 else 0.8
-
-                # Calculate adjusted counts
-                max_entities = int(total_cells * max_density)
-                adjusted_prey = int(max_entities * ratio)
-                adjusted_predators = max_entities - adjusted_prey
-
-                logger.warning(
-                    f"Reducing entity count for large grid: prey {settings.initial_prey} → {adjusted_prey}, predators {settings.initial_predators} → {adjusted_predators}")
-
-                # Update settings with adjusted values
-                settings.initial_prey = adjusted_prey
-                settings.initial_predators = adjusted_predators
-
         # Generate a unique simulation ID
         simulation_id = f"sim_{datetime.now().strftime('%Y%m%d%H%M%S')}_{len(active_simulations)}"
         logger.info(f"Generated simulation ID: {simulation_id}")
@@ -175,8 +98,8 @@ async def start_simulation(settings: SimulationSettings):
             logger.info(
                 f"Initializing grid with size={settings.grid_size}, prey={settings.initial_prey}, predators={settings.initial_predators}, substrate_prob={settings.initial_substrate_probability}")
 
-            # Set a longer timeout for large grids
-            grid_initialization_timeout = 300  # 5 minutes for very large grids
+            # Set a timeout for grid initialization
+            grid_initialization_timeout = 30  # 30 seconds timeout
 
             # Use a task with timeout for grid initialization
             grid_task = asyncio.create_task(initialize_grid_with_timeout(
@@ -243,94 +166,43 @@ async def start_simulation(settings: SimulationSettings):
         record_simulation = settings.record_simulation
         if record_simulation:
             logger.info("Recording enabled for this simulation")
+            try:
+                # Save initial settings to database
+                db.save_simulation_settings(simulation_id, settings.dict())
+            except Exception as e:
+                logger.error(f"Failed to save initial settings to database: {str(e)}")
+                # Continue with simulation even if database save fails
 
-        # Initialize the simulation
-        sim_data = {
-            "simulation": Simulation(
-                (grid, adjustment_info),  # Pass the tuple directly
-                param_dict,
-                recording_enabled=record_simulation
-            ),
-            "status": "initialized",
+        # Create simulation object
+        simulation = Simulation(grid, param_dict, recording_enabled=record_simulation)
+        logger.info("Simulation object created successfully")
+
+        # Store simulation in active simulations
+        active_simulations[simulation_id] = {
+            "simulation": simulation,
             "current_step": 0,
             "total_steps": settings.steps,
-            "parameters": param_dict,
-            "adjustment_info": adjustment_info
+            "status": "running"
         }
+        logger.info(f"Simulation {simulation_id} stored in active simulations")
 
-        # Store the simulation
-        active_simulations[simulation_id] = sim_data
-        logger.info(f"Simulation {simulation_id} stored in active_simulations")
+        # Return the initial state
+        return SimulationResponse(
+            simulation_id=simulation_id,
+            status="running",
+            current_step=0,
+            total_steps=settings.steps,
+            grid=grid.tolist(),
+            statistics=simulation.get_statistics(),
+            message="Simulation started successfully",
+            steps_run=0,
+            db_save_success=True,
+            adjustment_info=adjustment_info
+        )
 
-        # Save settings to database - but make this non-critical
-        db_save_success = False
-        try:
-            db = DatabaseHandler()
-            settings_id = db.save_settings(param_dict)
-            logger.info(f"Settings saved to database with ID: {settings_id}")
-            db_save_success = (settings_id > 0)
-        except Exception as e:
-            logger.error(f"Error saving settings to database: {str(e)}")
-            # Continue even if database save fails - this is non-critical functionality
-            logger.info("Continuing without saving settings to database")
-
-        # Get initial statistics
-        statistics = sim_data["simulation"].get_statistics()
-        logger.info(f"Initial statistics: {statistics}")
-
-        # Return initial state and simulation ID
-        response = {
-            "simulation_id": simulation_id,
-            "status": sim_data["status"],
-            "current_step": sim_data["current_step"],
-            "total_steps": settings.steps,
-            "grid": sim_data["simulation"].grid.tolist(),
-            "statistics": statistics,
-            # Optional field to indicate if DB save was successful
-            "db_save_success": db_save_success
-        }
-
-        # Add adjustment information if values were adjusted during grid initialization
-        if adjustment_info and adjustment_info.get("values_adjusted", False):
-            response["adjustments"] = adjustment_info
-
-        logger.info(f"Returning initial simulation state for {simulation_id}")
-        return response
-
-    except HTTPException:
-        # Re-raise HTTP exceptions as they already have appropriate status codes
-        raise
-    except ValueError as e:
-        # Handle validation errors
-        error_msg = f"Invalid parameter: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=400, detail=error_msg)
     except Exception as e:
-        # Handle all other unexpected errors
-        error_msg = f"Error starting simulation: {str(e)}"
-        logger.exception(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
-
-
-@app.get("/api/simulate/{simulation_id}/status", response_model=SimulationResponse)
-async def get_simulation_status(simulation_id: str):
-    """Get the current status of a running simulation."""
-    if simulation_id not in active_simulations:
-        raise HTTPException(status_code=404, detail="Simulation not found")
-
-    sim_data = active_simulations[simulation_id]
-    simulation = sim_data["simulation"]
-
-    return {
-        "simulation_id": simulation_id,
-        "status": sim_data["status"],
-        "current_step": sim_data["current_step"],
-        "total_steps": sim_data["total_steps"],
-        "grid": simulation.grid.tolist(),
-        "statistics": simulation.get_statistics(),
-        "adjustment_info": sim_data.get("adjustment_info", {"values_adjusted": False})
-    }
-
+        logger.exception(f"Error in start_simulation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/simulate/{simulation_id}/step")
 async def step_simulation(simulation_id: str, steps: int = 1):
@@ -377,31 +249,6 @@ async def step_simulation(simulation_id: str, steps: int = 1):
             "steps_run": 0
         }
 
-    # Check grid size for large simulations
-    grid_size = simulation.grid.shape[0]
-    is_large_grid = grid_size >= 500
-    is_very_large_grid = grid_size >= 800
-
-    # Adjust steps and timeout based on grid size
-    if is_very_large_grid and steps > 1:
-        logger.info(
-            f"Reducing steps from {steps} to 1 for very large grid ({grid_size}×{grid_size})")
-        steps = 1  # Force one step at a time for very large grids
-    elif is_large_grid and steps > 3:
-        logger.info(
-            f"Reducing steps from {steps} to 3 for large grid ({grid_size}×{grid_size})")
-        steps = min(steps, 3)
-
-    # Calculate appropriate timeout based on grid size
-    step_timeout = 30  # Default 30 seconds
-    if is_very_large_grid:
-        step_timeout = 180  # 3 minutes for very large grids
-    elif is_large_grid:
-        step_timeout = 120  # 2 minutes for large grids
-
-    logger.info(
-        f"Using timeout of {step_timeout} seconds for grid size {grid_size}")
-
     # Run the specified number of steps
     steps_actually_run = 0
     try:
@@ -410,32 +257,8 @@ async def step_simulation(simulation_id: str, steps: int = 1):
                 logger.info(
                     f"Running step {sim_data['current_step'] + 1} of {sim_data['total_steps']}")
 
-                # For large grids, run the step in a separate thread with a timeout
-                if is_large_grid:
-                    try:
-                        # Run the CPU-intensive step in a thread pool with adjustable timeout
-                        loop = asyncio.get_event_loop()
-
-                        # Create a task for the step execution
-                        step_task = asyncio.create_task(
-                            loop.run_in_executor(None, simulation.step)
-                        )
-
-                        # Wait for step to complete with timeout
-                        await asyncio.wait_for(step_task, timeout=step_timeout)
-                        logger.info(f"Large grid step completed successfully")
-                    except asyncio.TimeoutError:
-                        logger.error(
-                            f"Step timed out after {step_timeout} seconds")
-                        raise HTTPException(
-                            status_code=504,
-                            detail=f"Step timed out. The grid size {grid_size}×{grid_size} is too large to process within the time limit."
-                        )
-                else:
-                    # For smaller grids, run normally
-                    simulation.step()
-
-                # Continue with the rest of the step logic...
+                # Run the step
+                simulation.step()
                 steps_actually_run += 1
                 sim_data["current_step"] += 1
 
@@ -444,308 +267,187 @@ async def step_simulation(simulation_id: str, steps: int = 1):
                     sim_data["status"] = "completed"
                     logger.info("Simulation completed")
                     break
-    except HTTPException:
-        # Re-raise HTTP exceptions with proper status codes
-        raise
-    except Exception as e:
-        logger.exception(f"Error during simulation step: {str(e)}")
-        sim_data["status"] = "error"
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error executing simulation step: {str(e)}"
+
+        # Return the updated state
+        return SimulationResponse(
+            simulation_id=simulation_id,
+            status=sim_data["status"],
+            current_step=sim_data["current_step"],
+            total_steps=sim_data["total_steps"],
+            grid=simulation.grid.tolist(),
+            statistics=simulation.get_statistics(),
+            message=f"Ran {steps_actually_run} steps successfully",
+            steps_run=steps_actually_run,
+            db_save_success=True
         )
 
-    # Check if simulation is complete
-    if sim_data["current_step"] >= sim_data["total_steps"]:
-        sim_data["status"] = "completed"
-        logger.info("Simulation marked as completed")
-
-    # Get final statistics
-    try:
-        statistics = simulation.get_statistics()
-        logger.info(f"Final statistics after steps: {statistics}")
     except Exception as e:
-        logger.error(f"Error getting statistics: {str(e)}")
-        statistics = {
-            'predator_count': 0,
-            'prey_count': 0,
-            'substrate_count': 0,
-            'empty_count': 0
-        }
+        logger.exception(f"Error in step_simulation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # Create response
-    response = {
-        "simulation_id": simulation_id,
-        "status": sim_data["status"],
-        "current_step": sim_data["current_step"],
-        "total_steps": sim_data["total_steps"],
-        "grid": simulation.grid.tolist(),
-        "statistics": statistics,
-        "steps_run": steps_actually_run
-    }
-    logger.info(
-        f"Returning response with current_step={response['current_step']}, status={response['status']}, steps_run={steps_actually_run}")
-    return response
-
-
-@app.websocket("/ws/simulate/{simulation_id}")
-async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
-    """WebSocket endpoint for real-time simulation updates."""
-    await websocket.accept()
-    active_connections.append(websocket)
-    logger.info(
-        f"WebSocket connection established for simulation {simulation_id}")
-
-    try:
-        if simulation_id not in active_simulations:
-            logger.error(f"WebSocket: Simulation {simulation_id} not found")
-            await websocket.send_json({"error": "Simulation not found"})
-            await websocket.close()
-            return
-
-        sim_data = active_simulations[simulation_id]
-        simulation = sim_data["simulation"]
-
-        # Send initial state
-        logger.info(
-            f"WebSocket: Sending initial state for simulation {simulation_id}")
-        await websocket.send_json({
-            "simulation_id": simulation_id,
-            "status": sim_data["status"],
-            "current_step": sim_data["current_step"],
-            "total_steps": sim_data["total_steps"],
-            "grid": simulation.grid.tolist(),
-            "statistics": simulation.get_statistics(),
-            "adjustment_info": sim_data.get("adjustment_info", {"values_adjusted": False})
-        })
-
-        # Listen for commands from the client
-        while True:
-            data = await websocket.receive_text()
-            logger.info(f"WebSocket: Received command: {data}")
-
-            try:
-                command = json.loads(data)
-                action = command.get("action", "")
-
-                if action == "ping":
-                    # Simple ping response to check connection
-                    logger.info("WebSocket: Received ping, sending pong")
-                    await websocket.send_json({
-                        "pong": True,
-                        "timestamp": datetime.now().isoformat()
-                    })
-
-                elif action == "step":
-                    steps = command.get("steps", 1)
-                    logger.info(
-                        f"WebSocket: Running {steps} steps for simulation {simulation_id}")
-
-                    for i in range(steps):
-                        if sim_data["current_step"] < sim_data["total_steps"]:
-                            logger.info(
-                                f"WebSocket: Running step {sim_data['current_step'] + 1}")
-                            simulation.step()
-                            sim_data["current_step"] += 1
-                            logger.info(
-                                f"WebSocket: Step completed, new step count: {sim_data['current_step']}")
-                        else:
-                            sim_data["status"] = "completed"
-                            logger.info(
-                                "WebSocket: Simulation already completed, no more steps to run")
-                            break
-
-                    # Check if simulation is complete
-                    if sim_data["current_step"] >= sim_data["total_steps"]:
-                        sim_data["status"] = "completed"
-                        logger.info(
-                            "WebSocket: Simulation marked as completed")
-
-                    response = {
-                        "simulation_id": simulation_id,
-                        "status": sim_data["status"],
-                        "current_step": sim_data["current_step"],
-                        "total_steps": sim_data["total_steps"],
-                        "grid": simulation.grid.tolist(),
-                        "statistics": simulation.get_statistics(),
-                        "adjustment_info": sim_data.get("adjustment_info", {"values_adjusted": False})
-                    }
-                    logger.info(
-                        f"WebSocket: Sending step response with current_step={response['current_step']}")
-                    await websocket.send_json(response)
-
-                elif action == "stop":
-                    logger.info(
-                        f"WebSocket: Stopping simulation {simulation_id}")
-                    sim_data["status"] = "stopped"
-                    await websocket.send_json({
-                        "simulation_id": simulation_id,
-                        "status": sim_data["status"],
-                        "message": "Simulation stopped"
-                    })
-
-                elif action == "reset":
-                    logger.info(
-                        f"WebSocket: Resetting simulation {simulation_id}")
-                    # Reset the simulation
-                    grid_result = initialize_grid(
-                        sim_data["parameters"]["grid_size"],
-                        sim_data["parameters"]["initial_prey"],
-                        sim_data["parameters"]["initial_predators"],
-                        sim_data["parameters"]["initial_substrate_probability"]
-                    )
-                    # Handle the tuple returned by initialize_grid
-                    if isinstance(grid_result, tuple) and len(grid_result) == 2:
-                        grid, adjustment_info = grid_result
-                    else:
-                        grid = grid_result
-                        adjustment_info = {"values_adjusted": False}
-                    
-                    simulation = Simulation(
-                        (grid, adjustment_info),
-                        sim_data["parameters"]
-                    )
-
-                    sim_data["simulation"] = simulation
-                    sim_data["current_step"] = 0
-                    sim_data["status"] = "running"
-                    sim_data["adjustment_info"] = adjustment_info
-
-                    await websocket.send_json({
-                        "simulation_id": simulation_id,
-                        "status": sim_data["status"],
-                        "current_step": sim_data["current_step"],
-                        "total_steps": sim_data["total_steps"],
-                        "grid": simulation.grid.tolist(),
-                        "statistics": simulation.get_statistics(),
-                        "adjustment_info": adjustment_info
-                    })
-                    logger.info(
-                        f"WebSocket: Simulation {simulation_id} reset complete")
-
-                else:
-                    logger.warning(
-                        f"WebSocket: Unknown action received: {action}")
-                    await websocket.send_json({
-                        "error": f"Unknown action: {action}"
-                    })
-
-            except json.JSONDecodeError:
-                logger.error(f"WebSocket: Invalid JSON received: {data}")
-                await websocket.send_json({
-                    "error": "Invalid command format"
-                })
-            except Exception as e:
-                logger.exception(
-                    f"WebSocket: Error processing command: {str(e)}")
-                await websocket.send_json({
-                    "error": f"Error processing command: {str(e)}"
-                })
-
-    except WebSocketDisconnect:
-        logger.info(
-            f"WebSocket: Client disconnected from simulation {simulation_id}")
-        active_connections.remove(websocket)
-    except Exception as e:
-        logger.exception(f"WebSocket: Unexpected error: {str(e)}")
-        if websocket in active_connections:
-            active_connections.remove(websocket)
-
-
-@app.get("/api/settings")
-async def get_settings():
-    """Get all saved simulation settings."""
-    db = DatabaseHandler()
-    settings = db.get_all_settings()
-    return {"settings": settings}
-
-
-@app.post("/api/settings")
-async def save_settings(settings: UserSettings):
-    """Save user settings to the database."""
-    db = DatabaseHandler()
-    settings_id = db.save_settings(settings.dict())
-    return {"settings_id": settings_id, "message": "Settings saved successfully"}
-
-
-@app.get("/api/settings/{settings_id}")
-async def get_settings_by_id(settings_id: int):
-    """Get specific settings by ID."""
-    db = DatabaseHandler()
-    settings = db.get_settings_by_id(settings_id)
-    if not settings:
-        raise HTTPException(status_code=404, detail="Settings not found")
-    return {"settings": settings}
-
-
-@app.post("/api/simulate/{simulation_id}/save-recording")
-async def save_simulation_recording(simulation_id: str):
-    """Save the recording for a completed simulation to disk."""
+@app.get("/api/simulate/{simulation_id}")
+async def get_simulation(simulation_id: str):
+    """Get the current state of a simulation."""
     if simulation_id not in active_simulations:
-        logger.error(f"Simulation {simulation_id} not found")
         raise HTTPException(status_code=404, detail="Simulation not found")
 
     sim_data = active_simulations[simulation_id]
     simulation = sim_data["simulation"]
 
-    # Check if recording is enabled for this simulation
-    if not hasattr(simulation, 'recording_enabled') or not simulation.recording_enabled:
-        logger.warning(f"Recording not enabled for simulation {simulation_id}")
-        return {"status": "error", "message": "Recording not enabled for this simulation"}
+    return SimulationResponse(
+        simulation_id=simulation_id,
+        status=sim_data["status"],
+        current_step=sim_data["current_step"],
+        total_steps=sim_data["total_steps"],
+        grid=simulation.grid.tolist(),
+        statistics=simulation.get_statistics(),
+        message="Current simulation state",
+        steps_run=0,
+        db_save_success=True
+    )
 
-    # Save the recording
-    result = simulation.save_recording(simulation_id)
-    logger.info(f"Recording save result: {result}")
+@app.delete("/api/simulate/{simulation_id}")
+async def stop_simulation(simulation_id: str):
+    """Stop and remove a simulation."""
+    if simulation_id not in active_simulations:
+        raise HTTPException(status_code=404, detail="Simulation not found")
 
-    return result
+    del active_simulations[simulation_id]
+    return {"message": "Simulation stopped"}
 
-
-@app.get("/api/recordings")
-async def list_recordings():
-    """List all available recordings."""
-    recordings = Simulation.get_available_recordings()
-    return {"recordings": recordings, "count": len(recordings)}
-
-
-@app.get("/api/recordings/{recording_id}")
-async def get_recording(recording_id: str):
-    """Get a specific recording by ID."""
-    recording = Simulation.load_recording(recording_id)
-    if recording["status"] == "error":
-        raise HTTPException(status_code=404, detail=recording["message"])
-    return recording
-
-
-@app.delete("/api/recordings/{recording_id}")
-async def delete_recording(recording_id: str):
-    """Delete a recording."""
+@app.websocket("/ws/simulate/{simulation_id}")
+async def websocket_endpoint(websocket: WebSocket, simulation_id: str):
+    """WebSocket endpoint for real-time simulation updates."""
     try:
-        path = os.path.join(os.path.dirname(__file__), '..', 'recordings')
+        await websocket.accept()
+        logger.info(f"WebSocket connection accepted for simulation {simulation_id}")
 
-        # Check if files exist
-        metadata_file = os.path.join(path, f"{recording_id}_metadata.json")
-        frames_file = os.path.join(path, f"{recording_id}_frames.json")
+        # Send initial connection success message
+        await websocket.send_json({
+            "type": "connection",
+            "status": "connected",
+            "simulation_id": simulation_id
+        })
 
-        files_deleted = 0
+        while True:
+            try:
+                # Wait for a message from the client
+                data = await websocket.receive_text()
+                logger.info(f"Received WebSocket message: {data}")
 
-        if os.path.exists(metadata_file):
-            os.remove(metadata_file)
-            files_deleted += 1
+                # Check if simulation exists
+                if simulation_id not in active_simulations:
+                    await websocket.send_json({
+                        "type": "error",
+                        "error": "Simulation not found",
+                        "status": "error"
+                    })
+                    break
 
-        if os.path.exists(frames_file):
-            os.remove(frames_file)
-            files_deleted += 1
+                sim_data = active_simulations[simulation_id]
+                simulation = sim_data["simulation"]
 
-        if files_deleted > 0:
-            return {"status": "success", "message": f"Recording {recording_id} deleted", "files_deleted": files_deleted}
-        else:
-            return {"status": "error", "message": f"Recording {recording_id} not found"}
+                # Handle different commands
+                if data == "ping":
+                    await websocket.send_json({
+                        "type": "pong",
+                        "status": "ok"
+                    })
+                elif data == "step":
+                    try:
+                        # Run one step
+                        simulation.step()
+                        sim_data["current_step"] += 1
+
+                        # Check if simulation is complete
+                        if sim_data["current_step"] >= sim_data["total_steps"]:
+                            sim_data["status"] = "completed"
+
+                        # Send updated state
+                        await websocket.send_json({
+                            "type": "update",
+                            "status": sim_data["status"],
+                            "current_step": sim_data["current_step"],
+                            "total_steps": sim_data["total_steps"],
+                            "grid": simulation.grid.tolist(),
+                            "statistics": simulation.get_statistics()
+                        })
+                    except Exception as e:
+                        logger.error(f"Error during simulation step: {str(e)}")
+                        await websocket.send_json({
+                            "type": "error",
+                            "error": f"Step execution failed: {str(e)}",
+                            "status": "error"
+                        })
+                elif data == "reset":
+                    try:
+                        # Reset simulation to initial state
+                        simulation.reset()
+                        sim_data["current_step"] = 0
+                        sim_data["status"] = "running"
+
+                        # Send reset confirmation
+                        await websocket.send_json({
+                            "type": "reset",
+                            "status": "ok",
+                            "current_step": 0,
+                            "total_steps": sim_data["total_steps"],
+                            "grid": simulation.grid.tolist(),
+                            "statistics": simulation.get_statistics()
+                        })
+                    except Exception as e:
+                        logger.error(f"Error during simulation reset: {str(e)}")
+                        await websocket.send_json({
+                            "type": "error",
+                            "error": f"Reset failed: {str(e)}",
+                            "status": "error"
+                        })
+                else:
+                    await websocket.send_json({
+                        "type": "error",
+                        "error": "Unknown command",
+                        "status": "error"
+                    })
+
+            except WebSocketDisconnect:
+                logger.info(f"WebSocket disconnected for simulation {simulation_id}")
+                break
+            except Exception as e:
+                logger.exception(f"Error in WebSocket message handling: {str(e)}")
+                try:
+                    await websocket.send_json({
+                        "type": "error",
+                        "error": str(e),
+                        "status": "error"
+                    })
+                except:
+                    break
 
     except Exception as e:
-        logger.exception(f"Error deleting recording {recording_id}: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Error deleting recording: {str(e)}")
+        logger.exception(f"Error in WebSocket endpoint: {str(e)}")
+        try:
+            await websocket.send_json({
+                "type": "error",
+                "error": str(e),
+                "status": "error"
+            })
+        except:
+            pass
+    finally:
+        # Clean up if needed
+        logger.info(f"WebSocket connection closed for simulation {simulation_id}")
 
-# Run the application with Uvicorn if executed directly
-if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+@app.get("/api/settings")
+async def get_latest_settings(user_id: Optional[str] = None, db: DatabaseHandler = Depends(get_db)):
+    """Get the latest simulation settings for a user."""
+    try:
+        settings = db.get_latest_settings(user_id)
+        return {"settings": settings}
+    except Exception as e:
+        logger.error(f"Error fetching latest settings: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch settings")
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for container monitoring."""
+    return {"status": "ok"}
