@@ -22,9 +22,9 @@ def create_empty_grid(size):
     Returns:
         numpy.ndarray: Empty grid with all cells set to EMPTY
     """
-    if not isinstance(size, int) or size <= 0:
+    if not isinstance(size, int) or size <= 0 or size > 100:
         logger.error(f"Invalid grid size: {size}")
-        raise ValueError(f"Grid size must be a positive integer, got {size}")
+        raise ValueError(f"Grid size must be a positive integer between 1 and 100, got {size}")
 
     logger.info(f"Creating empty grid of size {size}x{size}")
     return np.zeros((size, size), dtype=int)
@@ -46,9 +46,9 @@ def initialize_grid(size, initial_prey, initial_predators, initial_substrate_pro
     # Track input validation and adjustments
     try:
         # Validate parameters
-        if not isinstance(size, int) or size <= 0:
+        if not isinstance(size, int) or size <= 0 or size > 100:
             raise ValueError(
-                f"Grid size must be a positive integer, got {size}")
+                f"Grid size must be a positive integer between 1 and 100, got {size}")
         if not isinstance(initial_prey, int) or initial_prey < 0:
             raise ValueError(
                 f"Initial prey must be a non-negative integer, got {initial_prey}")
@@ -79,48 +79,8 @@ def initialize_grid(size, initial_prey, initial_predators, initial_substrate_pro
         total_entities = initial_prey + initial_predators
         adjustments_made = False
 
-        # Adjust for very large grids
-        if size >= 800:
-            logger.info(
-                f"Very large grid: {size}x{size}, applying optimizations")
-
-            # Limit entity density for very large grids
-            max_density = 0.3 if size >= 1000 else 0.4
-            if total_entities > total_cells * max_density:
-                ratio = initial_prey / total_entities if total_entities > 0 else 0.5
-                max_entities = int(total_cells * max_density)
-
-                adjusted_prey = int(max_entities * ratio)
-                adjusted_predators = max_entities - adjusted_prey
-
-                logger.warning(
-                    f"Reduced prey: {initial_prey} → {adjusted_prey}")
-                logger.warning(
-                    f"Reduced predators: {initial_predators} → {adjusted_predators}")
-
-                adjustments_made = True
-                adjustment_info["values_adjusted"] = True
-                adjustment_info["adjusted_values"]["initial_prey"] = adjusted_prey
-                adjustment_info["adjusted_values"]["initial_predators"] = adjusted_predators
-                adjustment_info["reason"] = f"Grid too large ({size}×{size}). Entity counts reduced to prevent memory issues."
-
-                initial_prey = adjusted_prey
-                initial_predators = adjusted_predators
-
-            # Limit substrate probability for very large grids
-            if initial_substrate_prob > 0.2:
-                old_prob = initial_substrate_prob
-                initial_substrate_prob = min(initial_substrate_prob, 0.2)
-                logger.warning(
-                    f"Reduced substrate probability: {old_prob} → {initial_substrate_prob}")
-
-                adjustments_made = True
-                adjustment_info["values_adjusted"] = True
-                adjustment_info["adjusted_values"]["initial_substrate_prob"] = initial_substrate_prob
-                adjustment_info["reason"] += " Substrate probability reduced to avoid memory issues."
-
         # Adjust for regular grids when entities > 80% of cells
-        elif total_entities > total_cells * 0.8:
+        if total_entities > total_cells * 0.8:
             ratio = initial_prey / total_entities if total_entities > 0 else 0.5
             max_entities = int(total_cells * 0.8)
 
@@ -146,7 +106,6 @@ def initialize_grid(size, initial_prey, initial_predators, initial_substrate_pro
         grid = create_empty_grid(size)
         logger.info(f"Created empty grid of size {size}×{size}")
 
-        # SIMPLIFIED APPROACH: Always use vectorized placement
         # Create a flattened index of all cells
         all_indices = np.arange(total_cells)
         np.random.shuffle(all_indices)

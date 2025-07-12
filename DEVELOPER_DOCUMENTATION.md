@@ -13,6 +13,17 @@
 9. [Testing](#9-testing)
 10. [Deployment](#10-deployment)
 11. [Troubleshooting](#11-troubleshooting)
+12. [Current Status](#12-current-status)
+
+## Current Status - OPERATIONAL
+
+### Last Updated: June 18, 2025
+- **Frontend**: ✅ Operational (https://www.janis7ewski.org)
+- **Backend API**: ✅ Operational (https://ws.janis7ewski.org/api)
+- **WebSocket**: ✅ Operational (wss://ws.janis7ewski.org/ws)
+- **Database**: ✅ Connected and operational
+- **SSL/HTTPS**: ✅ Working via Cloudflare + Let's Encrypt
+- **Container Health**: ✅ All containers running and healthy
 
 ## 0. Git Repository Structure and Workflow
 
@@ -221,7 +232,6 @@ modca_7web follows a modern client-server architecture with the following compon
 
 ```
 modca_7web/
-│
 ├── backend/                    # Backend server
 │   ├── app/                    # Application code
 │   │   ├── __init__.py         # Package initializer
@@ -231,94 +241,89 @@ modca_7web/
 │   │   ├── main.py             # Main FastAPI application
 │   │   ├── models.py           # Data models
 │   │   └── simulation.py       # Simulation logic
-│   │
+│   ├── recordings/             # Simulation recordings
+│   ├── sqlite_data/            # Database files
 │   ├── venv/                   # Backend virtual environment
-│   ├── requirements.txt        # Python dependencies
-│   └── settings.db             # Database file
+│   ├── Dockerfile              # Container definition
+│   └── requirements.txt        # Python dependencies
 │
 ├── frontend/                   # Frontend application
-│   ├── node_modules/           # Node.js dependencies
 │   ├── src/                    # Source code
-│   │   └── pages/              # Next.js pages
-│   │       ├── index.tsx       # Home page
-│   │       └── simulate.tsx    # Simulation page
-│   │
-│   ├── next-env.d.ts           # Next.js type declarations
-│   ├── next.config.js          # Next.js configuration
-│   ├── package-lock.json       # Locked dependencies
-│   ├── package.json            # Node.js dependencies
-│   └── tsconfig.json           # TypeScript configuration
+│   │   ├── components/         # React components
+│   │   │   ├── SimulationSetup.tsx     # Initial setup form and validation
+│   │   │   └── RunningSimulation.tsx   # Active simulation visualization
+│   │   ├── pages/             # Next.js pages
+│   │   │   ├── _app.tsx       # App wrapper
+│   │   │   ├── index.tsx      # Home page
+│   │   │   ├── about.tsx      # About page
+│   │   │   └── simulate.tsx   # Main simulation page
+│   │   ├── styles/            # CSS and styling
+│   │   ├── utils/             # Utility functions
+│   │   ├── constants.ts       # Constants and config
+│   │   └── types.ts           # TypeScript types
+│   ├── next.config.js         # Next.js configuration
+│   ├── package.json           # Node.js dependencies
+│   ├── tailwind.config.js     # Tailwind CSS config
+│   ├── tsconfig.json          # TypeScript configuration
+│   └── vercel.json            # Vercel deployment config
 │
-├── .gitignore                  # Git ignore file
-├── cleanup.bat                 # Cleanup script
-├── create_desktop_shortcut.bat # Shortcut creator
-├── DEVELOPER_DOCUMENTATION.md  # This documentation file
-├── QUICK_START.md              # Quick start guide
-└── start_app.bat               # Application starter
+├── deployment/                 # Deployment configuration
+│   ├── config/                # Service configurations
+│   │   ├── nginx/            # Nginx configuration
+│   │   ├── prometheus/       # Monitoring config
+│   │   └── systemd/         # Service definitions
+│   ├── scripts/              # Deployment scripts
+│   └── maintenance/          # Maintenance docs
+│
+├── docs/                      # Project documentation
+├── .cursor/                   # Cursor IDE settings
+├── .gitignore                # Git ignore patterns
+├── start_dev.sh              # Development startup script
+├── modca_7web.desktop        # Linux desktop shortcut
+├── open_in_nautilus.sh       # File explorer script
+└── structure.txt             # Project structure doc
 ```
 
 ### 5.1 Production VPS Structure
-```
-/home/modca/modca_7web/
-├── backend/
-│   ├── app/               # Core application code
-│   │   ├── constants.py
-│   │   ├── grid.py
-│   │   ├── main.py
-│   │   ├── models.py
-│   │   ├── simulation.py
-│   │   └── __init__.py
-│   ├── data/             # Data storage
-│   ├── recordings/       # Simulation recordings
-│   │   ├── sim_20250404230746_1_frames.json
-│   │   └── sim_20250404230746_1_metadata.json
-│   ├── sqlite_data/      # SQLite database files
-│   │   └── settings.db
-│   ├── venv/             # Python virtual environment
-│   ├── Dockerfile        # Container definition
-│   ├── Procfile         # Process management
-│   ├── requirements.txt  # Dependencies
-│   ├── runtime.txt      # Runtime configuration
-│   └── settings.db      # Database file
-├── certbot/             # SSL certificates
-│   ├── conf/           # Certbot configuration
-│   └── www/            # Web root for verification
-├── config/             # Service configurations
-│   └── nginx/          # Nginx configuration
-│       └── modca.conf  # Nginx site config
-└── docker-compose.yml  # Container orchestration
+
+```bash
+/home/modca/
+├── modca_7web/           # Git repository (code only)
+├── modca_config/         # VPS-specific configs (never overwritten)
+│   ├── nginx/           # Nginx configuration
+│   │   └── modca.conf   # Main Nginx config
+│   ├── ssl/             # SSL certificates
+│   ├── docker-compose.prod.yml  # Production Docker Compose
+│   └── .env.prod        # Production environment variables
+└── modca_data/          # Persistent data
+    ├── sqlite_data/     # Database files
+    │   └── simulation.db
+    └── backups/         # Backup directory
+        ├── db/          # Database backups
+        └── config/      # Config backups
 ```
 
 ### 5.2 Key Differences Between Development and Production
 
-1. **Containerization**
-   - Development: Direct Python execution
-   - Production: Docker containers with Nginx reverse proxy
+1. **Directory Structure**
+   - Development: All in one repository
+   - Production: Separated into code, config, and data directories
 
-2. **Data Storage**
-   - Development: Local SQLite database
-   - Production: Persistent volume-mounted SQLite database
+2. **Configuration Management**
+   - Development: Local `.env` files
+   - Production: Centralized in `/home/modca/modca_config`
 
-3. **SSL/TLS**
-   - Development: None (local development)
-   - Production: Let's Encrypt certificates via Certbot
+3. **Data Storage**
+   - Development: Local SQLite in `backend/sqlite_data`
+   - Production: Persistent volume in `/home/modca/modca_data`
 
-4. **Web Server**
-   - Development: Uvicorn directly
-   - Production: Nginx as reverse proxy
+4. **Deployment Configuration**
+   - Development: Local Docker Compose
+   - Production: Production-specific Docker Compose with volume mounts
 
-5. **Environment**
-   - Development: Local virtual environment
-   - Production: Containerized environment
-
-6. **User Management**
-   - Development: Local user
-   - Production: Dedicated `modca` user (UID: 1000) with:
-     - Home directory: `/home/modca`
-     - Project directory: `/home/modca/modca_7web`
-     - SSH key: `githubVPSkey` for GitHub access
-     - Git repository: Connected to GitHub
-     - Branch: `vps-deploy` (based on `prod`)
+5. **SSL/TLS**
+   - Development: None (HTTP)
+   - Production: Let's Encrypt certificates in `/home/modca/modca_config/ssl`
 
 ## 6. Backend Documentation
 
@@ -516,37 +521,130 @@ Key Implementation Details:
 ### 7.1 Component Structure
 
 ```
-components/
-├── Grid/
-│   ├── Cell.tsx
-│   ├── Grid.tsx
-│   └── types.ts
-├── Controls/
-│   ├── SimulationControls.tsx
-│   ├── ParameterControls.tsx
-│   └── types.ts
-└── Statistics/
-    ├── PopulationGraph.tsx
-    ├── StatisticsSummary.tsx
-    └── types.ts
+frontend/
+├── src/
+    ├── components/
+    │   ├── SimulationSetup.tsx     # Initial setup form and validation
+    │   └── RunningSimulation.tsx   # Active simulation visualization
+    ├── pages/
+    │   ├── _app.tsx               # App wrapper
+    │   ├── index.tsx              # Home page
+    │   ├── about.tsx              # About page
+    │   └── simulate.tsx           # Main simulation page
+    ├── styles/
+    │   ├── fonts.ts              # Font configurations
+    │   ├── globals.css           # Global styles
+    │   └── index.ts             # Style exports
+    ├── utils/
+    │   ├── env.ts               # Environment utilities
+    │   └── notification.ts      # Notification system
+    ├── constants.ts             # Application constants
+    └── types.ts                # TypeScript type definitions
+
+Component Responsibilities:
+
+1. Pages:
+   - simulate.tsx: Main simulation page that coordinates between setup and running states
+   - about.tsx: Information about the project
+   - index.tsx: Landing page
+
+2. Core Components:
+   - SimulationSetup: Handles initial simulation configuration
+     - Form validation using Formik + Yup
+     - Parameter input and validation
+   
+   - RunningSimulation: Manages active simulation display
+     - Grid visualization using Canvas
+     - Population trends with Chart.js
+     - Real-time statistics display
+     - Fullscreen modes for grid and charts
+     - Pan and zoom controls for large grids
+
+3. State Management:
+   - Local state for component-specific data
+   - Props for component communication
+   - WebSocket connection for real-time updates
 ```
 
-### 7.2 State Management
+### 7.2 Component Communication
 
-The application uses React's Context API for global state management:
+```
+simulate.tsx (Page)
+├── Manages global simulation state
+├── Handles WebSocket connection
+├── Coordinates between components
+│
+├── SimulationSetup
+│   ├── Receives: onStartSimulation callback
+│   └── Emits: simulation parameters
+│
+└── RunningSimulation
+    ├── Receives: simulation state, grid data, statistics
+    └── Emits: control actions (step, reset, etc.)
+```
+
+### 7.3 State Management
+
+The application uses React's built-in state management with hooks:
 
 ```typescript
+// Main simulation state in simulate.tsx
 interface SimulationState {
-  settings: SimulationSettings;
-  statistics: SimulationStatistics;
-  status: SimulationStatus;
-  grid: Grid;
+  simulationId: string | null;
+  status: string;
+  currentStep: number;
+  totalSteps: number;
+  grid: number[][];
+  statistics: any;
+  chartData: ChartData;
+  isGridFullscreen: boolean;
+  isChartFullscreen: boolean;
+  wsConnected: boolean;
+  valueAdjustments: any;
 }
 
-const SimulationContext = React.createContext<{
-  state: SimulationState;
-  dispatch: React.Dispatch<SimulationAction>;
-}>(initialContext);
+// Viewport state for large grids
+interface ViewportState {
+  offset: { x: number, y: number };
+  zoomLevel: number;
+  isDragging: boolean;
+}
+```
+
+### 7.4 WebSocket Integration
+
+WebSocket communication is managed in the main simulation page:
+```typescript
+// In simulate.tsx
+const wsRef = useRef<WebSocket | null>(null);
+
+const connectWebSocket = (simId: string) => {
+  const wsUrl = getWsUrl() + '/simulate/' + simId;
+  const ws = new WebSocket(wsUrl);
+  
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    // Update simulation state based on received data
+  };
+  
+  // Handle connection lifecycle
+  ws.onopen = () => setWsConnected(true);
+  ws.onclose = () => setWsConnected(false);
+  ws.onerror = (error) => handleWebSocketError(error);
+};
+```
+
+### 7.5 Form Validation
+
+Validation schema in SimulationSetup:
+```typescript
+const SimulationSchema = Yup.object().shape({
+  grid_size: Yup.number()
+    .required('Required')
+    .min(VALIDATION_LIMITS.GRID_SIZE.min)
+    .max(VALIDATION_LIMITS.GRID_SIZE.max),
+  // ... other validations
+});
 ```
 
 ## 8. Development Workflow
@@ -766,3 +864,251 @@ const SimulationContext = React.createContext<{
    - Cache Level: Bypass
    - Security Level: High
    ```
+
+### 10.3 VPS Infrastructure Management
+
+#### VPS Access
+- **User**: `modca` (non-root)
+- **SSH Command**: `ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66`
+- **Key Requirements**:
+  - Key file: `~/.ssh/modca_7web_vps`
+  - Permissions: 600 (`chmod 600 ~/.ssh/modca_7web_vps`)
+  - Key type: RSA
+
+#### Container Management
+```bash
+# Navigate to config directory
+cd /home/modca/modca_config
+
+# Check container status
+docker-compose -f docker-compose.prod.yml ps
+
+# Start all services
+docker-compose -f docker-compose.prod.yml up -d
+
+# Stop all services
+docker-compose -f docker-compose.prod.yml down
+
+# View logs
+docker-compose -f docker-compose.prod.yml logs backend --tail 50
+docker-compose -f docker-compose.prod.yml logs nginx --tail 50
+
+# Follow logs in real-time
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Rebuild and restart
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+#### Automated Deployment Script
+```bash
+#!/bin/bash
+# /home/modca/modca_config/deploy.sh
+
+set -e  # Exit on any error
+
+echo "🚀 Starting deployment..."
+
+# 1. Backup current state
+echo "📦 Creating backup..."
+docker-compose -f /home/modca/modca_config/docker-compose.prod.yml down
+cp -r /home/modca/modca_data/sqlite_data /home/modca/modca_data/backup_$(date +%Y%m%d_%H%M%S)
+
+# 2. Update code (safe - only code, no configs)
+echo "📥 Updating code..."
+cd /home/modca/modca_7web
+git fetch origin
+git reset --hard origin/prod  # Force clean update
+
+# 3. Build and deploy
+echo "🔨 Building and starting services..."
+cd /home/modca/modca_config
+docker-compose -f docker-compose.prod.yml build --no-cache backend
+docker-compose -f docker-compose.prod.yml up -d
+
+# 4. Health check
+echo "🏥 Health check..."
+sleep 10
+if curl -f https://ws.janis7ewski.org/api/health; then
+    echo "✅ Deployment successful!"
+else
+    echo "❌ Health check failed - rolling back..."
+    # Rollback logic here
+    exit 1
+fi
+```
+
+#### Rollback Script
+```bash
+#!/bin/bash
+# /home/modca/modca_config/rollback.sh
+
+echo "🔄 Rolling back to previous version..."
+
+# Stop current services
+docker-compose -f /home/modca/modca_config/docker-compose.prod.yml down
+
+# Restore from backup
+LATEST_BACKUP=$(ls -t /home/modca/modca_data/backup_* | head -n1)
+rm -rf /home/modca/modca_data/sqlite_data
+cp -r $LATEST_BACKUP /home/modca/modca_data/sqlite_data
+
+# Revert code
+cd /home/modca/modca_7web
+git reset --hard HEAD~1
+
+# Restart services
+cd /home/modca/modca_config
+docker-compose -f docker-compose.prod.yml up -d
+
+echo "✅ Rollback complete!"
+```
+
+### 10.4 Backup & Recovery
+
+#### Database Backup
+```bash
+# Manual backup
+cd /home/modca/modca_data
+cp -r sqlite_data/ backup_$(date +%Y%m%d)/
+```
+
+#### Configuration Backup
+```bash
+# Backup critical configs
+cd /home/modca/modca_config
+tar -czf config_backup_$(date +%Y%m%d).tar.gz \
+    docker-compose.prod.yml \
+    nginx/ \
+    ssl/
+```
+
+## 11. Troubleshooting
+
+### 11.1 Common Backend Issues
+
+#### 1. "521 Web server is down" Error
+**Cause**: Nginx container not running
+**Solution**:
+```bash
+cd /home/modca/modca_config
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### 2. Frontend Cannot Connect to Backend
+**Symptoms**: API calls fail, WebSocket connections fail
+**Diagnosis**:
+```bash
+# Test API connectivity
+curl -i https://ws.janis7ewski.org/api/health
+
+# Check container status
+docker-compose -f docker-compose.prod.yml ps
+
+# Check logs
+docker-compose -f docker-compose.prod.yml logs
+```
+
+#### 3. SSL Certificate Issues
+```bash
+openssl s_client -connect ws.janis7ewski.org:443 -servername ws.janis7ewski.org
+```
+
+### 11.2 Common Frontend Issues
+
+#### 1. "Failed to connect to backend" Error
+**Cause**: Network issues or backend server down
+**Solution**:
+- Check network connectivity
+- Verify backend server status
+
+#### 2. "WebSocket connection failed" Error
+**Cause**: WebSocket server down or network issues
+**Solution**:
+- Check WebSocket server status
+- Verify network connectivity
+
+### 11.3 Common Deployment Issues
+
+#### 1. "502 Bad Gateway" Error
+**Cause**: Nginx configuration issues or backend server down
+**Solution**:
+- Check Nginx configuration
+- Verify backend server status
+
+#### 2. "404 Not Found" Error
+**Cause**: Resource not found
+**Solution**:
+- Verify resource path
+- Check backend server logs for more details
+
+### 11.4 Common Infrastructure Issues
+
+#### 1. "521 Web server is down" Error
+**Cause**: Nginx container not running
+**Solution**:
+```bash
+cd /home/modca/modca_config
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### 2. Frontend Cannot Connect to Backend
+**Symptoms**: API calls fail, WebSocket connections fail
+**Diagnosis**:
+```bash
+# Test API connectivity
+curl -i https://ws.janis7ewski.org/api/health
+
+# Check container status
+docker-compose -f docker-compose.prod.yml ps
+
+# Check logs
+docker-compose -f docker-compose.prod.yml logs
+```
+
+#### 3. SSL Certificate Issues
+```bash
+openssl s_client -connect ws.janis7ewski.org:443 -servername ws.janis7ewski.org
+```
+
+### 11.5 Performance Metrics
+- **API Response Time**: < 100ms (local)
+- **WebSocket Latency**: < 50ms
+- **SSL Handshake**: < 200ms via Cloudflare
+- **Container Resources**: 
+  - Memory: < 512MB per container
+  - CPU: < 10% under normal load
+  - Disk I/O: Minimal (SQLite operations)
+
+### Performance Tuning
+
+1. **Nginx Optimization**:
+   - Enable gzip compression
+   - Configure caching with appropriate timeouts
+   - Set appropriate worker processes based on CPU cores
+   - Configure buffer sizes for WebSocket connections
+   - Enable keepalive connections
+   - Configure microcache for static assets
+
+2. **Application Settings**:
+   - Adjust grid size (max 100x100)
+   - Configure appropriate step sizes
+   - Monitor memory usage
+   - Optimize WebSocket message frequency
+   - Configure appropriate batch sizes for data operations
+
+3. **Security Hardening**:
+   - Configure Content Security Policy (CSP)
+   - Set X-Frame-Options headers
+   - Enable HTTP Strict Transport Security (HSTS)
+   - Configure rate limiting per IP
+   - Set secure cookie flags
+   - Implement WebSocket origin validation
+   - Configure proper CORS headers
+   - Set up fail2ban for SSH and HTTP protection
+   - Regular security audits and updates
+
+---
+
+*Last verified: June 18, 2025 - All systems operational*

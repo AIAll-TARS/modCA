@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import { Inter } from 'next/font/google'
 import { useRouter } from 'next/router'
@@ -43,9 +43,14 @@ import {
     VALIDATION_LIMITS,
     PREY_THREAT_RESPONSE
 } from '../constants'
-import { ChartData, ChartDataset, Statistics, SimulationParams } from '../types'
+import { ChartData, ChartDataset, Statistics, SimulationParams, SimulationStatus } from '../types'
 import { fontFamily } from '@/styles/fonts'
 import { getApiUrl, getWsUrl } from '../utils/env'
+import React from 'react';
+import Link from 'next/link';
+import { showNotification } from '../utils/notification';
+import { SimulationSetup } from '../components/SimulationSetup';
+import { RunningSimulation } from '../components/RunningSimulation';
 
 // Register ChartJS components
 ChartJS.register(
@@ -78,7 +83,6 @@ const SimulationSchema = Yup.object().shape({
         .required('Required'),
     grid_type: Yup.string()
         .required('Required'),
-    record_simulation: Yup.boolean(),
     predator_death_probability: Yup.number()
         .required('Required')
         .min(VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min, `Must be at least ${VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}`)
@@ -136,13 +140,14 @@ const SimulationSchema = Yup.object().shape({
 export default function Simulate() {
     const router = useRouter()
     const [simulationId, setSimulationId] = useState<string | null>(null)
-    const [status, setStatus] = useState<string>('idle')
+    const [status, setStatus] = useState<SimulationStatus>('setup')  // Start with setup status
     const [currentStep, setCurrentStep] = useState<number>(0)
     const [totalSteps, setTotalSteps] = useState<number>(0)
     const [grid, setGrid] = useState<number[][]>([])
     const [statistics, setStatistics] = useState<any>({})
     const [isGridFullscreen, setIsGridFullscreen] = useState<boolean>(false)
-    const [isChartFullscreen, setIsChartFullscreen] = useState<boolean>(false)
+    const [viewportOffset, setViewportOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+    const [zoomLevel, setZoomLevel] = useState<number>(1);
     const [chartData, setChartData] = useState<any>({
         labels: [],
         datasets: [
@@ -211,8 +216,6 @@ export default function Simulate() {
     };
 
     // Add viewport state for large grids
-    const [viewportOffset, setViewportOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
-    const [zoomLevel, setZoomLevel] = useState<number>(1);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [dragStart, setDragStart] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
     const LARGE_GRID_THRESHOLD = 200; // Grids larger than this will use viewport rendering
@@ -462,11 +465,6 @@ export default function Simulate() {
         setIsGridFullscreen(!isGridFullscreen);
     };
 
-    // Toggle fullscreen mode for the chart
-    const toggleChartFullscreen = () => {
-        setIsChartFullscreen(!isChartFullscreen);
-    };
-
     // Update chart with new statistics
     useEffect(() => {
         if (!statistics || !statistics.predator_count) return
@@ -504,9 +502,13 @@ export default function Simulate() {
     // Start a new simulation
     const startSimulation = async (values: SimulationParams) => {
         try {
+            // Set loading state immediately
+            setStatus('loading')
+
             // Validate grid size
             if (Number(values.grid_size) > 400) {
-                alert('Grid size cannot exceed 400x400');
+                showNotification('Grid size cannot exceed 400x400');
+                setStatus('setup')
                 return;
             }
 
@@ -515,43 +517,18 @@ export default function Simulate() {
             const totalEntities = Number(values.initial_predators) + Number(values.initial_prey);
 
             if (totalEntities > totalCells) {
-                alert(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+                showNotification(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+                setStatus('setup')
                 return;
             }
 
-            // Add warning for very large grids
+            // For large grids, show a non-blocking notification
             if (Number(values.grid_size) >= 200) {
-                const confirmLargeGrid = window.confirm(
-                    `You're creating a large grid (${values.grid_size}×${values.grid_size}) with ${values.grid_size * values.grid_size} cells.\n\n` +
-                    `Large grids can be slow to render and may use significant memory.\n\n` +
-                    `For best performance:\n` +
-                    `- Use fullscreen mode\n` +
-                    `- Use zoom and pan controls\n\n` +
-                    `Continue with this large grid?`
+                showNotification(
+                    `Large grid (${values.grid_size}×${values.grid_size}). Use fullscreen mode for better performance.`
                 );
-
-                if (!confirmLargeGrid) {
-                    return;
-                }
             }
 
-            // Additional warning for extremely large grids that may timeout
-            if (Number(values.grid_size) >= 800) {
-                const confirmExtremeGrid = window.confirm(
-                    `WARNING: Extremely large grid (${values.grid_size}×${values.grid_size}).\n\n` +
-                    `Grids larger than 800×800 may cause server timeouts or memory issues.\n\n` +
-                    `- The server may take a long time to respond\n` +
-                    `- The simulation might fail to initialize\n\n` +
-                    `Try reducing the grid size for better reliability.\n\n` +
-                    `Proceed anyway with this extreme grid size?`
-                );
-
-                if (!confirmExtremeGrid) {
-                    return;
-                }
-            }
-
-            setStatus('loading')
             console.log('Starting simulation with raw form values:', values)
 
             // Calculate dynamic timeout based on grid size
@@ -584,18 +561,6 @@ export default function Simulate() {
                 record_simulation: Boolean(values.record_simulation)
             };
 
-            // DEBUG: Log all conversions to see if they're working correctly
-            console.log('Conversion results:')
-            console.log('grid_size:', values.grid_size, '->', validatedValues.grid_size)
-            console.log('steps:', values.steps, '->', validatedValues.steps)
-            console.log('initial_prey:', values.initial_prey, '->', validatedValues.initial_prey)
-            console.log('initial_predators:', values.initial_predators, '->', validatedValues.initial_predators)
-            console.log('predator_death_probability:', values.predator_death_probability, '->', validatedValues.predator_death_probability)
-
-            // Note: Removed value limitations to allow any user input
-
-            console.log('Validated values being sent to backend:', validatedValues)
-
             // Save the settings to localStorage for future use
             saveSettingsToLocalStorage(validatedValues);
 
@@ -605,7 +570,7 @@ export default function Simulate() {
                 console.log('API URL:', getApiUrl() || 'Using relative URL');
 
                 const response = await axios.post(`${getApiUrl()}/simulate`, validatedValues, {
-                    timeout: dynamicTimeout, // Dynamic timeout based on grid size
+                    timeout: dynamicTimeout,
                     headers: {
                         'Content-Type': 'application/json'
                     }
@@ -618,7 +583,7 @@ export default function Simulate() {
                     throw new Error('Invalid response from server - missing simulation ID')
                 }
 
-                const { simulation_id, status, current_step, total_steps, grid, statistics, db_save_success, adjustments } = response.data
+                const { simulation_id, status, current_step, total_steps, grid, statistics, adjustments } = response.data
 
                 // Ensure all required data is present
                 if (!simulation_id || !grid || !statistics) {
@@ -626,15 +591,9 @@ export default function Simulate() {
                     throw new Error('Incomplete simulation data received from server')
                 }
 
-                // Validate that received data matches expectations
-                console.log('Checking received data:')
-                console.log('Grid dimensions:', grid.length > 0 ? `${grid.length}x${grid[0].length}` : 'Empty grid')
-                console.log('Statistics received:', JSON.stringify(statistics))
-                console.log('Current step:', current_step, 'of', total_steps)
-
                 // Set all the state values
                 setSimulationId(simulation_id)
-                setStatus(status)
+                setStatus('ready')  // Set to ready instead of using status from response
                 setCurrentStep(current_step)
                 setTotalSteps(total_steps)
                 setGrid(grid)
@@ -644,13 +603,8 @@ export default function Simulate() {
                 if (adjustments && adjustments.values_adjusted) {
                     console.log("Values were adjusted during initialization:", adjustments);
                     setValueAdjustments(adjustments);
-                } else if (statistics && statistics.values_adjusted) {
-                    // Some statistics objects might contain the adjustment info directly
-                    console.log("Values were adjusted (from statistics):", statistics);
-                    setValueAdjustments(statistics);
-                } else {
-                    console.log("No value adjustments were made");
-                    setValueAdjustments(null);
+                    // Show a non-blocking notification about adjustments
+                    showNotification('Some simulation values were adjusted to fit the grid size.');
                 }
 
                 // Check if recording is enabled and reset recording status
@@ -658,12 +612,6 @@ export default function Simulate() {
                 setRecordingSaved(false);
 
                 console.log(`Simulation ${simulation_id} started at step ${current_step} of ${total_steps}`)
-
-                // Show database warning if save failed
-                if (db_save_success === false) {
-                    console.warn('Database save failed - settings will not be persisted')
-                    // You could show a toast notification here if you want to inform the user
-                }
 
                 // Reset chart data
                 setChartData({
@@ -701,28 +649,21 @@ export default function Simulate() {
                     ],
                 })
 
-                // Add a slight delay before connecting to WebSocket to ensure backend is ready
+                // Connect to WebSocket and start simulation immediately
+                connectWebSocket(simulation_id)
                 setTimeout(() => {
-                    console.log(`Connecting to WebSocket for simulation ${simulation_id}`)
-                    connectWebSocket(simulation_id)
-
-                    // Try to immediately step the simulation to verify it's working
-                    setTimeout(() => {
-                        if (status !== 'completed') {
-                            console.log('Testing simulation stepping functionality')
-                            stepSimulation(1)
-                        }
-                    }, 1000)
+                    if (status !== 'completed') {
+                        autoRunSimulation()
+                    }
                 }, 500)
+
             } catch (axiosError: any) {
                 console.error('Axios error starting simulation:', axiosError)
 
                 // Handle timeout errors specifically
                 if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ECONNRESET') {
-                    setStatus('error')
-                    alert(`The server timed out trying to create a ${validatedValues.grid_size}×${validatedValues.grid_size} grid.\n\n` +
-                        `This grid size is too large for the server to process.\n\n` +
-                        `Please try again with a smaller grid size (we recommend 500×500 or less).`)
+                    setStatus('setup')
+                    showNotification('Connection timeout. Try reducing the grid size or check your connection.')
                     return
                 }
 
@@ -730,28 +671,26 @@ export default function Simulate() {
                 if (axiosError.response?.status === 500) {
                     // Check for specific error messages
                     const errorDetail = axiosError.response.data?.detail || '';
+                    let errorMessage = 'Server error occurred. ';
 
                     if (errorDetail.includes('grid initialization failed')) {
-                        handleAxiosError(axiosError, 'Error initializing grid. Try reducing grid size or entity counts.')
+                        errorMessage += 'Try reducing grid size or entity counts.'
                     } else if (errorDetail.includes('simulation initialization failed')) {
-                        handleAxiosError(axiosError, 'Error creating simulation. Try with different parameters.')
-                    } else if (errorDetail.includes('database')) {
-                        // Database errors shouldn't prevent simulation
-                        handleAxiosError(axiosError, 'Warning: Database error occurred but simulation will still run.')
-                    } else {
-                        // Generic server error
-                        handleAxiosError(axiosError, 'Server error')
+                        errorMessage += 'Try with different parameters.'
                     }
+
+                    showNotification(errorMessage)
                 } else {
                     // For other error types
-                    handleAxiosError(axiosError, 'Error starting simulation')
+                    showNotification('Error starting simulation. Please try again.')
                 }
+                setStatus('setup')
             }
 
         } catch (error: any) {
             console.error('General error during simulation start:', error)
-            setStatus('error')
-            alert(`Error: ${error.message || 'Unknown error occurred'}`)
+            setStatus('setup')
+            showNotification('An unexpected error occurred. Please try again.')
         }
     }
 
@@ -767,7 +706,7 @@ export default function Simulate() {
             const errorDetail = error.response.data?.detail || 'Unknown server error';
             const errorMessage = `${message}: ${errorDetail}`;
 
-            alert(errorMessage)
+            handleSettingsError(errorMessage)
 
             // Show more detailed debugging info in the console
             if (error.response.status === 500) {
@@ -776,11 +715,11 @@ export default function Simulate() {
         } else if (error.request) {
             // The request was made but no response was received
             console.error('No response received:', error.request)
-            alert(`${message}: No response from server. Please check if the backend is running.`)
+            handleWebSocketError(message, error)
         } else {
             // Something happened in setting up the request that triggered an Error
             console.error('Error message:', error.message)
-            alert(`${message}: ${error.message}`)
+            handleWebSocketError(message, error)
         }
     }
 
@@ -804,9 +743,30 @@ export default function Simulate() {
             const ws = new WebSocket(wsUrl)
             wsRef.current = ws
 
+            // Add connection timeout
+            const connectionTimeout = setTimeout(() => {
+                if (ws.readyState !== WebSocket.OPEN) {
+                    console.error('WebSocket connection timeout')
+                    ws.close()
+                    setStatus('error')
+                    showNotification('Connection issue. Retrying...')
+                    // Try to reconnect
+                    setTimeout(() => connectWebSocket(simId), 2000)
+                }
+            }, 10000) // 10 second timeout
+
             ws.onopen = () => {
                 console.log('WebSocket connection established')
+                clearTimeout(connectionTimeout)
                 setWsConnected(true)
+                setStatus('ready')
+
+                // Send a ping to ensure connection is working
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        sendWsCommand('ping')
+                    }
+                }, 500)
             }
 
             ws.onmessage = (event) => {
@@ -814,79 +774,95 @@ export default function Simulate() {
                     const data = JSON.parse(event.data)
                     console.log('WebSocket message:', data)
 
-                    if (data.error) {
+                    if (data.type === 'error') {
                         console.error('WebSocket error:', data.error)
                         setStatus('error')
+                        // Only show notification for non-connection errors
+                        if (!data.error.includes('connection')) {
+                            showNotification(`Simulation error: ${data.error}`)
+                        }
                         return
                     }
 
                     // Handle simulation updates
-                    if (data.grid && data.statistics) {
-                        setStatus(data.status)
+                    if (data.type === 'update' && data.grid && data.statistics) {
+                        setStatus(data.status as SimulationStatus)
                         setCurrentStep(data.current_step)
                         setTotalSteps(data.total_steps)
-                        setGrid(data.grid)
-                        setStatistics(data.statistics)
 
-                        // Update chart with new data
-                        setChartData((prevData: ChartData) => {
-                            // Skip adding data for step 0
-                            if (data.current_step === 0) return prevData;
+                        // Batch state updates using a single setState call
+                        const newState = {
+                            grid: data.grid,
+                            statistics: data.statistics,
+                            chartData: (prevData: ChartData) => {
+                                // Skip adding data for step 0
+                                if (data.current_step === 0) return prevData;
 
-                            const newLabels = [...prevData.labels, data.current_step]
-                            return {
-                                labels: newLabels,
-                                datasets: [
-                                    {
-                                        ...prevData.datasets[0],
-                                        data: [...prevData.datasets[0].data, data.statistics.predator_count],
-                                    },
-                                    {
-                                        ...prevData.datasets[1],
-                                        data: [...prevData.datasets[1].data, data.statistics.prey_count],
-                                    },
-                                    {
-                                        ...prevData.datasets[2],
-                                        data: [...prevData.datasets[2].data, data.statistics.substrate_count],
-                                    },
-                                    {
-                                        ...prevData.datasets[3],
-                                        data: [...prevData.datasets[3].data, data.statistics.predator_count + data.statistics.prey_count + data.statistics.substrate_count],
-                                    },
-                                ],
+                                const newLabels = [...prevData.labels, data.current_step]
+                                return {
+                                    labels: newLabels,
+                                    datasets: [
+                                        {
+                                            ...prevData.datasets[0],
+                                            data: [...prevData.datasets[0].data, data.statistics.predator_count],
+                                        },
+                                        {
+                                            ...prevData.datasets[1],
+                                            data: [...prevData.datasets[1].data, data.statistics.prey_count],
+                                        },
+                                        {
+                                            ...prevData.datasets[2],
+                                            data: [...prevData.datasets[2].data, data.statistics.substrate_count],
+                                        },
+                                        {
+                                            ...prevData.datasets[3],
+                                            data: [...prevData.datasets[3].data, data.statistics.predator_count + data.statistics.prey_count + data.statistics.substrate_count],
+                                        },
+                                    ],
+                                }
                             }
-                        })
+                        }
+
+                        // Update state in a single batch
+                        setGrid(newState.grid)
+                        setStatistics(newState.statistics)
+                        setChartData(newState.chartData)
                     }
                 } catch (error) {
                     console.error('Error parsing WebSocket message:', error)
+                    // Don't show notification for parsing errors, just log them
                 }
             }
 
             ws.onclose = (event) => {
                 console.log(`WebSocket closed with code ${event.code}`)
+                clearTimeout(connectionTimeout)
                 setWsConnected(false)
 
                 // Try to reconnect if connection was lost unexpectedly
                 if (event.code !== 1000 && event.code !== 1001) {
-                    console.log('Attempting to reconnect WebSocket in 5 seconds...')
-                    setTimeout(() => connectWebSocket(simId), 5000)
+                    console.log('Attempting to reconnect WebSocket in 2 seconds...')
+                    // Only show notification if we're not already in error state
+                    if (status !== 'error') {
+                        showNotification('Connection lost. Reconnecting...')
+                    }
+                    setTimeout(() => connectWebSocket(simId), 2000)
                 }
             }
 
             ws.onerror = (event) => {
                 console.error('WebSocket error:', event)
+                clearTimeout(connectionTimeout)
                 setWsConnected(false)
+                setStatus('error')
+                showNotification('Connection error. Please try refreshing the page.')
             }
-
-            // Send a ping to ensure connection is working
-            setTimeout(() => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    sendWsCommand('ping')
-                }
-            }, 1000)
 
         } catch (error) {
             console.error('Error creating WebSocket connection:', error)
+            setStatus('error')
+            showNotification('Failed to connect to simulation server')
+            setTimeout(() => connectWebSocket(simId), 2000)
         }
     }
 
@@ -894,17 +870,26 @@ export default function Simulate() {
     const sendWsCommand = (action: string, params: any = {}) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.error('WebSocket not connected, cannot send command')
+            setStatus('error')
+            showNotification('Connection error. Please try refreshing the page.')
             return false
         }
 
-        const message = JSON.stringify({
-            action,
-            ...params,
-        })
+        try {
+            const message = JSON.stringify({
+                action,
+                ...params,
+            })
 
-        console.log(`Sending WebSocket command: ${message}`)
-        wsRef.current.send(message)
-        return true
+            console.log(`Sending WebSocket command: ${message}`)
+            wsRef.current.send(action) // Send just the action string as expected by the backend
+            return true
+        } catch (error) {
+            console.error('Error sending WebSocket command:', error)
+            setStatus('error')
+            showNotification('Error sending command. Please try again.')
+            return false
+        }
     }
 
     // Run one or more simulation steps
@@ -948,40 +933,54 @@ export default function Simulate() {
 
         // Create a function to attempt the step with retry capability
         const attemptStep = () => {
+            // Create an AbortController for the request
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+
             // Step the simulation via REST API
-            axios.post(`/api/simulate/${simulationId}/step?steps=${steps}`, {}, {
-                timeout: timeout // Set timeout based on grid size
+            axios.post(`${getApiUrl()}/simulate/${simulationId}/step?steps=${steps}`, {}, {
+                timeout: timeout,
+                signal: controller.signal
             })
                 .then(response => {
+                    clearTimeout(timeoutId);
                     console.log('Step complete, response:', response.data)
                     const { status, current_step, grid, statistics } = response.data
 
-                    setStatus(status)
-                    setCurrentStep(current_step)
-                    setGrid(grid)
-                    setStatistics(statistics)
+                    // Batch state updates
+                    const updates = () => {
+                        setStatus(status as SimulationStatus)
+                        setCurrentStep(current_step)
+                        setGrid(grid)
+                        setStatistics(statistics)
+                    }
+
+                    // Use requestAnimationFrame to avoid blocking the UI
+                    requestAnimationFrame(updates)
                 })
                 .catch(error => {
+                    clearTimeout(timeoutId);
                     console.error('Error stepping simulation:', error)
 
                     // Check if we should retry
                     if (retryCount < maxRetries &&
                         (error.code === 'ECONNABORTED' ||
                             error.code === 'ECONNRESET' ||
-                            !error.response)) {
+                            !error.response ||
+                            error.name === 'AbortError')) {
 
                         retryCount++;
                         console.log(`Connection issue detected. Retry attempt ${retryCount}/${maxRetries}...`);
 
                         // Wait a bit longer between each retry
                         const retryDelay = 3000 * retryCount;
+                        showNotification(`Connection issue. Retrying in ${retryDelay / 1000} seconds...`)
                         setTimeout(() => {
                             attemptStep();
                         }, retryDelay);
 
                         // Show a non-blocking message to the user about the retry
-                        const retryMsg = `Server connection issue. Retrying (${retryCount}/${maxRetries})...`;
-                        setStatus(`retrying-${retryCount}`);
+                        setStatus(retryCount === 1 ? 'retrying-1' : retryCount === 2 ? 'retrying-2' : 'retrying-3');
 
                         // Don't show full error dialog during retries
                         return;
@@ -990,15 +989,12 @@ export default function Simulate() {
                     // If we've exhausted retries or it's another type of error, handle normally
                     handleAxiosError(error, 'Failed to step simulation');
 
-                    if (error.code === 'ECONNABORTED' || error.code === 'ECONNRESET') {
+                    if (error.code === 'ECONNABORTED' || error.code === 'ECONNRESET' || error.name === 'AbortError') {
                         // For timeout/connection errors with large grids, provide more helpful message
                         if (isLargeGrid) {
-                            alert(`The server is having trouble processing this large grid (${gridSize}×${gridSize}).\n\n` +
-                                `Tips for large grids:\n` +
-                                `- Use smaller step increments (try one step at a time)\n` +
-                                `- Allow more time between steps\n` +
-                                `- Restart the backend server if needed\n` +
-                                `- Consider using a smaller grid size`);
+                            handleLargeGridWarning(gridSize)
+                        } else {
+                            showNotification('Step timed out. Try reducing the grid size or number of steps.')
                         }
                     }
 
@@ -1024,8 +1020,16 @@ export default function Simulate() {
 
     // Auto-run the simulation with improved error handling
     const autoRunSimulation = () => {
-        if (!simulationId || status === 'completed' || status === 'stopped') {
+        if (!simulationId || status === 'completed' || status === 'stopped' || status === 'error') {
             console.log('Cannot auto-run: simulation not in running state')
+            return () => { }
+        }
+
+        // Ensure WebSocket is connected
+        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+            console.log('WebSocket not connected, attempting to reconnect...')
+            connectWebSocket(simulationId)
+            setTimeout(autoRunSimulation, 1000)
             return () => { }
         }
 
@@ -1043,60 +1047,122 @@ export default function Simulate() {
 
         console.log(`Auto-run using ${stepInterval}ms interval (large grid: ${isLargeGrid})`)
 
-        const interval = setInterval(() => {
-            // Check if we're in a retry or error state
-            if (status.startsWith('retrying') || status === 'error') {
-                consecutiveFailures++;
-                console.log(`Auto-run detected error/retry state (${consecutiveFailures}/${maxConsecutiveFailures})`)
+        // Use requestAnimationFrame for smoother updates
+        let animationFrameId: number;
+        let lastStepTime = 0;
 
-                // If we've had too many consecutive failures, stop auto-run
-                if (consecutiveFailures >= maxConsecutiveFailures) {
-                    console.log('Too many consecutive failures, stopping auto-run')
-                    clearInterval(interval)
-                    alert('Auto-run stopped due to persistent connection issues. Please try manual stepping or restart the simulation.')
-                    return
+        const runStep = (timestamp: number) => {
+            // Check if enough time has passed since the last step
+            if (timestamp - lastStepTime >= stepInterval) {
+                // Check if we're in a retry or error state
+                const isRetrying = status === 'retrying-1' || status === 'retrying-2' || status === 'retrying-3';
+                const isErrorState = status === ('error' as SimulationStatus);
+                if (isRetrying || isErrorState) {
+                    consecutiveFailures++;
+                    console.log(`Auto-run detected error/retry state (${consecutiveFailures}/${maxConsecutiveFailures})`)
+
+                    // If we've had too many consecutive failures, stop auto-run
+                    if (consecutiveFailures >= maxConsecutiveFailures) {
+                        console.log('Too many consecutive failures, stopping auto-run')
+                        handleConnectionIssues()
+                        return
+                    }
+
+                    // Skip this step and continue
+                    lastStepTime = timestamp;
+                } else {
+                    // We had a successful step, reset the failure counter
+                    consecutiveFailures = 0
+
+                    // Check current state to decide whether to continue
+                    if (currentStep >= totalSteps) {
+                        console.log('Auto-run complete: reached total steps')
+                        setStatus('completed' as SimulationStatus)
+                        return
+                    }
+
+                    // Also check if we're already in a loading state
+                    if (status === ('loading' as SimulationStatus)) {
+                        console.log('Skipping auto-run step: simulation is still processing previous step')
+                    } else {
+                        // Send step command via WebSocket
+                        sendWsCommand('step')
+                    }
+
+                    lastStepTime = timestamp;
                 }
-
-                // Skip this step and continue
-                return
             }
 
-            // We had a successful step, reset the failure counter
-            consecutiveFailures = 0
-
-            // Check current state to decide whether to continue
-            if (currentStep >= totalSteps) {
-                console.log('Auto-run complete: reached total steps')
-                clearInterval(interval)
-                setStatus('completed')
-                return
+            // Schedule next frame unless we're done
+            if (currentStep < totalSteps && status !== ('completed' as SimulationStatus)) {
+                animationFrameId = requestAnimationFrame(runStep);
             }
+        };
 
-            // Also check if we're already in a loading state
-            if (status === 'loading') {
-                console.log('Skipping auto-run step: simulation is still processing previous step')
-                return
-            }
-
-            // Use standard stepping method with just 1 step at a time for better reliability
-            stepSimulation(1)
-        }, stepInterval)
+        // Start the animation loop
+        animationFrameId = requestAnimationFrame(runStep);
 
         // Return cleanup function
         return () => {
-            console.log('Cleaning up auto-run interval')
-            clearInterval(interval)
+            console.log('Cleaning up auto-run animation frame')
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId)
+            }
         }
     }
 
-    // Clean up WebSocket on component unmount
+    // Add cleanup effect for navigation
     useEffect(() => {
         return () => {
+            // Cleanup function that runs when component unmounts
             if (wsRef.current) {
-                wsRef.current.close()
+                console.log('Cleaning up WebSocket connection');
+                wsRef.current.close(1000, 'Navigation cleanup');
             }
-        }
-    }, [])
+            // Reset all stateful values
+            setSimulationId(null);
+            setStatus('setup');
+            setCurrentStep(0);
+            setTotalSteps(0);
+            setGrid([]);
+            setStatistics(null);
+            setChartData({
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Predators',
+                        data: [],
+                        borderColor: CHART_COLORS[PREDATOR].border,
+                        backgroundColor: CHART_COLORS[PREDATOR].background,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Prey',
+                        data: [],
+                        borderColor: CHART_COLORS[PREY].border,
+                        backgroundColor: CHART_COLORS[PREY].background,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Substrate',
+                        data: [],
+                        borderColor: CHART_COLORS[SUBSTRATE].border,
+                        backgroundColor: CHART_COLORS[SUBSTRATE].background,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Total',
+                        data: [],
+                        borderColor: 'rgba(150, 150, 150, 1)',
+                        backgroundColor: 'rgba(150, 150, 150, 0.5)',
+                        tension: 0.1,
+                        borderWidth: 3
+                    }
+                ]
+            });
+            setWsConnected(false);
+        };
+    }, []);
 
     // Save the current simulation recording
     const saveRecording = async () => {
@@ -1108,13 +1174,13 @@ export default function Simulate() {
 
             if (response.data && response.data.status === 'success') {
                 setRecordingSaved(true);
-                alert(`Recording saved successfully with ID: ${response.data.recording_id}`);
+                handleRecordingSaved(response.data.recording_id);
             } else {
-                alert(`Error saving recording: ${response.data.message || 'Unknown error'}`);
+                handleRecordingError(response.data);
             }
         } catch (error) {
             console.error('Error saving recording:', error);
-            alert('Failed to save recording. See console for details.');
+            handleRecordingError(error);
         } finally {
             setStatus(status === 'saving' ? (currentStep >= totalSteps ? 'completed' : 'running') : status);
         }
@@ -1217,856 +1283,210 @@ export default function Simulate() {
         }
     }
 
+    // Add this function near the other utility functions
+    const loadSettingsFromLocalStorage = () => {
+        try {
+            const savedSettings = localStorage.getItem('simulationSettings');
+            if (savedSettings) {
+                const parsedSettings = JSON.parse(savedSettings);
+                console.log('Loaded saved settings from localStorage:', parsedSettings);
+                setDefaultSettings(parsedSettings);
+                // Update form values without reloading the page
+                if (formikRef.current) {
+                    formikRef.current.setValues(parsedSettings);
+                }
+            } else {
+                alert('No saved settings found');
+            }
+        } catch (error) {
+            console.error('Error loading saved settings:', error);
+            alert('Error loading saved settings');
+        }
+    };
+
+    // Add formikRef near the top of the component with other refs
+    const formikRef = useRef<any>(null);
+
+    const [isSaveModalOpen, setIsSaveModalOpen] = React.useState(false);
+    const [isLoadModalOpen, setIsLoadModalOpen] = React.useState(false);
+    const [settings, setSettings] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+
+    // Load settings when component mounts
+    React.useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch(`${getApiUrl()}/settings`);
+            if (!response.ok) {
+                throw new Error('Failed to load settings');
+            }
+            const data = await response.json();
+            setSettings(data.settings);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load settings');
+            console.error('Error loading settings:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveSettings = async (name: string, description: string) => {
+        try {
+            const response = await fetch(`${getApiUrl()}/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name,
+                    description,
+                    ...formikRef.current.values,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save settings');
+            }
+
+            setIsSaveModalOpen(false);
+            // Reload settings list
+            await loadSettings();
+            // Show success message
+            alert('Settings saved successfully!');
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            alert('Failed to save settings. Please try again.');
+        }
+    };
+
+    const NUMERIC_FIELDS = [
+        'grid_size', 'steps', 'initial_prey', 'initial_predators',
+        'predator_death_probability', 'predator_birth_probability', 'predator_starvation_steps',
+        'prey_hunted_probability', 'prey_random_death', 'prey_birth_probability',
+        'prey_starvation_steps', 'prey_threat_response',
+        'initial_substrate_probability', 'substrate_random_death', 'substrate_consumption_prob'
+    ];
+
+    const handleLoadSettings = (settings: SimulationParams) => {
+        const normalized = Object.fromEntries(
+            Object.entries(settings).map(([key, value]) => {
+                if (NUMERIC_FIELDS.includes(key)) {
+                    const asNumber = parseFloat(String(value).replace(',', '.'));
+                    return [key, isNaN(asNumber) ? value : asNumber];
+                }
+                return [key, value];
+            })
+        );
+        console.log('Loaded and robustly normalized settings:', normalized);
+        formikRef.current.setValues(normalized);
+        // Log Formik values after setValues
+        setTimeout(() => {
+            console.log('Formik values after setValues:', formikRef.current.values);
+        }, 0);
+        setIsLoadModalOpen(false);
+    };
+
+    // Replace all alert() calls with showNotification()
+    const validateGridSize = (values: SimulationParams) => {
+        if (values.grid_size > 400) {
+            showNotification('Grid size cannot exceed 400x400');
+            return false;
+        }
+        return true;
+    };
+
+    const validateEntityCounts = (values: SimulationParams) => {
+        const totalCells = values.grid_size * values.grid_size;
+        if (values.initial_predators + values.initial_prey > totalCells) {
+            showNotification(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+            return false;
+        }
+        return true;
+    };
+
+    const handleTimeoutError = (gridSize: number) => {
+        showNotification(
+            `The server timed out trying to create a ${gridSize}×${gridSize} grid.\n\n` +
+            'Please try:\n' +
+            '1. A smaller grid size\n' +
+            '2. Fewer initial entities\n' +
+            '3. Running the simulation locally'
+        );
+    };
+
+    const handleSimulationError = (error: any) => {
+        showNotification(`Error: ${error.message || 'Unknown error occurred'}`);
+    };
+
+    const handleWebSocketError = (message: string, error?: any) => {
+        if (!error) {
+            showNotification(`${message}: No response from server. Please check if the backend is running.`);
+        } else {
+            showNotification(`${message}: ${error.message}`);
+        }
+    };
+
+    const handleLargeGridWarning = (gridSize: number) => {
+        showNotification(
+            `The server is having trouble processing this large grid (${gridSize}×${gridSize}).\n\n` +
+            'Consider:\n' +
+            '1. Using a smaller grid size\n' +
+            '2. Reducing the number of entities\n' +
+            '3. Running the simulation locally'
+        );
+    };
+
+    const handleConnectionIssues = () => {
+        showNotification('Auto-run stopped due to persistent connection issues. Please try manual stepping or restart the simulation.');
+    };
+
+    const handleRecordingSaved = (recordingId: string) => {
+        showNotification(`Recording saved successfully with ID: ${recordingId}`);
+    };
+
+    const handleRecordingError = (error: any) => {
+        if (error.response?.data?.message) {
+            showNotification(`Error saving recording: ${error.response.data.message}`);
+        } else {
+            showNotification('Failed to save recording. See console for details.');
+        }
+    };
+
+    const handleSettingsError = (message: string) => {
+        showNotification(message);
+    };
+
+    // Render either setup or simulation based on status
     return (
-        <>
-            <Head>
-                <title>Run Simulation - modCA_7</title>
-                <meta name="description" content="Configure and run a cellular automata simulation" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <link rel="icon" href="/favicon.ico" />
-            </Head>
-
-            <style jsx global>{`
-                .btn-primary {
-                    background-color: #6B7280;
-                    color: white;
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
-                    transition: background-color 0.2s;
-                }
-                .btn-primary:hover {
-                    background-color: #4B5563;
-                }
-                .btn-secondary {
-                    background-color: #9CA3AF;
-                    color: white;
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
-                    transition: background-color 0.2s;
-                }
-                .btn-secondary:hover {
-                    background-color: #6B7280;
-                }
-                .btn-success {
-                    background-color: #6B7280;
-                    color: white;
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
-                    transition: background-color 0.2s;
-                }
-                .btn-success:hover {
-                    background-color: #4B5563;
-                }
-                .btn-warning {
-                    background-color: #9CA3AF;
-                    color: white;
-                    font-weight: 500;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
-                    transition: background-color 0.2s;
-                }
-                .btn-warning:hover {
-                    background-color: #6B7280;
-                }
-            `}</style>
-
-            {isGridFullscreen && (
-                <div className="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center p-2">
-                    <div className="relative w-full h-full">
-                        <button
-                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
-                            onClick={toggleGridFullscreen}
-                        >
-                            Exit Fullscreen
-                        </button>
-
-                        {/* Zoom controls */}
-                        {grid.length > LARGE_GRID_THRESHOLD && (
-                            <div className="absolute top-2 left-2 z-10 flex space-x-2">
-                                <button
-                                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
-                                    onClick={() => setZoomLevel(prev => Math.min(prev + 0.5, 20))}
-                                >
-                                    Zoom In
-                                </button>
-                                <button
-                                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
-                                    onClick={() => setZoomLevel(prev => Math.max(prev - 0.5, 0.5))}
-                                >
-                                    Zoom Out
-                                </button>
-                                <button
-                                    className="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700"
-                                    onClick={() => {
-                                        setZoomLevel(1);
-                                        setViewportOffset({ x: 0, y: 0 });
-                                    }}
-                                >
-                                    Reset View
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="w-full h-full flex flex-col items-center justify-center">
-                            <h2 className="text-xl text-white mb-2">Grid Visualization (Step {currentStep})</h2>
-                            <div className="w-full h-[calc(100%-40px)] flex items-center justify-center">
-                                <canvas
-                                    ref={canvasRef}
-                                    className="max-w-full max-h-full bg-gray-800"
-                                ></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isChartFullscreen && (
-                <div className="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center p-2">
-                    <div className="relative w-full h-full">
-                        <button
-                            className="absolute top-2 right-2 z-10 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
-                            onClick={toggleChartFullscreen}
-                        >
-                            Exit Fullscreen
-                        </button>
-
-                        {/* Control buttons for simulation in fullscreen mode */}
-                        <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
-                            <button
-                                className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
-                                onClick={() => stepSimulation(1)}
-                                disabled={status === 'completed' || !simulationId}
-                            >
-                                Step
-                            </button>
-                            <button
-                                className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
-                                onClick={autoRunSimulation}
-                                disabled={status === 'completed' || !simulationId}
-                            >
-                                Auto Run
-                            </button>
-                            <button
-                                className="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700"
-                                onClick={resetSimulation}
-                                disabled={!simulationId}
-                            >
-                                Reset
-                            </button>
-                            <button
-                                className="bg-yellow-600 text-white px-3 py-1 rounded-md hover:bg-yellow-700"
-                                onClick={() => router.push("/")}
-                            >
-                                Home
-                            </button>
-                        </div>
-
-                        <div className="w-full h-full flex flex-col items-center justify-center">
-                            {/* Combined step counter and population counters in one line with larger text */}
-                            <div className="flex items-center justify-center space-x-6 mb-6 text-2xl">
-                                <div className="text-white font-bold">Step: {currentStep}</div>
-                                <div className="flex items-center">
-                                    <span className="text-red-500 font-bold">{statistics.predator_count || 0}</span>
-                                    {currentStep > 1 && (
-                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[0].data) === 'increasing'
-                                            ? 'text-green-400'
-                                            : calculateTrend(chartData.datasets[0].data) === 'decreasing'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
-                                            }`}>
-                                            {calculateTrend(chartData.datasets[0].data) === 'increasing'
-                                                ? '↑'
-                                                : calculateTrend(chartData.datasets[0].data) === 'decreasing'
-                                                    ? '↓'
-                                                    : '→'
-                                            }
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="text-yellow-500 font-bold">{statistics.prey_count || 0}</span>
-                                    {currentStep > 1 && (
-                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[1].data) === 'increasing'
-                                            ? 'text-green-400'
-                                            : calculateTrend(chartData.datasets[1].data) === 'decreasing'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
-                                            }`}>
-                                            {calculateTrend(chartData.datasets[1].data) === 'increasing'
-                                                ? '↑'
-                                                : calculateTrend(chartData.datasets[1].data) === 'decreasing'
-                                                    ? '↓'
-                                                    : '→'
-                                            }
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="text-green-500 font-bold">{statistics.substrate_count || 0}</span>
-                                    {currentStep > 1 && (
-                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[2].data) === 'increasing'
-                                            ? 'text-green-400'
-                                            : calculateTrend(chartData.datasets[2].data) === 'decreasing'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
-                                            }`}>
-                                            {calculateTrend(chartData.datasets[2].data) === 'increasing'
-                                                ? '↑'
-                                                : calculateTrend(chartData.datasets[2].data) === 'decreasing'
-                                                    ? '↓'
-                                                    : '→'
-                                            }
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center border-l pl-4 border-gray-600">
-                                    <span className="text-gray-300 font-bold">
-                                        {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
-                                    </span>
-                                    {currentStep > 1 && (
-                                        <span className={`ml-2 ${calculateTrend(chartData.datasets[3].data) === 'increasing'
-                                            ? 'text-green-400'
-                                            : calculateTrend(chartData.datasets[3].data) === 'decreasing'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
-                                            }`}>
-                                            {calculateTrend(chartData.datasets[3].data) === 'increasing'
-                                                ? '↑'
-                                                : calculateTrend(chartData.datasets[3].data) === 'decreasing'
-                                                    ? '↓'
-                                                    : '→'
-                                            }
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="w-full h-[calc(100%-80px)] flex items-center justify-center bg-white dark:bg-dark-card p-4 rounded-md">
-                                <Line
-                                    data={chartData}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: {
-                                                display: false, // Hide the legend
-                                            },
-                                            title: {
-                                                display: true,
-                                                text: 'Population Over Time',
-                                                color: '#E0E0E0',
-                                                font: {
-                                                    size: 24 // Larger title
-                                                }
-                                            },
-                                        },
-                                        scales: {
-                                            y: {
-                                                beginAtZero: true,
-                                                ticks: {
-                                                    color: '#E0E0E0',
-                                                    font: {
-                                                        size: 16
-                                                    }
-                                                },
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
-                                                },
-                                                display: true
-                                            },
-                                            x: {
-                                                ticks: {
-                                                    color: '#E0E0E0',
-                                                    font: {
-                                                        size: 16
-                                                    },
-                                                    callback: function (value, index, values) {
-                                                        // If there are no data points yet, show 0-10 range
-                                                        if (chartData.labels.length === 0) {
-                                                            return index; // Return index to show 0-10
-                                                        }
-                                                        return this.getLabelForValue(Number(value));
-                                                    }
-                                                },
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.1)'
-                                                },
-                                                display: true,
-                                                // Show default 0-10 range if no data
-                                                min: chartData.labels.length > 0 ? undefined : 0,
-                                                max: chartData.labels.length > 0 ? undefined : 10,
-                                            }
-                                        },
-                                        elements: {
-                                            line: {
-                                                tension: 0.1,
-                                                borderWidth: 3
-                                            },
-                                            point: {
-                                                radius: 2,
-                                                hoverRadius: 5
-                                            }
-                                        },
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <main className="min-h-screen bg-gray-50 dark:bg-dark-bg">
-                {/* Fixed top navigation bar with buttons */}
-                {simulationId && (
-                    <div className="sticky top-0 z-40 bg-white dark:bg-dark-card shadow-md p-3 mb-4">
-                        <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text">
-                                    Simulation #{simulationId}
-                                </h2>
-                                <div className="flex items-center">
-                                    <span className="text-gray-600 dark:text-gray-300 mr-2">
-                                        Step {currentStep} of {totalSteps}
-                                    </span>
-                                    <div className={`h-3 w-3 rounded-full ${status === 'running' ? 'bg-green-500' :
-                                        status === 'completed' ? 'bg-blue-500' :
-                                            status === 'stopped' ? 'bg-red-500' :
-                                                status.startsWith('retrying') ? 'bg-purple-500 animate-pulse' :
-                                                    'bg-yellow-500'
-                                        }`}></div>
-                                    <span className="ml-2 text-sm capitalize dark:text-gray-300">
-                                        {status.startsWith('retrying') ? 'Retrying connection...' : status}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => router.push("/")}
-                                    title="Return to Home"
-                                >
-                                    Home
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => stepSimulation(1)}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Step (1)
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => stepSimulation(5)}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Step (5)
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={autoRunSimulation}
-                                    disabled={status === 'completed' || !simulationId}
-                                >
-                                    Auto Run
-                                </button>
-                                <button
-                                    type="button"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                    onClick={resetSimulation}
-                                    disabled={!simulationId}
-                                >
-                                    Reset
-                                </button>
-                                {simulationId && recordingAvailable && !recordingSaved && (
-                                    <button
-                                        type="button"
-                                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                        onClick={() => saveRecording()}
-                                    >
-                                        Save Recording
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+        <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
+            <div className="container mx-auto px-4 py-8">
+                {status === 'setup' ? (
+                    <SimulationSetup onStartSimulation={startSimulation} />
+                ) : (
+                    <RunningSimulation
+                        simulationId={simulationId || ''}
+                        grid={grid}
+                        currentStep={currentStep}
+                        totalSteps={totalSteps}
+                        statistics={statistics}
+                        status={status}
+                        chartData={chartData}
+                        isGridFullscreen={isGridFullscreen}
+                        setIsGridFullscreen={setIsGridFullscreen}
+                        viewportOffset={viewportOffset}
+                        setViewportOffset={setViewportOffset}
+                        zoomLevel={zoomLevel}
+                        setZoomLevel={setZoomLevel}
+                        autoRunSimulation={autoRunSimulation}
+                    />
                 )}
-
-                {/* Display adjustment warning if values were adjusted */}
-                {simulationId && valueAdjustments && valueAdjustments.values_adjusted && (
-                    <div className="container mx-auto max-w-7xl mb-4">
-                        <AdjustmentWarning adjustments={valueAdjustments} />
-                    </div>
-                )}
-
-                <div className="container mx-auto px-4 py-6 max-w-7xl">
-                    {!simulationId ? (
-                        <>
-                            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text mb-6">Set simulation baby and let's roll</h1>
-                            <div className="card p-6 mb-8">
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-4">Configure Simulation</h2>
-
-                                <Formik
-                                    initialValues={defaultSettings}
-                                    validationSchema={SimulationSchema}
-                                    enableReinitialize={true}
-                                    onSubmit={(values: SimulationParams, { setSubmitting }) => {
-                                        // Convert all form values explicitly before calling startSimulation
-                                        const numericValues: SimulationParams = {
-                                            ...values,
-                                            grid_size: Number(values.grid_size) || GRID_SIZE,
-                                            steps: Number(values.steps) || STEPS,
-                                            initial_prey: Number(values.initial_prey) || INITIAL_PREY,
-                                            initial_predators: Number(values.initial_predators) || INITIAL_PREDATORS,
-                                            predator_death_probability: Number(values.predator_death_probability) || PREDATOR_DEATH_PROBABILITY,
-                                            predator_birth_probability: Number(values.predator_birth_probability) || PREDATOR_BIRTH_PROBABILITY,
-                                            predator_starvation_steps: Number(values.predator_starvation_steps) || PREDATOR_STARVATION_STEPS,
-                                            prey_hunted_probability: Number(values.prey_hunted_probability) || PREY_HUNTED_PROBABILITY,
-                                            prey_random_death: Number(values.prey_random_death) || PREY_RANDOM_DEATH,
-                                            prey_birth_probability: Number(values.prey_birth_probability) || PREY_BIRTH_PROBABILITY,
-                                            prey_starvation_steps: Number(values.prey_starvation_steps) || PREY_STARVATION_STEPS,
-                                            prey_threat_response: Number(values.prey_threat_response) || PREY_THREAT_RESPONSE,
-                                            initial_substrate_probability: Number(values.initial_substrate_probability) || INITIAL_SUBSTRATE_PROBABILITY,
-                                            substrate_random_death: Number(values.substrate_random_death) || SUBSTRATE_RANDOM_DEATH,
-                                            substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
-                                            neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
-                                            grid_type: values.grid_type || GRID_TYPE,
-                                            record_simulation: Boolean(values.record_simulation)
-                                        };
-                                        console.log('Form submission - converted numeric values:', numericValues);
-
-                                        // Save settings to localStorage before starting simulation
-                                        saveSettingsToLocalStorage(numericValues);
-
-                                        startSimulation(numericValues);
-                                        setSubmitting(false);
-                                    }}
-                                >
-                                    {({ isSubmitting }) => (
-                                        <Form className="space-y-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                <div>
-                                                    <label htmlFor="grid_size" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Grid Size</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="grid_size"
-                                                        min={VALIDATION_LIMITS.GRID_SIZE.min}
-                                                        max={VALIDATION_LIMITS.GRID_SIZE.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="grid_size" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Steps</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="steps"
-                                                        min={VALIDATION_LIMITS.STEPS.min}
-                                                        max={VALIDATION_LIMITS.STEPS.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="steps" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="neighborhood_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Neighborhood Type</label>
-                                                    <Field
-                                                        as="select"
-                                                        name="neighborhood_type"
-                                                        className="input"
-                                                    >
-                                                        <option value="von_neumann">Von Neumann (4 cells)</option>
-                                                        <option value="moore">Moore (8 cells)</option>
-                                                    </Field>
-                                                    <ErrorMessage name="neighborhood_type" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="grid_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Grid Type</label>
-                                                    <Field
-                                                        as="select"
-                                                        name="grid_type"
-                                                        className="input"
-                                                    >
-                                                        <option value="finite">Finite</option>
-                                                        <option value="torus">Torus</option>
-                                                    </Field>
-                                                    <ErrorMessage name="grid_type" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div className="col-span-3 border-t pt-4 mt-2">
-                                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Predator Parameters</h3>
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="initial_predators" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Predators</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="initial_predators"
-                                                        min={VALIDATION_LIMITS.INITIAL_PREDATORS.min}
-                                                        max={VALIDATION_LIMITS.INITIAL_PREDATORS.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="initial_predators" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="predator_death_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Death Probability</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="predator_death_probability"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.PREDATOR_DEATH_PROBABILITY.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="predator_death_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="predator_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="predator_birth_probability"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.PREDATOR_BIRTH_PROBABILITY.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="predator_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="predator_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="predator_starvation_steps"
-                                                        min={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.min}
-                                                        max={VALIDATION_LIMITS.PREDATOR_STARVATION_STEPS.max}
-                                                        className="input"
-                                                    />
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a predator can survive without food</div>
-                                                    <ErrorMessage name="predator_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div className="col-span-3 border-t pt-4 mt-2">
-                                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Prey Parameters</h3>
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="initial_prey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Prey</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="initial_prey"
-                                                        min={VALIDATION_LIMITS.INITIAL_PREY.min}
-                                                        max={VALIDATION_LIMITS.INITIAL_PREY.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="initial_prey" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_hunted_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hunted Probability</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="prey_hunted_probability"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.PREY_HUNTED_PROBABILITY.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="prey_hunted_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="prey_random_death"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.PREY_RANDOM_DEATH.min}
-                                                        max={VALIDATION_LIMITS.PREY_RANDOM_DEATH.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="prey_random_death" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_birth_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Birth Probability</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="prey_birth_probability"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.PREY_BIRTH_PROBABILITY.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="prey_birth_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_starvation_steps" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Starvation Steps</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="prey_starvation_steps"
-                                                        min={VALIDATION_LIMITS.PREY_STARVATION_STEPS.min}
-                                                        max={VALIDATION_LIMITS.PREY_STARVATION_STEPS.max}
-                                                        className="input"
-                                                    />
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Steps a prey can survive without substrate</div>
-                                                    <ErrorMessage name="prey_starvation_steps" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="prey_threat_response" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Threat Response</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="prey_threat_response"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.min}
-                                                        max={VALIDATION_LIMITS.PREY_THREAT_RESPONSE.max}
-                                                        className="input"
-                                                    />
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Probability of staying still when threatened</div>
-                                                    <ErrorMessage name="prey_threat_response" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div className="col-span-3 border-t pt-4 mt-2">
-                                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Substrate Parameters</h3>
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="initial_substrate_probability" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Initial Probability</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="initial_substrate_probability"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.min}
-                                                        max={VALIDATION_LIMITS.INITIAL_SUBSTRATE_PROBABILITY.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="initial_substrate_probability" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="substrate_random_death" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Random Death Probability</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="substrate_random_death"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.min}
-                                                        max={VALIDATION_LIMITS.SUBSTRATE_RANDOM_DEATH.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="substrate_random_death" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="substrate_consumption_prob" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Consumption Probability</label>
-                                                    <Field
-                                                        type="number"
-                                                        name="substrate_consumption_prob"
-                                                        step="0.01"
-                                                        min={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.min}
-                                                        max={VALIDATION_LIMITS.SUBSTRATE_CONSUMPTION_PROB.max}
-                                                        className="input"
-                                                    />
-                                                    <ErrorMessage name="substrate_consumption_prob" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor="record_simulation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                        Record Simulation
-                                                    </label>
-                                                    <div className="mt-1 flex items-center">
-                                                        <Field
-                                                            type="checkbox"
-                                                            name="record_simulation"
-                                                            id="record_simulation"
-                                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                        />
-                                                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                                                            Enable to save each step for smoother playback later
-                                                        </span>
-                                                    </div>
-                                                    <ErrorMessage name="record_simulation" component="div" className="text-red-500 text-sm mt-1" />
-                                                </div>
-                                            </div>
-
-                                            <div className="flex justify-end space-x-3 pt-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => router.push('/')}
-                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        // Reset to factory defaults
-                                                        setDefaultSettings(DEFAULT_SIMULATION_SETTINGS);
-                                                        saveSettingsToLocalStorage(DEFAULT_SIMULATION_SETTINGS);
-                                                        // Reload the page to apply defaults
-                                                        window.location.reload();
-                                                    }}
-                                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                                                >
-                                                    Reset to Defaults
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    disabled={isSubmitting}
-                                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
-                                                >
-                                                    {isSubmitting ? 'Starting...' : 'Start Simulation'}
-                                                </button>
-                                            </div>
-                                        </Form>
-                                    )}
-                                </Formik>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="space-y-6">
-                            <div className="card p-6">
-                                <div className="flex flex-wrap -mx-2">
-                                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                                        <div className="border dark:border-dark-border rounded-md p-2">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Grid Visualization</h3>
-                                                <button
-                                                    className="btn-secondary text-sm px-2 py-1"
-                                                    onClick={toggleGridFullscreen}
-                                                >
-                                                    Fullscreen
-                                                </button>
-                                            </div>
-                                            <div className="aspect-square bg-gray-100 dark:bg-gray-800 border rounded-md overflow-hidden">
-                                                <canvas
-                                                    ref={canvasRef}
-                                                    width={400}
-                                                    height={400}
-                                                    className="w-full h-full bg-gray-100 dark:bg-gray-800"
-                                                ></canvas>
-                                            </div>
-                                            {grid.length > 100 && (
-                                                <div className="mt-2 text-xs text-gray-500">
-                                                    Large grid ({grid.length}x{grid.length}). Use fullscreen for better visibility.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="w-full lg:w-1/2 px-2 mb-4">
-                                        <div className="border dark:border-dark-border rounded-md p-2">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">Population Trends</h3>
-                                                <button
-                                                    className="btn-secondary text-sm px-2 py-1"
-                                                    onClick={toggleChartFullscreen}
-                                                >
-                                                    Fullscreen
-                                                </button>
-                                            </div>
-                                            <div className="aspect-square bg-white dark:bg-dark-card">
-                                                <Line
-                                                    data={chartData}
-                                                    options={{
-                                                        responsive: true,
-                                                        plugins: {
-                                                            legend: {
-                                                                position: 'top',
-                                                                labels: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                }
-                                                            },
-                                                            title: {
-                                                                display: true,
-                                                                text: 'Population Over Time',
-                                                                color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                            },
-                                                        },
-                                                        scales: {
-                                                            y: {
-                                                                beginAtZero: true,
-                                                                ticks: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                },
-                                                                grid: {
-                                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
-                                                                },
-                                                                display: chartData.labels.length > 0
-                                                            },
-                                                            x: {
-                                                                ticks: {
-                                                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : undefined
-                                                                },
-                                                                grid: {
-                                                                    color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : undefined
-                                                                },
-                                                                display: chartData.labels.length > 0
-                                                            }
-                                                        },
-                                                        elements: {
-                                                            line: {
-                                                                tension: 0.1
-                                                            },
-                                                            point: {
-                                                                radius: 0 // Hide points when not needed
-                                                            }
-                                                        },
-                                                        animation: {
-                                                            duration: 0 // Disable animation for initial render
-                                                        }
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4">
-                                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">Current Statistics</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-                                            <div className="text-sm text-red-600 dark:text-red-400 font-medium">Predators</div>
-                                            <div className="text-2xl font-bold text-red-800 dark:text-red-300">{statistics.predator_count || 0}</div>
-                                        </div>
-                                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
-                                            <div className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Prey</div>
-                                            <div className="text-2xl font-bold text-yellow-800 dark:text-yellow-300">{statistics.prey_count || 0}</div>
-                                        </div>
-                                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
-                                            <div className="text-sm text-green-600 dark:text-green-400 font-medium">Substrate</div>
-                                            <div className="text-2xl font-bold text-green-800 dark:text-green-300">{statistics.substrate_count || 0}</div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-md p-3">
-                                        <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Population</div>
-                                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-300">
-                                            {(statistics.predator_count || 0) + (statistics.prey_count || 0) + (statistics.substrate_count || 0)}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {status === 'error' && (
-                                    <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded">
-                                        An error occurred. Please check the console for details or try again.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </main>
-        </>
+            </div>
+        </div>
     )
 } 

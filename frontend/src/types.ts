@@ -38,4 +38,18 @@ export interface SimulationParams {
     initial_substrate_probability: number;
     substrate_random_death: number;
     substrate_consumption_prob: number;
-} 
+}
+
+// All possible simulation states
+export type SimulationStatus =
+    | 'setup'      // Initial setup state
+    | 'loading'    // Loading/initializing
+    | 'ready'      // Ready to run
+    | 'running'    // Simulation is running
+    | 'completed'  // Simulation finished
+    | 'error'      // Error state
+    | 'saving'     // Saving state
+    | 'stopped'    // Manually stopped
+    | 'retrying-1' // First retry attempt
+    | 'retrying-2' // Second retry attempt
+    | 'retrying-3'; // Third retry attempt 
