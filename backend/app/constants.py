@@ -7,7 +7,7 @@ Contains default configuration parameters for the simulation.
 GRID_SIZE = 75  # Size of the square grid (NxN), max 100
 STEPS = 9999  # Number of simulation iterations
 NEIGHBORHOOD_TYPE = "moore"  # Can be "von_neumann" or "moore"
-GRID_TYPE = "torus"  # Grid type, typically "torus"
+GRID_TYPE = "finite"  # Grid type, can be "finite" or "torus"
 
 # Predator parameters
 PREDATOR_DEATH_PROBABILITY = 0.1  # Probability of predator dying
