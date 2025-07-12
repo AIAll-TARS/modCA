@@ -561,8 +561,13 @@ export default function Simulate() {
                 record_simulation: Boolean(values.record_simulation)
             };
 
-            // Save the settings to localStorage for future use
-            saveSettingsToLocalStorage(validatedValues);
+            // Save the validated settings to localStorage
+            try {
+                localStorage.setItem('simulationSettings', JSON.stringify(validatedValues));
+                console.log('Settings saved to localStorage:', validatedValues);
+            } catch (error) {
+                console.error('Error saving settings to localStorage:', error);
+            }
 
             // Add timeout to axios request to prevent hanging indefinitely
             try {
