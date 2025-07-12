@@ -837,10 +837,10 @@ const SimulationSchema = Yup.object().shape({
 
 #### VPS Access
 - **User**: `modca` (non-root)
-- **SSH Command**: `ssh -i ~/.ssh/modca_vps modca@135.181.111.66`
+- **SSH Command**: `ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66`
 - **Key Requirements**:
-  - Key file: `~/.ssh/modca_vps`
-  - Permissions: 600 (`chmod 600 ~/.ssh/modca_vps`)
+  - Key file: `~/.ssh/modca_7web_vps`
+  - Permissions: 600 (`chmod 600 ~/.ssh/modca_7web_vps`)
   - Key type: RSA
 
 #### Container Management

@@ -88,11 +88,11 @@ Client → Cloudflare (DNS + SSL) → Vercel (Frontend)
 
 ### SSH Access
 - **User**: `modca` (not root)
-- **Command**: `ssh -i ~/.ssh/modca_vps modca@135.181.111.66`
+- **Command**: `ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66`
 - **Project Directory**: `/home/modca/modca_7web`
 - **Key Requirements**:
-  - Key file: `~/.ssh/modca_vps`
-  - Permissions: 600 (`chmod 600 ~/.ssh/modca_vps`)
+  - Key file: `~/.ssh/modca_7web_vps`
+  - Permissions: 600 (`chmod 600 ~/.ssh/modca_7web_vps`)
   - Key type: RSA
 
 ### Container Management
@@ -451,7 +451,7 @@ fi
 git push origin prod
 
 # VPS deployment (one command)
-ssh -i ~/.ssh/modca_vps modca@135.181.111.66 '/home/modca/modca_config/deploy.sh'
+ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66 '/home/modca/modca_config/deploy.sh'
 ```
 
 #### 5. **Configuration Management**
@@ -518,7 +518,7 @@ echo "✅ Rollback complete!"
 ### Essential Commands
 ```bash
 # SSH to VPS
-ssh -i ~/.ssh/modca_vps modca@135.181.111.66
+ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66
 
 # Navigate to project
 cd /home/modca/modca_7web
