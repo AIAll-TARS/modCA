@@ -352,14 +352,14 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                             Grid Size: <span className="text-gray-500">{values.grid_size}×{values.grid_size}</span>
                                         </label>
                                         <div className="flex items-center space-x-2 mt-2">
-                                            <Field
+                                            <input
                                                 type="range"
-                                                name="grid_size"
                                                 min={VALIDATION_LIMITS.GRID_SIZE.min}
                                                 max={VALIDATION_LIMITS.GRID_SIZE.max}
+                                                value={values.grid_size}
                                                 step="1"
                                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                                                onChange={(e) => {
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                     const newSize = parseInt(e.target.value);
                                                     const newSettings = getDefaultSettings(newSize);
                                                     setFieldValue('grid_size', newSize);
@@ -391,7 +391,7 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                                 max={6}  // 10^6
                                                 step="0.1"
                                                 value={stepsToSliderValue(values.steps)}
-                                                onChange={(e) => {
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                     const value = parseFloat(e.target.value);
                                                     const newSteps = sliderValueToSteps(value);
                                                     setFieldValue('steps', newSteps);
