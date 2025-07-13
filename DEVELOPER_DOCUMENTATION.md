@@ -729,7 +729,34 @@ const SimulationSchema = Yup.object().shape({
 
 ## 8. Development Workflow
 
-### 8.1 Setting Up Development Environment
+### 8.1 Development and Deployment Overview
+
+1. **Local Development**
+   - Make changes in feature branches
+   - Test frontend-only changes locally
+   - Always run frontend from local machine, not VPS
+   - Frontend must be run from `~/projects/modca_7web/frontend` directory
+
+2. **VPS Backend Testing**
+   - SSH access: `ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66`
+   - Always test backend changes on VPS using dev branch
+   - Update and restart using docker-compose
+   - Test endpoints via curl before frontend testing
+
+3. **Frontend Testing**
+   - Run against VPS backend:
+     ```bash
+     cd frontend
+     NEXT_PUBLIC_API_URL=https://ws.janis7ewski.org/api NEXT_PUBLIC_WS_URL=wss://ws.janis7ewski.org/ws npm run dev
+     ```
+   - Verify all endpoints and WebSocket connections
+
+4. **Production Deployment**
+   - Merge tested changes from dev to prod
+   - Frontend auto-deploys via Vercel from prod branch
+   - Backend deploys manually on VPS
+
+### 8.2 Setting Up Development Environment
 
 1. Clone the repository
 2. Set up backend:
@@ -947,13 +974,24 @@ const SimulationSchema = Yup.object().shape({
 
 ### 10.3 VPS Infrastructure Management
 
-#### VPS Access
+#### VPS Access and Configuration
 - **User**: `modca` (non-root)
 - **SSH Command**: `ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66`
 - **Key Requirements**:
-  - Key file: `~/.ssh/modca_7web_vps`
+  - Key file: `~/.ssh/modca_7web_vps` (not `~/.ssh/modca_vps`)
   - Permissions: 600 (`chmod 600 ~/.ssh/modca_7web_vps`)
   - Key type: RSA
+
+#### Development and Deployment Structure
+- **Backend**: Always runs on VPS (135.181.111.66)
+- **Frontend**: Always runs from local machine
+- **Branch Strategy**:
+  - `dev`: Development and testing
+  - `prod`: Production deployment
+  - Feature branches for new features
+- **Constants and Configuration**:
+  - All shared configuration in backend
+  - Frontend fetches constants from backend API
 
 #### Container Management
 ```bash
