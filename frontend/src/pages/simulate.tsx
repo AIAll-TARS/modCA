@@ -51,6 +51,7 @@ import Link from 'next/link';
 import { useToast } from '../components/Toast';
 import { SimulationSetup } from '../components/SimulationSetup';
 import { RunningSimulation } from '../components/RunningSimulation';
+import { showNotification } from '../utils/notification';
 
 // Register ChartJS components
 ChartJS.register(
