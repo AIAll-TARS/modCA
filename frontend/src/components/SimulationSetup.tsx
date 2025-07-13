@@ -361,7 +361,10 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                     const newSize = parseInt(e.target.value);
-                                                    const newSettings = getDefaultSettings(newSize);
+                                                    const newSettings = getDefaultSettings({
+                                                        ...constants,
+                                                        GRID_SIZE: newSize
+                                                    });
                                                     setFieldValue('grid_size', newSize);
                                                     setFieldValue('initial_predators', newSettings.initial_predators);
                                                     setFieldValue('initial_prey', newSettings.initial_prey);
