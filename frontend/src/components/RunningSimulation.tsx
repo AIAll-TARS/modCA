@@ -10,6 +10,7 @@ import {
 } from '../constants';
 import { ChartData } from '../types';
 import { useRouter } from 'next/router';
+import { useLoading } from '../contexts/LoadingContext';
 
 // Define simulation status type
 type SimulationStatus = 'setup' | 'loading' | 'ready' | 'running' | 'completed' | 'error' | 'saving' | 'stopped' | 'retrying-1' | 'retrying-2' | 'retrying-3';
@@ -51,6 +52,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
     const [isDragging, setIsDragging] = React.useState(false);
     const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
     const router = useRouter();
+    const { showLoading, hideLoading } = useLoading();
 
     // Function to handle simulation start
     const handleSimulationStart = () => {
@@ -263,25 +265,12 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                     className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
                     onClick={async () => {
                         try {
-                            // Set loading state
-                            const btn = document.activeElement as HTMLButtonElement;
-                            if (btn) {
-                                btn.disabled = true;
-                                btn.textContent = 'Loading...';
-                            }
-
-                            // Small delay to ensure cleanup
-                            await new Promise(resolve => setTimeout(resolve, 100));
-
-                            // Navigate home
+                            showLoading('Returning to home...');
                             await router.push("/");
                         } catch (error) {
                             console.error('Navigation error:', error);
-                            const btn = document.activeElement as HTMLButtonElement;
-                            if (btn) {
-                                btn.disabled = false;
-                                btn.textContent = 'Home';
-                            }
+                        } finally {
+                            hideLoading();
                         }
                     }}
                 >
@@ -296,18 +285,6 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                     {status === 'running' ? 'Running...' : status === 'loading' ? 'Loading...' : 'Run Simulation'}
                 </button>
             </div>
-
-            {/* Loading overlay */}
-            {status === 'loading' && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-gray-900 p-6 rounded-lg shadow-xl">
-                        <div className="flex items-center space-x-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                            <div className="text-lg text-gray-300">Loading simulation...</div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Error state */}
             {status === 'error' && (

@@ -4,6 +4,7 @@ import Head from 'next/head';
 import '../styles/globals.css';
 import { ToastProvider } from '../components/Toast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { LoadingProvider } from '../contexts/LoadingContext';
 
 export default function App({ Component, pageProps }: AppProps) {
     const [darkMode, setDarkMode] = useState(true); // Default to dark mode
@@ -31,12 +32,14 @@ export default function App({ Component, pageProps }: AppProps) {
     return (
         <ErrorBoundary>
             <ToastProvider>
-                <Head>
-                    <title>ModCA Web</title>
-                    <meta name="description" content="ModCA Web - Ecosystem Simulation" />
-                    <link rel="icon" href="/favicon.ico" />
-                </Head>
-                <Component {...pageProps} />
+                <LoadingProvider>
+                    <Head>
+                        <title>ModCA Web</title>
+                        <meta name="description" content="ModCA Web - Ecosystem Simulation" />
+                        <link rel="icon" href="/favicon.ico" />
+                    </Head>
+                    <Component {...pageProps} />
+                </LoadingProvider>
             </ToastProvider>
         </ErrorBoundary>
     );

@@ -52,6 +52,8 @@ import { useToast } from '../components/Toast';
 import { SimulationSetup } from '../components/SimulationSetup';
 import { RunningSimulation } from '../components/RunningSimulation';
 import { showNotification } from '../utils/notification';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import { useLoading } from '../contexts/LoadingContext';
 
 // Register ChartJS components
 ChartJS.register(
@@ -141,6 +143,7 @@ const SimulationSchema = Yup.object().shape({
 export default function Simulate() {
     const router = useRouter();
     const { showToast } = useToast();
+    const { showLoading, hideLoading } = useLoading();
     const [simulationId, setSimulationId] = useState<string | null>(null)
     const [status, setStatus] = useState<SimulationStatus>('setup')  // Start with setup status
     const [currentStep, setCurrentStep] = useState<number>(0)
@@ -504,13 +507,14 @@ export default function Simulate() {
     // Start a new simulation
     const startSimulation = async (values: SimulationParams) => {
         try {
-            // Set loading state immediately
+            showLoading('Initializing simulation...');
             setStatus('loading')
 
             // Validate grid size
             if (Number(values.grid_size) > 400) {
                 showToast('Grid size cannot exceed 400x400', 'error');
                 setStatus('setup')
+                hideLoading();
                 return;
             }
 
@@ -521,6 +525,7 @@ export default function Simulate() {
             if (totalEntities > totalCells) {
                 showToast(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`, 'error');
                 setStatus('setup')
+                hideLoading();
                 return;
             }
 
@@ -699,6 +704,8 @@ export default function Simulate() {
             console.error('General error during simulation start:', error)
             setStatus('setup')
             showNotification('An unexpected error occurred. Please try again.')
+        } finally {
+            hideLoading();
         }
     }
 
