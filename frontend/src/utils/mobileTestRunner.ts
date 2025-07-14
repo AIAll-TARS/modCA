@@ -1,9 +1,9 @@
-import { MOBILE_DEVICES, runMobileTests, logTestResults } from './mobileTest';
+import { MOBILE_DEVICES, runMobileTests, logTestResults, TestResults } from './mobileTest';
 
 interface TestResult {
     device: string;
     viewport: { width: number; height: number };
-    results: ReturnType<typeof runMobileTests>;
+    results: TestResults;  // Changed from ReturnType<typeof runMobileTests> to TestResults
     timestamp: string;
 }
 
