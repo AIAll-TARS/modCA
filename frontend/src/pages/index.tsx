@@ -63,17 +63,6 @@ export default function Home() {
                         </p>
                     </header>
 
-                    <nav className="flex justify-between items-center mb-8">
-                        <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
-                            MODCA
-                        </Link>
-                        <div className="space-x-4">
-                            <Link href="/mobile-test" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                                Mobile Test
-                            </Link>
-                        </div>
-                    </nav>
-
                     <div className="max-w-4xl mx-auto">
                         <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-md p-8 mb-16">
                             <div className="flex flex-col items-center">
