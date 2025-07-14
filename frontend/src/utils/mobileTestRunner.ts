@@ -25,8 +25,8 @@ class MobileTestRunner {
             // Wait for layout to update
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // Run tests
-            const results = runMobileTests();
+            // Run tests and wait for results
+            const results = await runMobileTests();
             this.results.push({
                 device,
                 viewport,
