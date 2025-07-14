@@ -17,7 +17,7 @@ interface TestResult {
     details: string[];
 }
 
-interface TestResults {
+export interface TestResults {
     touch: TestResult;
     text: TestResult;
     layout: TestResult;
