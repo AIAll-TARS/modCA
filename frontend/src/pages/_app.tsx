@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
+import { fetchConstants } from '../api/constants';
+import { updateConstants } from '../constants';
 import '../styles/globals.css';
 import { ToastProvider } from '../components/Toast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -9,6 +11,15 @@ export default function App({ Component, pageProps }: AppProps) {
     const [darkMode, setDarkMode] = useState(true); // Default to dark mode
 
     useEffect(() => {
+        // Fetch and update constants when app starts
+        fetchConstants()
+            .then(constants => {
+                updateConstants(constants);
+            })
+            .catch(error => {
+                console.error('Failed to fetch simulation constants:', error);
+            });
+
         // Check if there's a saved theme preference
         const savedTheme = localStorage.getItem('theme');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
