@@ -729,7 +729,85 @@ const SimulationSchema = Yup.object().shape({
 
 ## 8. Development Workflow
 
-### 8.1 Setting Up Development Environment
+### 8.1 Development and Deployment Overview
+
+1. **Local Development**
+   - Make changes in feature branches
+   - Test frontend-only changes locally
+   - Always run frontend from local machine, not VPS
+   - Frontend must be run from `~/projects/modca_7web/frontend` directory
+
+2. **VPS Backend Testing**
+   - SSH access: `ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66`
+   - Always test backend changes on VPS using dev branch
+   - Update and restart using docker-compose
+   - Test endpoints via curl before frontend testing
+
+3. **Frontend Testing**
+   - Run against VPS backend:
+     ```bash
+     cd frontend
+     NEXT_PUBLIC_API_URL=https://ws.janis7ewski.org/api NEXT_PUBLIC_WS_URL=wss://ws.janis7ewski.org/ws npm run dev
+     ```
+   - Verify all endpoints and WebSocket connections
+
+4. **Production Deployment**
+   - Merge tested changes from dev to prod
+   - Frontend auto-deploys via Vercel from prod branch
+   - Backend deploys manually on VPS
+
+### 8.2 Constants Management
+
+1. **Architecture**
+   - Backend constants (`backend/app/constants.py`) serve as the source of truth
+   - Frontend has local fallback values (`frontend/src/constants.ts`)
+   - Constants are synced via `/api/constants` endpoint
+   - Frontend fetches and updates constants on app startup
+
+2. **Updating Constants**
+   ```bash
+   # 1. Edit backend/app/constants.py
+   
+   # 2. Commit and push to prod
+   git add backend/app/constants.py
+   git commit -m "feat: update constants"
+   git push origin prod
+   
+   # 3. SSH into VPS
+   ssh -i ~/.ssh/modca_7web_vps modca@135.181.111.66
+   
+   # 4. Update and restart backend
+   cd ~/modca_7web
+   git checkout prod
+   git pull origin prod
+   docker-compose down
+   docker-compose up -d --build
+   ```
+
+3. **Frontend Constants Flow**
+   - App startup: Fetches constants from backend
+   - If fetch fails: Uses local fallback values
+   - Constants update mechanism:
+     ```typescript
+     // in _app.tsx
+     useEffect(() => {
+         fetchConstants()
+             .then(constants => {
+                 updateConstants(constants);
+             })
+             .catch(error => {
+                 console.error('Failed to fetch constants:', error);
+             });
+     }, []);
+     ```
+
+4. **Best Practices**
+   - Always update backend constants first
+   - Keep frontend fallback values in sync with backend
+   - Test changes on dev branch before prod
+   - Verify frontend receives updated values after deployment
+
+### 8.3 Setting Up Development Environment
 
 1. Clone the repository
 2. Set up backend:
@@ -745,7 +823,7 @@ const SimulationSchema = Yup.object().shape({
    npm install
    ```
 
-### 8.2 Development Process
+### 8.4 Development Process
 
 1. Create feature branch from main
 2. Implement changes
