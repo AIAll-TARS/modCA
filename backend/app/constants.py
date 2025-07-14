@@ -4,7 +4,7 @@ Contains default configuration parameters for the simulation.
 """
 
 # Grid configuration
-GRID_SIZE = 75  # Size of the square grid (NxN), max 100
+GRID_SIZE = 100  # Size of the square grid (NxN), max 100
 STEPS = 9999  # Number of simulation iterations
 NEIGHBORHOOD_TYPE = "moore"  # Can be "von_neumann" or "moore"
 GRID_TYPE = "finite"  # Grid type, can be "finite" or "torus"
