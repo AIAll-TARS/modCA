@@ -611,7 +611,7 @@ export default function Simulate() {
                     console.log("Values were adjusted during initialization:", adjustments);
                     setValueAdjustments(adjustments);
                     // Show a non-blocking notification about adjustments
-                    showNotification('Some simulation values were adjusted to fit the grid size.');
+                    showToast('Some simulation values were adjusted to fit the grid size.', 'info');
                 }
 
                 // Check if recording is enabled and reset recording status
@@ -670,7 +670,7 @@ export default function Simulate() {
                 // Handle timeout errors specifically
                 if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ECONNRESET') {
                     setStatus('setup')
-                    showNotification('Connection timeout. Try reducing the grid size or check your connection.')
+                    showToast('Connection timeout. Try reducing the grid size or check your connection.', 'warning')
                     return
                 }
 
@@ -686,10 +686,10 @@ export default function Simulate() {
                         errorMessage += 'Try with different parameters.'
                     }
 
-                    showNotification(errorMessage)
+                    showToast(errorMessage, 'error');
                 } else {
                     // For other error types
-                    showNotification('Error starting simulation. Please try again.')
+                    showToast('Error starting simulation. Please try again.', 'error');
                 }
                 setStatus('setup')
             }
@@ -697,7 +697,7 @@ export default function Simulate() {
         } catch (error: any) {
             console.error('General error during simulation start:', error)
             setStatus('setup')
-            showNotification('An unexpected error occurred. Please try again.')
+            showToast('An unexpected error occurred. Please try again.', 'error');
         }
     }
 
@@ -786,7 +786,7 @@ export default function Simulate() {
                         setStatus('error')
                         // Only show notification for non-connection errors
                         if (!data.error.includes('connection')) {
-                            showNotification(`Simulation error: ${data.error}`)
+                            showToast(`Simulation error: ${data.error}`, 'error');
                         }
                         return
                     }
@@ -862,13 +862,13 @@ export default function Simulate() {
                 clearTimeout(connectionTimeout)
                 setWsConnected(false)
                 setStatus('error')
-                showToast('Connection error. Please try refreshing the page.', 'error')
+                showToast('Connection error. Please try refreshing the page.', 'error');
             }
 
         } catch (error) {
             console.error('Error creating WebSocket connection:', error)
             setStatus('error')
-            showToast('Failed to connect to simulation server', 'error')
+            showToast('Failed to connect to simulation server', 'error');
             setTimeout(() => connectWebSocket(simId), 2000)
         }
     }
@@ -878,7 +878,7 @@ export default function Simulate() {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.error('WebSocket not connected, cannot send command')
             setStatus('error')
-            showToast('Connection error. Please try refreshing the page.', 'error')
+            showToast('Connection error. Please try refreshing the page.', 'error');
             return false
         }
 
@@ -894,7 +894,7 @@ export default function Simulate() {
         } catch (error) {
             console.error('Error sending WebSocket command:', error)
             setStatus('error')
-            showToast('Error sending command. Please try again.', 'error')
+            showToast('Error sending command. Please try again.', 'error');
             return false
         }
     }
@@ -1001,7 +1001,7 @@ export default function Simulate() {
                         if (isLargeGrid) {
                             handleLargeGridWarning(gridSize)
                         } else {
-                            showNotification('Step timed out. Try reducing the grid size or number of steps.')
+                            showToast('Step timed out. Try reducing the grid size or number of steps.', 'warning');
                         }
                     }
 
@@ -1303,11 +1303,11 @@ export default function Simulate() {
                     formikRef.current.setValues(parsedSettings);
                 }
             } else {
-                alert('No saved settings found');
+                showToast('No saved settings found', 'info');
             }
         } catch (error) {
             console.error('Error loading saved settings:', error);
-            alert('Error loading saved settings');
+            showToast('Error loading saved settings', 'error');
         }
     };
 
@@ -1365,10 +1365,10 @@ export default function Simulate() {
             // Reload settings list
             await loadSettings();
             // Show success message
-            alert('Settings saved successfully!');
+            showToast('Settings saved successfully!', 'success');
         } catch (error) {
             console.error('Error saving settings:', error);
-            alert('Failed to save settings. Please try again.');
+            showToast('Failed to save settings. Please try again.', 'error');
         }
     };
 
@@ -1399,10 +1399,10 @@ export default function Simulate() {
         setIsLoadModalOpen(false);
     };
 
-    // Replace all alert() calls with showNotification()
+    // Replace all alert() calls with showToast()
     const validateGridSize = (values: SimulationParams) => {
         if (values.grid_size > 400) {
-            showNotification('Grid size cannot exceed 400x400');
+            showToast('Grid size cannot exceed 400x400', 'error');
             return false;
         }
         return true;
@@ -1411,19 +1411,16 @@ export default function Simulate() {
     const validateEntityCounts = (values: SimulationParams) => {
         const totalCells = values.grid_size * values.grid_size;
         if (values.initial_predators + values.initial_prey > totalCells) {
-            showNotification(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`);
+            showToast(`Total number of predators (${values.initial_predators}) and prey (${values.initial_prey}) cannot exceed the total number of cells (${totalCells})`, 'error');
             return false;
         }
         return true;
     };
 
     const handleTimeoutError = (gridSize: number) => {
-        showNotification(
-            `The server timed out trying to create a ${gridSize}×${gridSize} grid.\n\n` +
-            'Please try:\n' +
-            '1. A smaller grid size\n' +
-            '2. Fewer initial entities\n' +
-            '3. Running the simulation locally'
+        showToast(
+            `The server timed out trying to create a ${gridSize}×${gridSize} grid. Please try a smaller grid size or fewer initial entities.`,
+            'error'
         );
     };
 
@@ -1440,12 +1437,9 @@ export default function Simulate() {
     };
 
     const handleLargeGridWarning = (gridSize: number) => {
-        showNotification(
-            `The server is having trouble processing this large grid (${gridSize}×${gridSize}).\n\n` +
-            'Consider:\n' +
-            '1. Using a smaller grid size\n' +
-            '2. Reducing the number of entities\n' +
-            '3. Running the simulation locally'
+        showToast(
+            `The server is having trouble processing this large grid (${gridSize}×${gridSize}). Consider using a smaller grid size or reducing the number of entities.`,
+            'warning'
         );
     };
 
