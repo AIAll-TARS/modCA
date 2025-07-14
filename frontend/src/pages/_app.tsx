@@ -45,7 +45,8 @@ export default function App({ Component, pageProps }: AppProps) {
                 <Head>
                     <title>ModCA Web</title>
                     <meta name="description" content="ModCA Web - Ecosystem Simulation" />
-                    <link rel="icon" href="/favicon.ico" />
+                    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+                    <meta name="theme-color" content="#121212" />
                 </Head>
                 <Component {...pageProps} />
             </ToastProvider>
