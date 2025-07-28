@@ -710,6 +710,78 @@ class Simulation:
         """
         return self.stats
 
+    def reset(self):
+        """
+        Reset the simulation to its initial state.
+        
+        This method recreates the initial grid and resets all tracking arrays
+        to their initial values. Note that this is a simplified reset that
+        recreates the grid rather than storing the original state.
+        """
+        try:
+            logger.info("Resetting simulation to initial state")
+            
+            # Get the original parameters
+            grid_size = self.grid.shape[0]
+            initial_prey = self.params.get('initial_prey', 0)
+            initial_predators = self.params.get('initial_predators', 0)
+            initial_substrate_prob = self.params.get('initial_substrate_probability', 0.1)
+            
+            # Recreate the initial grid
+            from .grid import initialize_grid
+            self.grid = initialize_grid(grid_size, initial_prey, initial_predators, initial_substrate_prob)
+            
+            # Reset statistics tracking
+            self.stats = {
+                'predator_count': [np.count_nonzero(self.grid == PREDATOR)],
+                'prey_count': [np.count_nonzero(self.grid == PREY)],
+                'substrate_count': [np.count_nonzero(self.grid == SUBSTRATE)]
+            }
+            
+            # Reset event tracking statistics
+            self.statistics = {
+                "predator_deaths": 0,
+                "predator_births": 0,
+                "predator_starved": 0,
+                "prey_deaths": 0,
+                "prey_births": 0,
+                "prey_hunted": 0,
+                "prey_starved": 0,
+                "substrate_created": 0,
+                "substrate_consumed": 0
+            }
+            
+            # Reset starvation tracking arrays
+            grid_shape = self.grid.shape
+            self.predator_hunger = np.ones(grid_shape, dtype=int) * -1
+            self.prey_hunger = np.ones(grid_shape, dtype=int) * -1
+            
+            # Set initial hunger counters to 0 for all predators and prey
+            self.predator_hunger[self.grid == PREDATOR] = 0
+            self.prey_hunger[self.grid == PREY] = 0
+            
+            # Reset recording if enabled
+            if self.recording_enabled:
+                self.recorded_frames = []
+                # Save initial state
+                self.recorded_frames.append({
+                    'grid': copy.deepcopy(self.grid).tolist(),
+                    'step': 0,
+                    'statistics': {
+                        'predator_count': np.count_nonzero(self.grid == PREDATOR),
+                        'prey_count': np.count_nonzero(self.grid == PREY),
+                        'substrate_count': np.count_nonzero(self.grid == SUBSTRATE),
+                        'empty_count': np.count_nonzero(self.grid == EMPTY)
+                    },
+                    'timestamp': datetime.now().isoformat()
+                })
+            
+            logger.info("Simulation reset successfully")
+            
+        except Exception as e:
+            logger.exception(f"Error resetting simulation: {str(e)}")
+            raise Exception(f"Failed to reset simulation: {str(e)}")
+
     def save_recording(self, simulation_id=None, recording_dir='recordings'):
         """
         Save the recorded frames to disk.
