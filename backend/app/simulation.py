@@ -978,3 +978,13 @@ class Simulation:
                     nearby_cells.append((nx, ny))
 
         return nearby_cells
+
+
+def get_neighborhood_params(neighborhood_type):
+    """Get neighborhood parameters based on the neighborhood type."""
+    if neighborhood_type == "moore":
+        return {"neighborhood_type": "moore", "includes_diagonal": True}
+    elif neighborhood_type == "von_neumann":
+        return {"neighborhood_type": "von_neumann", "includes_diagonal": False}
+    else:
+        return {"neighborhood_type": "moore", "includes_diagonal": True}
