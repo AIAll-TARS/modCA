@@ -79,8 +79,8 @@ const SimulationSchema = Yup.object().shape({
         .required('Required')
         .min(VALIDATION_LIMITS.STEPS.min, `Must be at least ${VALIDATION_LIMITS.STEPS.min}`)
         .max(VALIDATION_LIMITS.STEPS.max, `Must be at most ${VALIDATION_LIMITS.STEPS.max}`),
-    neighborhood_type: Yup.string()
-        .required('Required'),
+    // neighborhood_type: Yup.string()
+    //     .required('Required'),
     grid_type: Yup.string()
         .required('Required'),
     predator_death_probability: Yup.number()
@@ -558,7 +558,7 @@ export default function Simulate() {
                 initial_substrate_probability: Number(values.initial_substrate_probability) || INITIAL_SUBSTRATE_PROBABILITY,
                 substrate_random_death: Number(values.substrate_random_death) || SUBSTRATE_RANDOM_DEATH,
                 substrate_consumption_prob: Number(values.substrate_consumption_prob) || SUBSTRATE_CONSUMPTION_PROB,
-                neighborhood_type: values.neighborhood_type || NEIGHBORHOOD_TYPE,
+                neighborhood_type: "moore", // Always use Moore neighborhood (8 neighbors)
                 grid_type: values.grid_type || GRID_TYPE,
                 record_simulation: Boolean(values.record_simulation)
             };

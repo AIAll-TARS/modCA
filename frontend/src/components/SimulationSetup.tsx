@@ -31,8 +31,8 @@ const SimulationSchema = Yup.object().shape({
         .required('Required')
         .min(VALIDATION_LIMITS.STEPS.min, `Must be at least ${VALIDATION_LIMITS.STEPS.min}`)
         .max(VALIDATION_LIMITS.STEPS.max, `Must be at most ${VALIDATION_LIMITS.STEPS.max}`),
-    neighborhood_type: Yup.string()
-        .required('Required'),
+    // neighborhood_type: Yup.string()
+    //     .required('Required'),
     grid_type: Yup.string()
         .required('Required'),
     predator_death_probability: Yup.number()
@@ -437,8 +437,8 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                         <ErrorMessage name="grid_type" component="div" className="text-red-500 text-sm mt-1" />
                                     </div>
 
-                                    {/* Neighborhood Type */}
-                                    <div>
+                                    {/* Neighborhood Type - HIDDEN, always uses Moore (8 neighbors) */}
+                                    {/* <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Neighborhood Type</label>
                                         <div className="radio-toggle">
                                             <Field type="radio" name="neighborhood_type" value="von_neumann" id="von_neumann" />
@@ -457,7 +457,7 @@ export const SimulationSetup: React.FC<SimulationSetupProps> = ({ onStartSimulat
                                             Select the number of neighboring cells to consider
                                         </div>
                                         <ErrorMessage name="neighborhood_type" component="div" className="text-red-500 text-sm mt-1" />
-                                    </div>
+                                    </div> */}
 
                                     {/* Empty div to maintain grid layout */}
                                     <div></div>

@@ -128,7 +128,7 @@ export const getDefaultSettings = (constants: SimulationConstants) => {
         initial_substrate_probability: constants.INITIAL_SUBSTRATE_PROBABILITY,
         substrate_random_death: constants.SUBSTRATE_RANDOM_DEATH,
         substrate_consumption_prob: constants.SUBSTRATE_CONSUMPTION_PROB,
-        neighborhood_type: constants.NEIGHBORHOOD_TYPE,
+        neighborhood_type: "moore", // Always use Moore neighborhood (8 neighbors)
         grid_type: constants.GRID_TYPE,
         record_simulation: false
     };
