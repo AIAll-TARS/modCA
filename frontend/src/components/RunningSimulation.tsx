@@ -8,14 +8,11 @@ import {
     SUBSTRATE,
     LARGE_GRID_THRESHOLD
 } from '../constants';
-import { ChartData } from '../types';
+import { ChartData, SimulationStatus } from '../types';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import { getApiUrl } from '../utils/env';
 import { useToast } from './Toast';
-
-// Define simulation status type
-type SimulationStatus = 'setup' | 'loading' | 'ready' | 'running' | 'completed' | 'error' | 'saving' | 'stopped' | 'retrying-1' | 'retrying-2' | 'retrying-3';
 
 interface RunningSimulationProps {
     simulationId: string;
@@ -304,7 +301,7 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                     onClick={async () => {
                         try {
                             console.log('Home button clicked - initiating cleanup and navigation');
-                            
+
                             // Set loading state
                             const btn = document.activeElement as HTMLButtonElement;
                             if (btn) {

@@ -227,10 +227,10 @@ export default function Simulate() {
 
     // Add a new state variable to track adjustments
     const [valueAdjustments, setValueAdjustments] = useState<any>(null);
-    
+
     // Add a flag to track if we're navigating away
     const [isNavigating, setIsNavigating] = useState<boolean>(false);
-    
+
     // Animation frame reference for auto-run
     const animationFrameRef = useRef<number | null>(null);
 
@@ -870,7 +870,7 @@ export default function Simulate() {
                 console.error('WebSocket error:', event)
                 clearTimeout(connectionTimeout)
                 setWsConnected(false)
-                
+
                 // Only show error if we're still actively using the simulation and not navigating away
                 if (simulationId && status !== 'stopped' && status !== 'setup' && !isNavigating) {
                     setStatus('error')
@@ -890,7 +890,7 @@ export default function Simulate() {
     const sendWsCommand = (action: string, params: any = {}) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.error('WebSocket not connected, cannot send command')
-            
+
             // Only show error if we're actively running and not stopped/navigating
             if (status !== 'stopped' && status !== 'setup' && !isNavigating) {
                 setStatus('error')
@@ -1055,14 +1055,14 @@ export default function Simulate() {
         try {
             // Set navigation flag to prevent error notifications during cleanup
             setIsNavigating(true);
-            
+
             // Cancel any pending animation frames
             if (animationFrameRef.current) {
                 console.log('Cancelling animation frame');
                 cancelAnimationFrame(animationFrameRef.current);
                 animationFrameRef.current = null;
             }
-            
+
             // Close WebSocket connection first
             if (wsRef.current) {
                 console.log('Closing WebSocket connection');
@@ -1078,11 +1078,11 @@ export default function Simulate() {
             // Update local state
             setStatus('stopped');
             setWsConnected(false);
-            
+
             console.log(`Simulation ${simulationId} stopped successfully`);
         } catch (error: any) {
             console.error('Error stopping simulation:', error);
-            
+
             // Handle different error scenarios
             if (error.response?.status === 404) {
                 console.log('Simulation not found on backend (already stopped/removed)');
@@ -1094,7 +1094,7 @@ export default function Simulate() {
                 console.log('Unknown error during stop:', error.message);
                 showToast('Error stopping simulation, but frontend stopped', 'warning');
             }
-            
+
             // Always stop the frontend even if backend call fails
             setStatus('stopped');
             setWsConnected(false);
@@ -1115,7 +1115,7 @@ export default function Simulate() {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.log('WebSocket not connected, attempting to reconnect...')
             // Only reconnect if we're not stopped or navigating
-            if (status !== 'stopped' && !isNavigating) {
+            if (status !== ('stopped' as SimulationStatus) && !isNavigating) {
                 connectWebSocket(simulationId)
                 setTimeout(autoRunSimulation, 1000)
             }
@@ -1210,14 +1210,14 @@ export default function Simulate() {
             // Cleanup function that runs when component unmounts
             console.log('Simulate page unmounting - cleaning up...');
             setIsNavigating(true);
-            
+
             // Cancel any pending animation frames
             if (animationFrameRef.current) {
                 console.log('Cleaning up animation frame on unmount');
                 cancelAnimationFrame(animationFrameRef.current);
                 animationFrameRef.current = null;
             }
-            
+
             if (wsRef.current) {
                 console.log('Cleaning up WebSocket connection');
                 wsRef.current.close(1000, 'Navigation cleanup');
