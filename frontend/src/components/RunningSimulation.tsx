@@ -64,23 +64,37 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
         autoRunSimulation();
     };
 
-    // Function to handle simulation stop
+        // Function to handle simulation stop
     const handleSimulationStop = async () => {
         if (!simulationId || status === 'stopped' || status === 'completed') return;
 
         try {
+            console.log(`Attempting to stop simulation: ${simulationId}`);
+            console.log(`Using API URL: ${getApiUrl()}`);
+            
             // Call the backend to stop the simulation
-            await axios.delete(`${getApiUrl()}/simulate/${simulationId}`);
-
+            const response = await axios.delete(`${getApiUrl()}/simulate/${simulationId}`);
+            console.log('Stop response:', response.data);
+            
             // Call the parent's stop handler to update state
             if (onStopSimulation) {
                 onStopSimulation();
             }
-
+            
             showToast('Simulation stopped successfully', 'success');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error stopping simulation:', error);
-            showToast('Failed to stop simulation', 'error');
+            
+            // Handle 404 errors gracefully (simulation already stopped/removed)
+            if (error.response?.status === 404) {
+                console.log('Simulation already stopped or removed');
+                if (onStopSimulation) {
+                    onStopSimulation();
+                }
+                showToast('Simulation stopped', 'success');
+            } else {
+                showToast(`Failed to stop simulation: ${error.response?.data?.detail || error.message}`, 'error');
+            }
         }
     };
 

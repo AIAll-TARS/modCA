@@ -1025,28 +1025,50 @@ export default function Simulate() {
         }
     }
 
-    // Stop the simulation
+        // Stop the simulation
     const stopSimulation = async () => {
-        if (!simulationId) return;
+        if (!simulationId) {
+            console.log('No simulation ID available to stop');
+            return;
+        }
+
+        console.log(`Stopping simulation: ${simulationId}`);
+        console.log(`Current status: ${status}`);
 
         try {
-            // Close WebSocket connection
+            // Close WebSocket connection first
             if (wsRef.current) {
+                console.log('Closing WebSocket connection');
                 wsRef.current.close(1000, 'Simulation stopped by user');
                 wsRef.current = null;
             }
 
             // Call backend to stop simulation
-            await axios.delete(`${getApiUrl()}/simulate/${simulationId}`);
+            console.log(`Calling DELETE ${getApiUrl()}/simulate/${simulationId}`);
+            const response = await axios.delete(`${getApiUrl()}/simulate/${simulationId}`);
+            console.log('Backend stop response:', response.data);
 
             // Update local state
             setStatus('stopped');
             setWsConnected(false);
-
+            
             console.log(`Simulation ${simulationId} stopped successfully`);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error stopping simulation:', error);
-            // Even if backend call fails, we should stop the frontend
+            
+            // Handle different error scenarios
+            if (error.response?.status === 404) {
+                console.log('Simulation not found on backend (already stopped/removed)');
+                showToast('Simulation was already stopped', 'info');
+            } else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+                console.log('Backend connection failed');
+                showToast('Cannot connect to backend, stopping frontend only', 'warning');
+            } else {
+                console.log('Unknown error during stop:', error.message);
+                showToast('Error stopping simulation, but frontend stopped', 'warning');
+            }
+            
+            // Always stop the frontend even if backend call fails
             setStatus('stopped');
             setWsConnected(false);
         }
