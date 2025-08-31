@@ -227,6 +227,9 @@ export default function Simulate() {
 
     // Add a new state variable to track adjustments
     const [valueAdjustments, setValueAdjustments] = useState<any>(null);
+    
+    // Add a flag to track if we're navigating away
+    const [isNavigating, setIsNavigating] = useState<boolean>(false);
 
     // Draw the grid on canvas
     useEffect(() => {
@@ -846,14 +849,17 @@ export default function Simulate() {
                 clearTimeout(connectionTimeout)
                 setWsConnected(false)
 
-                // Try to reconnect if connection was lost unexpectedly
-                if (event.code !== 1000 && event.code !== 1001) {
+                // Only try to reconnect if it wasn't a clean close and we're still on the simulation page
+                if (event.code !== 1000 && event.code !== 1001 && status !== 'stopped' && status !== 'setup') {
                     console.log('Attempting to reconnect WebSocket in 2 seconds...')
-                    // Only show notification if we're not already in error state
-                    if (status !== 'error') {
+                    // Only show notification if we're not already in error state and not navigating away
+                    if (status !== 'error' && simulationId) {
                         showToast('Connection lost. Reconnecting...', 'warning')
                     }
-                    setTimeout(() => connectWebSocket(simId), 2000)
+                    // Only reconnect if we still have a simulation ID (haven't navigated away)
+                    if (simulationId) {
+                        setTimeout(() => connectWebSocket(simId), 2000)
+                    }
                 }
             }
 
@@ -861,8 +867,12 @@ export default function Simulate() {
                 console.error('WebSocket error:', event)
                 clearTimeout(connectionTimeout)
                 setWsConnected(false)
-                setStatus('error')
-                showToast('Connection error. Please try refreshing the page.', 'error');
+                
+                // Only show error if we're still actively using the simulation and not navigating away
+                if (simulationId && status !== 'stopped' && status !== 'setup' && !isNavigating) {
+                    setStatus('error')
+                    showToast('Connection error. Please try refreshing the page.', 'error');
+                }
             }
 
         } catch (error) {
@@ -1025,8 +1035,8 @@ export default function Simulate() {
         }
     }
 
-        // Stop the simulation
-    const stopSimulation = async () => {
+    // Stop the simulation
+    const stopSimulation = async (): Promise<void> => {
         if (!simulationId) {
             console.log('No simulation ID available to stop');
             return;
@@ -1036,6 +1046,9 @@ export default function Simulate() {
         console.log(`Current status: ${status}`);
 
         try {
+            // Set navigation flag to prevent error notifications during cleanup
+            setIsNavigating(true);
+            
             // Close WebSocket connection first
             if (wsRef.current) {
                 console.log('Closing WebSocket connection');
@@ -1071,6 +1084,9 @@ export default function Simulate() {
             // Always stop the frontend even if backend call fails
             setStatus('stopped');
             setWsConnected(false);
+        } finally {
+            // Reset navigation flag
+            setIsNavigating(false);
         }
     }
 
@@ -1171,9 +1187,12 @@ export default function Simulate() {
     useEffect(() => {
         return () => {
             // Cleanup function that runs when component unmounts
+            console.log('Simulate page unmounting - cleaning up...');
+            setIsNavigating(true);
             if (wsRef.current) {
                 console.log('Cleaning up WebSocket connection');
                 wsRef.current.close(1000, 'Navigation cleanup');
+                wsRef.current = null;
             }
             // Reset all stateful values
             setSimulationId(null);

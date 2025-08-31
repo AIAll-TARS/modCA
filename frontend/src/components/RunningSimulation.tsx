@@ -64,27 +64,27 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
         autoRunSimulation();
     };
 
-        // Function to handle simulation stop
+    // Function to handle simulation stop
     const handleSimulationStop = async () => {
         if (!simulationId || status === 'stopped' || status === 'completed') return;
 
         try {
             console.log(`Attempting to stop simulation: ${simulationId}`);
             console.log(`Using API URL: ${getApiUrl()}`);
-            
+
             // Call the backend to stop the simulation
             const response = await axios.delete(`${getApiUrl()}/simulate/${simulationId}`);
             console.log('Stop response:', response.data);
-            
+
             // Call the parent's stop handler to update state
             if (onStopSimulation) {
                 onStopSimulation();
             }
-            
+
             showToast('Simulation stopped successfully', 'success');
         } catch (error: any) {
             console.error('Error stopping simulation:', error);
-            
+
             // Handle 404 errors gracefully (simulation already stopped/removed)
             if (error.response?.status === 404) {
                 console.log('Simulation already stopped or removed');
@@ -303,6 +303,8 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                     className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
                     onClick={async () => {
                         try {
+                            console.log('Home button clicked - initiating cleanup and navigation');
+                            
                             // Set loading state
                             const btn = document.activeElement as HTMLButtonElement;
                             if (btn) {
@@ -310,10 +312,17 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                                 btn.textContent = 'Loading...';
                             }
 
+                            // If there's an active simulation, stop it first
+                            if (simulationId && status !== 'stopped' && status !== 'completed' && onStopSimulation) {
+                                console.log('Stopping simulation before navigation');
+                                await onStopSimulation();
+                            }
+
                             // Small delay to ensure cleanup
-                            await new Promise(resolve => setTimeout(resolve, 100));
+                            await new Promise(resolve => setTimeout(resolve, 200));
 
                             // Navigate home
+                            console.log('Navigating to home page');
                             await router.push("/");
                         } catch (error) {
                             console.error('Navigation error:', error);
