@@ -447,6 +447,8 @@ WebSocket Commands:
 - `step`: Run a specified number of steps
 - `reset`: Reset the simulation to initial state
 
+Note: Simulation stopping uses the REST DELETE endpoint, not WebSocket commands.
+
 ### 6.3 Data Models
 
 #### SimulationSettings
@@ -639,6 +641,7 @@ Component Responsibilities:
      - Real-time statistics display
      - Fullscreen modes for grid and charts
      - Pan and zoom controls for large grids
+     - Simulation control buttons (Start, Stop, New Simulation)
 
 3. State Management:
    - Local state for component-specific data
@@ -659,8 +662,8 @@ simulate.tsx (Page)
 │   └── Emits: simulation parameters
 │
 └── RunningSimulation
-    ├── Receives: simulation state, grid data, statistics
-    └── Emits: control actions (step, reset, etc.)
+    ├── Receives: simulation state, grid data, statistics, onStopSimulation callback
+    └── Emits: control actions (start, stop, reset)
 ```
 
 ### 7.3 State Management
@@ -714,7 +717,107 @@ const connectWebSocket = (simId: string) => {
 };
 ```
 
-### 7.5 Form Validation
+### 7.5 Simulation Controls
+
+The RunningSimulation component provides comprehensive control over simulation execution through a set of intuitive buttons:
+
+#### Control Buttons
+
+**1. Run Simulation (Green Button)**
+- **Purpose**: Starts or resumes the simulation auto-run
+- **States**: 
+  - "Run Simulation" (when ready)
+  - "Running..." (when active)
+  - "Loading..." (when processing)
+- **Disabled when**: simulation is already running, completed, or loading
+- **Implementation**: Uses WebSocket commands to step through simulation automatically
+
+**2. Stop Simulation (Red Button)**
+- **Purpose**: Stops the currently running simulation
+- **Functionality**:
+  - Calls `DELETE /api/simulate/{simulation_id}` endpoint
+  - Closes WebSocket connection gracefully
+  - Updates UI to show stopped state
+- **Disabled when**: simulation is already stopped, completed, or not started
+- **Visual feedback**: Toast notification confirms successful stop
+
+**3. New Simulation (Blue Button)**
+- **Purpose**: Provides path to start fresh simulation
+- **Appears when**: simulation is stopped or completed
+- **Action**: Reloads the page to return to setup phase
+- **UX**: Clear recovery path for users
+
+#### Implementation Details
+
+```typescript
+// Stop simulation function with full cleanup
+const stopSimulation = async () => {
+  if (!simulationId) return;
+
+  try {
+    // 1. Close WebSocket connection gracefully
+    if (wsRef.current) {
+      wsRef.current.close(1000, 'Simulation stopped by user');
+      wsRef.current = null;
+    }
+
+    // 2. Call backend to remove simulation from memory
+    await axios.delete(`${getApiUrl()}/simulate/${simulationId}`);
+
+    // 3. Update local state
+    setStatus('stopped');
+    setWsConnected(false);
+    
+    console.log(`Simulation ${simulationId} stopped successfully`);
+  } catch (error) {
+    console.error('Error stopping simulation:', error);
+    // Fail gracefully - stop frontend even if backend call fails
+    setStatus('stopped');
+    setWsConnected(false);
+  }
+};
+```
+
+#### State Management
+
+**Status States:**
+- `'setup'` - Initial configuration phase
+- `'loading'` - Simulation being created/processed
+- `'ready'` - Simulation created, ready to run
+- `'running'` - Simulation actively executing
+- `'stopped'` - Simulation manually stopped by user
+- `'completed'` - Simulation finished all steps
+- `'error'` - Error occurred during execution
+
+**Auto-run Logic:**
+```typescript
+// Auto-run respects stopped state
+if (currentStep < totalSteps && 
+    status !== 'completed' && 
+    status !== 'stopped') {
+  animationFrameId = requestAnimationFrame(runStep);
+}
+```
+
+#### User Experience Flow
+
+1. **Start Simulation**: User clicks green "Run Simulation" button
+2. **Active State**: Button becomes "Running...", red "Stop" button appears
+3. **Stop Action**: User clicks red "Stop Simulation" button
+4. **Stopped State**: 
+   - Gray status banner shows "Simulation Stopped"
+   - Blue "New Simulation" button appears
+   - Grid and charts remain visible for analysis
+5. **Recovery**: User clicks "New Simulation" to start over
+
+#### Error Handling
+
+- **Network failures**: Graceful degradation with user notifications
+- **Backend unavailable**: Frontend stops cleanly with error messages
+- **WebSocket disconnects**: Automatic reconnection attempts with user feedback
+- **Timeout scenarios**: Clear messaging about large grid performance
+
+### 7.6 Form Validation
 
 Validation schema in SimulationSetup:
 ```typescript

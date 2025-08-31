@@ -1025,6 +1025,33 @@ export default function Simulate() {
         }
     }
 
+    // Stop the simulation
+    const stopSimulation = async () => {
+        if (!simulationId) return;
+
+        try {
+            // Close WebSocket connection
+            if (wsRef.current) {
+                wsRef.current.close(1000, 'Simulation stopped by user');
+                wsRef.current = null;
+            }
+
+            // Call backend to stop simulation
+            await axios.delete(`${getApiUrl()}/simulate/${simulationId}`);
+
+            // Update local state
+            setStatus('stopped');
+            setWsConnected(false);
+
+            console.log(`Simulation ${simulationId} stopped successfully`);
+        } catch (error) {
+            console.error('Error stopping simulation:', error);
+            // Even if backend call fails, we should stop the frontend
+            setStatus('stopped');
+            setWsConnected(false);
+        }
+    }
+
     // Auto-run the simulation with improved error handling
     const autoRunSimulation = () => {
         if (!simulationId || status === 'completed' || status === 'stopped' || status === 'error') {
@@ -1100,8 +1127,8 @@ export default function Simulate() {
                 }
             }
 
-            // Schedule next frame unless we're done
-            if (currentStep < totalSteps && status !== ('completed' as SimulationStatus)) {
+            // Schedule next frame unless we're done or stopped
+            if (currentStep < totalSteps && status !== ('completed' as SimulationStatus) && status !== ('stopped' as SimulationStatus)) {
                 animationFrameId = requestAnimationFrame(runStep);
             }
         };
@@ -1485,6 +1512,7 @@ export default function Simulate() {
                         zoomLevel={zoomLevel}
                         setZoomLevel={setZoomLevel}
                         autoRunSimulation={autoRunSimulation}
+                        onStopSimulation={stopSimulation}
                     />
                 )}
             </div>

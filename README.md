@@ -9,6 +9,7 @@ A web-based implementation of a modified Cellular Automata simulation featuring 
 - Configurable simulation parameters
 - WebSocket support for live updates
 - RESTful API for simulation control
+- Simulation control buttons (Start, Stop, New Simulation)
 - Responsive web interface
 
 ## System Requirements

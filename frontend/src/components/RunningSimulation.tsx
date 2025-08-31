@@ -10,6 +10,9 @@ import {
 } from '../constants';
 import { ChartData } from '../types';
 import { useRouter } from 'next/router';
+import axios from 'axios';
+import { getApiUrl } from '../utils/env';
+import { useToast } from './Toast';
 
 // Define simulation status type
 type SimulationStatus = 'setup' | 'loading' | 'ready' | 'running' | 'completed' | 'error' | 'saving' | 'stopped' | 'retrying-1' | 'retrying-2' | 'retrying-3';
@@ -29,6 +32,7 @@ interface RunningSimulationProps {
     zoomLevel: number;
     setZoomLevel: (value: SetStateAction<number>) => void;
     autoRunSimulation: () => void;
+    onStopSimulation?: () => void;
 }
 
 export const RunningSimulation: React.FC<RunningSimulationProps> = ({
@@ -46,16 +50,38 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
     zoomLevel,
     setZoomLevel,
     autoRunSimulation,
+    onStopSimulation,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDragging, setIsDragging] = React.useState(false);
     const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
     const router = useRouter();
+    const { showToast } = useToast();
 
     // Function to handle simulation start
     const handleSimulationStart = () => {
         if (status === 'running') return;
         autoRunSimulation();
+    };
+
+    // Function to handle simulation stop
+    const handleSimulationStop = async () => {
+        if (!simulationId || status === 'stopped' || status === 'completed') return;
+
+        try {
+            // Call the backend to stop the simulation
+            await axios.delete(`${getApiUrl()}/simulate/${simulationId}`);
+
+            // Call the parent's stop handler to update state
+            if (onStopSimulation) {
+                onStopSimulation();
+            }
+
+            showToast('Simulation stopped successfully', 'success');
+        } catch (error) {
+            console.error('Error stopping simulation:', error);
+            showToast('Failed to stop simulation', 'error');
+        }
     };
 
     // Draw grid effect
@@ -295,6 +321,25 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                 >
                     {status === 'running' ? 'Running...' : status === 'loading' ? 'Loading...' : 'Run Simulation'}
                 </button>
+                {status !== 'stopped' && status !== 'completed' && (
+                    <button
+                        type="button"
+                        className="min-w-[140px] bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70"
+                        onClick={handleSimulationStop}
+                        disabled={status === 'setup' || status === 'loading'}
+                    >
+                        Stop Simulation
+                    </button>
+                )}
+                {(status === 'stopped' || status === 'completed') && (
+                    <button
+                        type="button"
+                        className="min-w-[140px] bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                        onClick={() => window.location.reload()}
+                    >
+                        New Simulation
+                    </button>
+                )}
             </div>
 
             {/* Loading overlay */}
@@ -341,6 +386,25 @@ export const RunningSimulation: React.FC<RunningSimulationProps> = ({
                             <h3 className="text-sm font-medium text-yellow-300">Retrying Connection</h3>
                             <div className="mt-2 text-sm text-yellow-200">
                                 <p>Attempting to reconnect to the simulation server... (Attempt {status === 'retrying-1' ? '1' : status === 'retrying-2' ? '2' : '3'} of 3)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Stopped state */}
+            {status === 'stopped' && (
+                <div className="bg-gray-800 border border-gray-600 rounded-md p-4 mb-6">
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zM8 13a1 1 0 112 0 1 1 0 01-2 0z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <h3 className="text-sm font-medium text-gray-300">Simulation Stopped</h3>
+                            <div className="mt-2 text-sm text-gray-400">
+                                <p>The simulation has been stopped at step {currentStep} of {totalSteps}. You can start a new simulation from the setup page.</p>
                             </div>
                         </div>
                     </div>
