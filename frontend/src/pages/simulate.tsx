@@ -230,6 +230,9 @@ export default function Simulate() {
     
     // Add a flag to track if we're navigating away
     const [isNavigating, setIsNavigating] = useState<boolean>(false);
+    
+    // Animation frame reference for auto-run
+    const animationFrameRef = useRef<number | null>(null);
 
     // Draw the grid on canvas
     useEffect(() => {
@@ -887,8 +890,12 @@ export default function Simulate() {
     const sendWsCommand = (action: string, params: any = {}) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.error('WebSocket not connected, cannot send command')
-            setStatus('error')
-            showToast('Connection error. Please try refreshing the page.', 'error');
+            
+            // Only show error if we're actively running and not stopped/navigating
+            if (status !== 'stopped' && status !== 'setup' && !isNavigating) {
+                setStatus('error')
+                showToast('Connection error. Please try refreshing the page.', 'error');
+            }
             return false
         }
 
@@ -1049,6 +1056,13 @@ export default function Simulate() {
             // Set navigation flag to prevent error notifications during cleanup
             setIsNavigating(true);
             
+            // Cancel any pending animation frames
+            if (animationFrameRef.current) {
+                console.log('Cancelling animation frame');
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
+            
             // Close WebSocket connection first
             if (wsRef.current) {
                 console.log('Closing WebSocket connection');
@@ -1092,16 +1106,19 @@ export default function Simulate() {
 
     // Auto-run the simulation with improved error handling
     const autoRunSimulation = () => {
-        if (!simulationId || status === 'completed' || status === 'stopped' || status === 'error') {
-            console.log('Cannot auto-run: simulation not in running state')
+        if (!simulationId || status === 'completed' || status === 'stopped' || status === 'error' || isNavigating) {
+            console.log(`Cannot auto-run: simulationId=${simulationId}, status=${status}, isNavigating=${isNavigating}`)
             return () => { }
         }
 
         // Ensure WebSocket is connected
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.log('WebSocket not connected, attempting to reconnect...')
-            connectWebSocket(simulationId)
-            setTimeout(autoRunSimulation, 1000)
+            // Only reconnect if we're not stopped or navigating
+            if (status !== 'stopped' && !isNavigating) {
+                connectWebSocket(simulationId)
+                setTimeout(autoRunSimulation, 1000)
+            }
             return () => { }
         }
 
@@ -1120,7 +1137,7 @@ export default function Simulate() {
         console.log(`Auto-run using ${stepInterval}ms interval (large grid: ${isLargeGrid})`)
 
         // Use requestAnimationFrame for smoother updates
-        let animationFrameId: number;
+        // Use the ref for animation frame tracking
         let lastStepTime = 0;
 
         const runStep = (timestamp: number) => {
@@ -1165,20 +1182,24 @@ export default function Simulate() {
                 }
             }
 
-            // Schedule next frame unless we're done or stopped
-            if (currentStep < totalSteps && status !== ('completed' as SimulationStatus) && status !== ('stopped' as SimulationStatus)) {
-                animationFrameId = requestAnimationFrame(runStep);
+            // Schedule next frame unless we're done, stopped, or navigating
+            if (currentStep < totalSteps && status !== ('completed' as SimulationStatus) && status !== ('stopped' as SimulationStatus) && !isNavigating) {
+                animationFrameRef.current = requestAnimationFrame(runStep);
+            } else {
+                console.log(`Auto-run stopped: currentStep=${currentStep}, totalSteps=${totalSteps}, status=${status}, isNavigating=${isNavigating}`);
+                animationFrameRef.current = null;
             }
         };
 
         // Start the animation loop
-        animationFrameId = requestAnimationFrame(runStep);
+        animationFrameRef.current = requestAnimationFrame(runStep);
 
         // Return cleanup function
         return () => {
             console.log('Cleaning up auto-run animation frame')
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId)
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
             }
         }
     }
@@ -1189,6 +1210,14 @@ export default function Simulate() {
             // Cleanup function that runs when component unmounts
             console.log('Simulate page unmounting - cleaning up...');
             setIsNavigating(true);
+            
+            // Cancel any pending animation frames
+            if (animationFrameRef.current) {
+                console.log('Cleaning up animation frame on unmount');
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
+            
             if (wsRef.current) {
                 console.log('Cleaning up WebSocket connection');
                 wsRef.current.close(1000, 'Navigation cleanup');
