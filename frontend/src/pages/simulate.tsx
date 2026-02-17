@@ -145,7 +145,7 @@ export default function Simulate() {
     const [currentStep, setCurrentStep] = useState<number>(0)
     const [totalSteps, setTotalSteps] = useState<number>(0)
     const [grid, setGrid] = useState<number[][]>([])
-    const [statistics, setStatistics] = useState<any>({})
+    const [statistics, setStatistics] = useState<Statistics | null>(null)
     const [isGridFullscreen, setIsGridFullscreen] = useState<boolean>(false)
     const [viewportOffset, setViewportOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
     const [zoomLevel, setZoomLevel] = useState<number>(1);
@@ -228,8 +228,10 @@ export default function Simulate() {
     // Add a new state variable to track adjustments
     const [valueAdjustments, setValueAdjustments] = useState<any>(null);
 
-    // Add a flag to track if we're navigating away
-    const [isNavigating, setIsNavigating] = useState<boolean>(false);
+    // Add a ref to track if we're in the process of stopping (for cleanup)
+    const isStoppingRef = useRef<boolean>(false);
+    // Add a ref to track if component is mounted
+    const isMountedRef = useRef<boolean>(true);
 
     // Animation frame reference for auto-run
     const animationFrameRef = useRef<number | null>(null);
@@ -474,7 +476,7 @@ export default function Simulate() {
 
     // Update chart with new statistics
     useEffect(() => {
-        if (!statistics || !statistics.predator_count) return
+        if (!statistics) return
 
         // Skip adding data points when simulation hasn't started yet (step 0)
         if (currentStep === 0) return
@@ -487,19 +489,19 @@ export default function Simulate() {
                 datasets: [
                     {
                         ...prev.datasets[0],
-                        data: [...prev.datasets[0].data, statistics.predator_count],
+                        data: [...prev.datasets[0].data, statistics?.predator_count || 0],
                     },
                     {
                         ...prev.datasets[1],
-                        data: [...prev.datasets[1].data, statistics.prey_count],
+                        data: [...prev.datasets[1].data, statistics?.prey_count || 0],
                     },
                     {
                         ...prev.datasets[2],
-                        data: [...prev.datasets[2].data, statistics.substrate_count],
+                        data: [...prev.datasets[2].data, statistics?.substrate_count || 0],
                     },
                     {
                         ...prev.datasets[3],
-                        data: [...prev.datasets[3].data, statistics.predator_count + statistics.prey_count + statistics.substrate_count],
+                        data: [...prev.datasets[3].data, (statistics?.predator_count || 0) + (statistics?.prey_count || 0) + (statistics?.substrate_count || 0)],
                     },
                 ],
             }
@@ -751,6 +753,8 @@ export default function Simulate() {
         const wsUrl = getWsUrl() + '/simulate/' + simId
 
         console.log(`WebSocket URL: ${wsUrl}`)
+        console.log(`Current hostname: ${typeof window !== 'undefined' ? window.location.hostname : 'server-side'}`)
+        console.log(`getWsUrl() returned: ${getWsUrl()}`)
 
         try {
             const ws = new WebSocket(wsUrl)
@@ -817,19 +821,19 @@ export default function Simulate() {
                                     datasets: [
                                         {
                                             ...prevData.datasets[0],
-                                            data: [...prevData.datasets[0].data, data.statistics.predator_count],
+                                            data: [...prevData.datasets[0].data, data.statistics?.predator_count || 0],
                                         },
                                         {
                                             ...prevData.datasets[1],
-                                            data: [...prevData.datasets[1].data, data.statistics.prey_count],
+                                            data: [...prevData.datasets[1].data, data.statistics?.prey_count || 0],
                                         },
                                         {
                                             ...prevData.datasets[2],
-                                            data: [...prevData.datasets[2].data, data.statistics.substrate_count],
+                                            data: [...prevData.datasets[2].data, data.statistics?.substrate_count || 0],
                                         },
                                         {
                                             ...prevData.datasets[3],
-                                            data: [...prevData.datasets[3].data, data.statistics.predator_count + data.statistics.prey_count + data.statistics.substrate_count],
+                                            data: [...prevData.datasets[3].data, (data.statistics?.predator_count || 0) + (data.statistics?.prey_count || 0) + (data.statistics?.substrate_count || 0)],
                                         },
                                     ],
                                 }
@@ -871,8 +875,8 @@ export default function Simulate() {
                 clearTimeout(connectionTimeout)
                 setWsConnected(false)
 
-                // Only show error if we're still actively using the simulation and not navigating away
-                if (simulationId && status !== 'stopped' && status !== 'setup' && !isNavigating) {
+                // Only show error if we're still actively using the simulation and not in the process of stopping
+                if (simulationId && status !== 'stopped' && status !== 'setup' && !isStoppingRef.current) {
                     setStatus('error')
                     showToast('Connection error. Please try refreshing the page.', 'error');
                 }
@@ -891,8 +895,8 @@ export default function Simulate() {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.error('WebSocket not connected, cannot send command')
 
-            // Only show error if we're actively running and not stopped/navigating
-            if (status !== 'stopped' && status !== 'setup' && !isNavigating) {
+            // Only show error if we're actively running and not stopped/in the process of stopping
+            if (status !== 'stopped' && status !== 'setup' && !isStoppingRef.current) {
                 setStatus('error')
                 showToast('Connection error. Please try refreshing the page.', 'error');
             }
@@ -1052,10 +1056,10 @@ export default function Simulate() {
         console.log(`Stopping simulation: ${simulationId}`);
         console.log(`Current status: ${status}`);
 
-        try {
-            // Set navigation flag to prevent error notifications during cleanup
-            setIsNavigating(true);
+        // Mark that we're in the process of stopping
+        isStoppingRef.current = true;
 
+        try {
             // Cancel any pending animation frames
             if (animationFrameRef.current) {
                 console.log('Cancelling animation frame');
@@ -1099,23 +1103,23 @@ export default function Simulate() {
             setStatus('stopped');
             setWsConnected(false);
         } finally {
-            // Reset navigation flag
-            setIsNavigating(false);
+            // Reset stopping flag
+            isStoppingRef.current = false;
         }
     }
 
     // Auto-run the simulation with improved error handling
     const autoRunSimulation = () => {
-        if (!simulationId || status === 'completed' || status === 'stopped' || status === 'error' || isNavigating) {
-            console.log(`Cannot auto-run: simulationId=${simulationId}, status=${status}, isNavigating=${isNavigating}`)
+        if (!simulationId || status === 'completed' || status === 'stopped' || status === 'error' || !isMountedRef.current) {
+            console.log(`Cannot auto-run: simulationId=${simulationId}, status=${status}, isMounted=${isMountedRef.current}`)
             return () => { }
         }
 
         // Ensure WebSocket is connected
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.log('WebSocket not connected, attempting to reconnect...')
-            // Only reconnect if we're not stopped or navigating
-            if (status !== ('stopped' as SimulationStatus) && !isNavigating) {
+            // Only reconnect if we're not stopped and component is still mounted
+            if (status !== ('stopped' as SimulationStatus) && isMountedRef.current) {
                 connectWebSocket(simulationId)
                 setTimeout(autoRunSimulation, 1000)
             }
@@ -1182,11 +1186,11 @@ export default function Simulate() {
                 }
             }
 
-            // Schedule next frame unless we're done, stopped, or navigating
-            if (currentStep < totalSteps && status !== ('completed' as SimulationStatus) && status !== ('stopped' as SimulationStatus) && !isNavigating) {
+            // Schedule next frame unless we're done, stopped, or component unmounted
+            if (currentStep < totalSteps && status !== ('completed' as SimulationStatus) && status !== ('stopped' as SimulationStatus) && isMountedRef.current) {
                 animationFrameRef.current = requestAnimationFrame(runStep);
             } else {
-                console.log(`Auto-run stopped: currentStep=${currentStep}, totalSteps=${totalSteps}, status=${status}, isNavigating=${isNavigating}`);
+                console.log(`Auto-run stopped: currentStep=${currentStep}, totalSteps=${totalSteps}, status=${status}, isMounted=${isMountedRef.current}`);
                 animationFrameRef.current = null;
             }
         };
@@ -1204,12 +1208,14 @@ export default function Simulate() {
         }
     }
 
-    // Add cleanup effect for navigation
+    // Set mounted flag on component mount
     useEffect(() => {
+        isMountedRef.current = true;
+        
         return () => {
             // Cleanup function that runs when component unmounts
             console.log('Simulate page unmounting - cleaning up...');
-            setIsNavigating(true);
+            isMountedRef.current = false;
 
             // Cancel any pending animation frames
             if (animationFrameRef.current) {

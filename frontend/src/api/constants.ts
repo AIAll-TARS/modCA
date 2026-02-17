@@ -21,9 +21,24 @@ export interface SimulationConstants {
 }
 
 export async function fetchConstants(): Promise<SimulationConstants> {
-    const response = await fetch(`${getApiUrl()}/constants`);
-    if (!response.ok) {
-        throw new Error('Failed to fetch simulation constants');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    try {
+        const response = await fetch(`${getApiUrl()}/constants`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch simulation constants: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+            throw new Error('Request timeout: Failed to fetch constants within 10 seconds');
+        }
+        throw error;
     }
-    return response.json();
 } 

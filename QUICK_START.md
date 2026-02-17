@@ -34,10 +34,10 @@ Best performance and compatibility with latest Python 3.12+
    ```
    If port 3000 is busy, use:
    ```bash
-   npm run dev -- --port 3001
+   npm run dev -- --port 3002
    ```
 
-   - Access the app at http://localhost:3000 (or 3001 if used)
+   - Access the app at http://localhost:3002
    - The backend API is at http://localhost:8000
 
    **Troubleshooting:**
@@ -63,7 +63,7 @@ For users running Ubuntu as their main OS
 ## 🌐 Access the Application
 
 The application will be available at:
-- [http://localhost:3000](http://localhost:3000) (or 3001 if used)
+- [http://localhost:3002](http://localhost:3002)
 
 ## 🎮 Quick Usage Guide
 
@@ -86,7 +86,7 @@ The application will be available at:
 
 ## ⚠️ Common Issues
 
-- Ensure ports 3000 (or 3001) and 8000 are available
+- Ensure ports 3002 and 8002 are available
 - Check both backend and frontend are running
 - Verify virtual environment is activated
 

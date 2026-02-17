@@ -10,11 +10,11 @@ const nextConfig = {
             ? [
                 {
                     source: '/api/:path*',
-                    destination: 'http://localhost:8000/api/:path*', // Backend API URL
+                    destination: 'http://localhost:8002/api/:path*', // Backend API URL
                 },
                 {
                     source: '/ws/:path*',
-                    destination: 'http://localhost:8000/ws/:path*', // WebSocket URL
+                    destination: 'http://localhost:8002/ws/:path*', // WebSocket URL
                 },
             ]
             : []; // In production, we use vercel.json rewrites

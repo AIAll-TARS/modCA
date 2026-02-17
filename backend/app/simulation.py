@@ -65,9 +65,9 @@ class Simulation:
 
         # Initialize statistics tracking
         self.stats = {
-            'predator_count': [np.count_nonzero(self.grid == PREDATOR)],
-            'prey_count': [np.count_nonzero(self.grid == PREY)],
-            'substrate_count': [np.count_nonzero(self.grid == SUBSTRATE)]
+            'predator_count': [int(np.count_nonzero(self.grid == PREDATOR))],
+            'prey_count': [int(np.count_nonzero(self.grid == PREY))],
+            'substrate_count': [int(np.count_nonzero(self.grid == SUBSTRATE))]
         }
 
         # Add event tracking statistics
